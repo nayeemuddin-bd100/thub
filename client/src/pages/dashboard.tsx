@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import RoleSwitcher from "@/components/RoleSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { useToast } from "@/hooks/use-toast";
@@ -402,6 +403,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </Card>
+            
+            {/* Role Switcher */}
+            <RoleSwitcher />
           </TabsContent>
         </Tabs>
       </div>

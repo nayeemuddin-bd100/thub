@@ -22,6 +22,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User role management routes
+  app.put('/api/auth/change-role', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { role } = req.body;
+      
+      // Validate role
+      const validRoles = ['client', 'property_owner', 'service_provider'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role. Valid roles: client, property_owner, service_provider" });
+      }
+      
+      const updatedUser = await storage.updateUserRole(userId, role);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.put('/api/admin/assign-role', isAuthenticated, async (req: any, res) => {
+    try {
+      const adminUserId = req.user.claims.sub;
+      const adminUser = await storage.getUser(adminUserId);
+      
+      // Check if user is admin
+      if (adminUser?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const { userId, role } = req.body;
+      
+      // Validate role
+      const validRoles = ['client', 'property_owner', 'service_provider', 'admin'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      const updatedUser = await storage.updateUserRole(userId, role);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error assigning user role:", error);
+      res.status(500).json({ message: "Failed to assign role" });
+    }
+  });
+
   // Property routes
   app.get('/api/properties', async (req, res) => {
     try {
