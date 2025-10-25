@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RoleSwitcher from "@/components/RoleSwitcher";
@@ -10,7 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -88,6 +91,35 @@ export default function Dashboard() {
     queryKey: ['/api/admin/users'],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,
+  });
+
+  // State for user search and filter
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+
+  // Mutation to assign user role
+  const assignRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
+      return await apiRequest('/api/admin/assign-role', {
+        method: 'PUT',
+        body: JSON.stringify({ userId, role }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      toast({
+        title: "Success",
+        description: "User role updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update user role",
+        variant: "destructive",
+      });
+    },
   });
 
   useEffect(() => {
@@ -286,6 +318,33 @@ export default function Dashboard() {
                 </h2>
               </div>
               
+              {/* Search and Filter */}
+              <div className="flex gap-4 items-center">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                    data-testid="input-user-search"
+                  />
+                </div>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-[200px]" data-testid="select-role-filter">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="property_owner">Property Owner</SelectItem>
+                    <SelectItem value="service_provider">Service Provider</SelectItem>
+                    <SelectItem value="client">Client</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               {usersLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
@@ -294,7 +353,20 @@ export default function Dashboard() {
                 </div>
               ) : allUsers && allUsers.length > 0 ? (
                 <div className="space-y-4">
-                  {allUsers.map((u: any) => (
+                  {allUsers
+                    .filter((u: any) => {
+                      // Search filter
+                      const matchesSearch = !searchQuery || 
+                        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                        (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()));
+                      
+                      // Role filter
+                      const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+                      
+                      return matchesSearch && matchesRole;
+                    })
+                    .map((u: any) => (
                     <Card key={u.id} className="p-4" data-testid={`card-user-${u.id}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -308,15 +380,27 @@ export default function Dashboard() {
                               {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : 'No name'}
                             </p>
                             <p className="text-sm text-muted-foreground">{u.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Joined {new Date(u.createdAt).toLocaleDateString()}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-4">
-                          <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
-                            {u.role}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(u.createdAt).toLocaleDateString()}
-                          </span>
+                          <Select 
+                            value={u.role} 
+                            onValueChange={(newRole) => assignRoleMutation.mutate({ userId: u.id, role: newRole })}
+                            disabled={assignRoleMutation.isPending}
+                          >
+                            <SelectTrigger className="w-[180px]" data-testid={`select-role-${u.id}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="client">Client</SelectItem>
+                              <SelectItem value="property_owner">Property Owner</SelectItem>
+                              <SelectItem value="service_provider">Service Provider</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                     </Card>
@@ -329,7 +413,7 @@ export default function Dashboard() {
                     No Users Found
                   </h3>
                   <p className="text-muted-foreground">
-                    No users registered yet.
+                    {searchQuery || roleFilter !== 'all' ? 'No users match your filters.' : 'No users registered yet.'}
                   </p>
                 </div>
               )}
