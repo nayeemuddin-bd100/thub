@@ -16,7 +16,15 @@ export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [activeTab, setActiveTab] = useState("bookings");
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check URL params first
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab) return tab;
+    
+    // Default tab based on role
+    return user?.role === 'admin' ? 'overview' : 'bookings';
+  });
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -30,8 +38,11 @@ export default function Dashboard() {
     const tab = urlParams.get('tab');
     if (tab) {
       setActiveTab(tab);
+    } else if (user?.role === 'admin') {
+      // Set default tab for admin if not in URL
+      setActiveTab('overview');
     }
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -135,24 +146,127 @@ export default function Dashboard() {
 
         {/* Dashboard Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="bookings" data-testid="tab-bookings">
-              <Calendar className="w-4 h-4 mr-2" />
-              My Bookings
-            </TabsTrigger>
-            <TabsTrigger value="properties" data-testid="tab-properties">
-              <Building className="w-4 h-4 mr-2" />
-              My Properties
-            </TabsTrigger>
-            <TabsTrigger value="services" data-testid="tab-services">
-              <UserCheck className="w-4 h-4 mr-2" />
-              My Services
-            </TabsTrigger>
-            <TabsTrigger value="profile" data-testid="tab-profile">
-              <Users className="w-4 h-4 mr-2" />
-              Profile
-            </TabsTrigger>
-          </TabsList>
+          {user?.role === 'admin' ? (
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="overview" data-testid="tab-overview">
+                <DollarSign className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="users" data-testid="tab-users">
+                <Users className="w-4 h-4 mr-2" />
+                Users
+              </TabsTrigger>
+              <TabsTrigger value="properties" data-testid="tab-properties">
+                <Building className="w-4 h-4 mr-2" />
+                Properties
+              </TabsTrigger>
+              <TabsTrigger value="services" data-testid="tab-services">
+                <UserCheck className="w-4 h-4 mr-2" />
+                Services
+              </TabsTrigger>
+              <TabsTrigger value="profile" data-testid="tab-profile">
+                <Users className="w-4 h-4 mr-2" />
+                Profile
+              </TabsTrigger>
+            </TabsList>
+          ) : (
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="bookings" data-testid="tab-bookings">
+                <Calendar className="w-4 h-4 mr-2" />
+                My Bookings
+              </TabsTrigger>
+              <TabsTrigger value="properties" data-testid="tab-properties">
+                <Building className="w-4 h-4 mr-2" />
+                My Properties
+              </TabsTrigger>
+              <TabsTrigger value="services" data-testid="tab-services">
+                <UserCheck className="w-4 h-4 mr-2" />
+                My Services
+              </TabsTrigger>
+              <TabsTrigger value="profile" data-testid="tab-profile">
+                <Users className="w-4 h-4 mr-2" />
+                Profile
+              </TabsTrigger>
+            </TabsList>
+          )}
+
+          {/* Admin Overview Tab */}
+          {user?.role === 'admin' && (
+            <TabsContent value="overview" className="space-y-6">
+              <h2 className="text-2xl font-semibold text-foreground" data-testid="text-overview-title">
+                Platform Overview
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Users</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                    </div>
+                    <Users className="w-8 h-8 text-primary" />
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Properties</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                    </div>
+                    <Building className="w-8 h-8 text-primary" />
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Service Providers</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                    </div>
+                    <UserCheck className="w-8 h-8 text-primary" />
+                  </div>
+                </Card>
+                
+                <Card className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Bookings</p>
+                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                    </div>
+                    <Calendar className="w-8 h-8 text-primary" />
+                  </div>
+                </Card>
+              </div>
+              
+              <div className="mt-8">
+                <p className="text-muted-foreground text-center">
+                  Welcome to the admin dashboard! Use the tabs above to manage users, properties, and services.
+                </p>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* Admin Users Tab */}
+          {user?.role === 'admin' && (
+            <TabsContent value="users" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-foreground" data-testid="text-users-title">
+                  User Management
+                </h2>
+              </div>
+              
+              <div className="text-center py-12">
+                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  User Management
+                </h3>
+                <p className="text-muted-foreground">
+                  View and manage all platform users, assign roles, and monitor activity.
+                </p>
+              </div>
+            </TabsContent>
+          )}
 
           {/* My Bookings */}
           <TabsContent value="bookings" className="space-y-6">
