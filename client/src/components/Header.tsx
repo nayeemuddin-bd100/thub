@@ -1,4 +1,6 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Globe, Moon, Sun, User } from "lucide-react";
@@ -19,6 +21,22 @@ interface HeaderProps {
 }
 
 export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated = false, user }: HeaderProps) {
+  const [, setLocation] = useLocation();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/auth/logout", {});
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['/api/auth/user'], null);
+      setLocation("/login");
+    },
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-card border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -83,21 +101,23 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                     <Link href="/bookings" data-testid="link-bookings">My Bookings</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/api/logout" data-testid="link-logout">Log out</a>
+                  <DropdownMenuItem onClick={handleLogout} data-testid="link-logout">
+                    Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2 bg-muted rounded-full p-1">
-                <Button variant="ghost" size="sm" asChild data-testid="button-host">
-                  <a href="/api/login">Host</a>
-                </Button>
-                <Button size="sm" className="rounded-full" asChild data-testid="button-login">
-                  <a href="/api/login">
+                <Link href="/host">
+                  <Button variant="ghost" size="sm" data-testid="button-host">
+                    Host
+                  </Button>
+                </Link>
+                <Link href="/login">
+                  <Button size="sm" className="rounded-full" data-testid="button-login">
                     <User className="w-4 h-4" />
-                  </a>
-                </Button>
+                  </Button>
+                </Link>
               </div>
             )}
           </nav>

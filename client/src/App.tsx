@@ -5,7 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
+import Login from "@/pages/login";
+import Register from "@/pages/register";
 import Home from "@/pages/home";
 import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
@@ -33,9 +34,12 @@ function Router() {
 
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (
+      {/* Auth pages */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      
+      {/* Protected pages */}
+      {isAuthenticated && (
         <>
           <Route path="/" component={Home} />
           <Route path="/properties" component={Properties} />
@@ -45,6 +49,9 @@ function Router() {
           <Route path="/dashboard" component={Dashboard} />
         </>
       )}
+      
+      {/* Redirect to login if not authenticated */}
+      {!isLoading && !isAuthenticated && <Route path="/" component={Login} />}
       
       {/* Public pages - accessible to all */}
       <Route path="/about" component={About} />

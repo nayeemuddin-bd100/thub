@@ -2,20 +2,105 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { hashPassword, verifyPassword, requireAuth } from "./auth";
 import { generateBookingCode } from "./base44";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
-
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Register endpoint
+  app.post('/api/auth/register', async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const { email, password, firstName, lastName } = req.body;
+
+      // Validate input
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Create user
+      const user = await storage.upsertUser({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: 'client',
+      });
+
+      // Set session
+      (req.session as any).userId = user.id;
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      if (error.code === '23505') { // Unique violation
+        return res.status(409).json({ message: "Email already exists" });
+      }
+      res.status(500).json({ message: "Failed to register" });
+    }
+  });
+
+  // Login endpoint
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // Find user by email
+      const users = await storage.getUserByEmail(email);
+      if (!users) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Verify password
+      const isValid = await verifyPassword(password, users.password);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Set session
+      (req.session as any).userId = users.id;
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = users;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Failed to login" });
+    }
+  });
+
+  // Logout endpoint
+  app.post('/api/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Failed to logout" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  // Get current user
+  app.get('/api/auth/user', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
       const user = await storage.getUser(userId);
-      res.json(user);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -23,9 +108,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User role management routes
-  app.put('/api/auth/change-role', isAuthenticated, async (req: any, res) => {
+  app.put('/api/auth/change-role', requireAuth, async (req, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const { role } = req.body;
       
       // Validate role
@@ -35,16 +120,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedUser = await storage.updateUserRole(userId, role);
-      res.json(updatedUser);
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update role" });
     }
   });
 
-  app.put('/api/admin/assign-role', isAuthenticated, async (req: any, res) => {
+  app.put('/api/admin/assign-role', requireAuth, async (req, res) => {
     try {
-      const adminUserId = req.user.claims.sub;
+      const adminUserId = (req.session as any).userId;
       const adminUser = await storage.getUser(adminUserId);
       
       // Check if user is admin
@@ -61,7 +147,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedUser = await storage.updateUserRole(userId, role);
-      res.json(updatedUser);
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error("Error assigning user role:", error);
       res.status(500).json({ message: "Failed to assign role" });
@@ -102,9 +189,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/properties', isAuthenticated, async (req: any, res) => {
+  app.post('/api/properties', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'property_owner' && user?.role !== 'admin') {
@@ -162,9 +249,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/service-providers', isAuthenticated, async (req: any, res) => {
+  app.post('/api/service-providers', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const user = await storage.getUser(userId);
       
       if (user?.role !== 'service_provider' && user?.role !== 'admin') {
@@ -196,9 +283,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Booking routes
-  app.post('/api/bookings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/bookings', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const { propertyId, checkIn, checkOut, guests, services = [] } = req.body;
       
       // Calculate totals
@@ -253,9 +340,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/bookings', isAuthenticated, async (req: any, res) => {
+  app.get('/api/bookings', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const bookings = await storage.getUserBookings(userId);
       res.json(bookings);
     } catch (error) {
@@ -264,14 +351,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/bookings/:id', isAuthenticated, async (req: any, res) => {
+  app.get('/api/bookings/:id', requireAuth, async (req: any, res) => {
     try {
       const booking = await storage.getBooking(req.params.id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       if (booking.clientId !== userId) {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -283,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/bookings/code/:code', isAuthenticated, async (req, res) => {
+  app.get('/api/bookings/code/:code', requireAuth, async (req, res) => {
     try {
       const booking = await storage.getBookingByCode(req.params.code);
       if (!booking) {
@@ -297,9 +384,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Review routes
-  app.post('/api/reviews', isAuthenticated, async (req: any, res) => {
+  app.post('/api/reviews', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const reviewData = {
         ...req.body,
         reviewerId: userId,
@@ -334,9 +421,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Message routes
-  app.post('/api/messages', isAuthenticated, async (req: any, res) => {
+  app.post('/api/messages', requireAuth, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = (req.session as any).userId;
       const messageData = {
         ...req.body,
         senderId: userId,
@@ -362,9 +449,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:userId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/conversations/:userId', requireAuth, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = (req.session as any).userId;
       const otherUserId = req.params.userId;
       
       const messages = await storage.getConversation(currentUserId, otherUserId);
@@ -376,9 +463,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user role (admin only)
-  app.patch('/api/users/:id/role', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/users/:id/role', requireAuth, async (req: any, res) => {
     try {
-      const currentUserId = req.user.claims.sub;
+      const currentUserId = (req.session as any).userId;
       const currentUser = await storage.getUser(currentUserId);
       
       if (currentUser?.role !== 'admin') {
