@@ -18,7 +18,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       store: new PgSession({
         pool,
         tableName: 'session',
-        createTableIfMissing: false,
       }),
       secret: process.env.SESSION_SECRET || 'travelhub-secret-key-change-in-production',
       resave: false,
