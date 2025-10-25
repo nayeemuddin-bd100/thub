@@ -76,6 +76,20 @@ export default function Dashboard() {
     retry: false,
   });
 
+  // Admin stats query
+  const { data: adminStats, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/admin/stats'],
+    enabled: isAuthenticated && user?.role === 'admin',
+    retry: false,
+  });
+
+  // Admin users query
+  const { data: allUsers, isLoading: usersLoading } = useQuery({
+    queryKey: ['/api/admin/users'],
+    enabled: isAuthenticated && user?.role === 'admin',
+    retry: false,
+  });
+
   useEffect(() => {
     if (bookingsError && isUnauthorizedError(bookingsError as Error)) {
       toast({
@@ -197,47 +211,63 @@ export default function Dashboard() {
                 Platform Overview
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Users</p>
-                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+              {statsLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-32 bg-muted rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Users</p>
+                        <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-users">
+                          {adminStats?.totalUsers || 0}
+                        </p>
+                      </div>
+                      <Users className="w-8 h-8 text-primary" />
                     </div>
-                    <Users className="w-8 h-8 text-primary" />
-                  </div>
-                </Card>
-                
-                <Card className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Properties</p>
-                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                  </Card>
+                  
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Properties</p>
+                        <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-properties">
+                          {adminStats?.totalProperties || 0}
+                        </p>
+                      </div>
+                      <Building className="w-8 h-8 text-primary" />
                     </div>
-                    <Building className="w-8 h-8 text-primary" />
-                  </div>
-                </Card>
-                
-                <Card className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Service Providers</p>
-                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                  </Card>
+                  
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Service Providers</p>
+                        <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-providers">
+                          {adminStats?.totalServiceProviders || 0}
+                        </p>
+                      </div>
+                      <UserCheck className="w-8 h-8 text-primary" />
                     </div>
-                    <UserCheck className="w-8 h-8 text-primary" />
-                  </div>
-                </Card>
-                
-                <Card className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Bookings</p>
-                      <p className="text-2xl font-bold text-foreground mt-2">-</p>
+                  </Card>
+                  
+                  <Card className="p-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Bookings</p>
+                        <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-bookings">
+                          {adminStats?.totalBookings || 0}
+                        </p>
+                      </div>
+                      <Calendar className="w-8 h-8 text-primary" />
                     </div>
-                    <Calendar className="w-8 h-8 text-primary" />
-                  </div>
-                </Card>
-              </div>
+                  </Card>
+                </div>
+              )}
               
               <div className="mt-8">
                 <p className="text-muted-foreground text-center">
@@ -256,15 +286,53 @@ export default function Dashboard() {
                 </h2>
               </div>
               
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">
-                  User Management
-                </h3>
-                <p className="text-muted-foreground">
-                  View and manage all platform users, assign roles, and monitor activity.
-                </p>
-              </div>
+              {usersLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : allUsers && allUsers.length > 0 ? (
+                <div className="space-y-4">
+                  {allUsers.map((u: any) => (
+                    <Card key={u.id} className="p-4" data-testid={`card-user-${u.id}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-lg font-semibold text-primary">
+                              {u.firstName?.[0] || u.email[0].toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground">
+                              {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : 'No name'}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{u.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <Badge variant={u.role === 'admin' ? 'default' : 'secondary'}>
+                            {u.role}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {new Date(u.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    No Users Found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    No users registered yet.
+                  </p>
+                </div>
+              )}
             </TabsContent>
           )}
 

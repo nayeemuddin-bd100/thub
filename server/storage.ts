@@ -73,6 +73,15 @@ export interface IStorage {
   // Property-Service associations
   getPropertyServices(propertyId: string): Promise<ServiceProvider[]>;
   addPropertyService(propertyId: string, serviceProviderId: string): Promise<PropertyService>;
+  
+  // Admin statistics
+  getAdminStats(): Promise<{
+    totalUsers: number;
+    totalProperties: number;
+    totalServiceProviders: number;
+    totalBookings: number;
+  }>;
+  getAllUsers(): Promise<User[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -354,6 +363,30 @@ export class DatabaseStorage implements IStorage {
       serviceProviderId,
     }).returning();
     return propertyService;
+  }
+
+  // Admin statistics
+  async getAdminStats(): Promise<{
+    totalUsers: number;
+    totalProperties: number;
+    totalServiceProviders: number;
+    totalBookings: number;
+  }> {
+    const [userCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
+    const [propertyCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(properties);
+    const [providerCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(serviceProviders);
+    const [bookingCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(bookings);
+
+    return {
+      totalUsers: Number(userCount.count),
+      totalProperties: Number(propertyCount.count),
+      totalServiceProviders: Number(providerCount.count),
+      totalBookings: Number(bookingCount.count),
+    };
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
   }
 }
 
