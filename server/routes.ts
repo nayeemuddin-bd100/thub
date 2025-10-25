@@ -1,12 +1,36 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword, requireAuth } from "./auth";
 import { generateBookingCode } from "./base44";
 import { z } from "zod";
 
+const PgSession = connectPg(session);
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure session middleware
+  app.use(
+    session({
+      store: new PgSession({
+        pool,
+        tableName: 'session',
+        createTableIfMissing: false,
+      }),
+      secret: process.env.SESSION_SECRET || 'travelhub-secret-key-change-in-production',
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+      },
+    })
+  );
   // Register endpoint
   app.post('/api/auth/register', async (req, res) => {
     try {
