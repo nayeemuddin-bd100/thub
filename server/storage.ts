@@ -70,6 +70,7 @@ export interface IStorage {
   
   // Booking operations
   getAllBookings(): Promise<Booking[]>;
+  getBookingDetails(id: string): Promise<any>;
   createBooking(booking: InsertBooking, serviceBookings?: Omit<ServiceBooking, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Booking>;
   getBooking(id: string): Promise<Booking | undefined>;
   getBookingByCode(code: string): Promise<Booking | undefined>;
@@ -256,6 +257,23 @@ export class DatabaseStorage implements IStorage {
   async getAllBookings(): Promise<Booking[]> {
     return await db.select().from(bookings)
       .orderBy(desc(bookings.createdAt));
+  }
+
+  async getBookingDetails(id: string): Promise<any> {
+    const booking = await this.getBooking(id);
+    if (!booking) return null;
+
+    const property = await this.getProperty(booking.propertyId);
+    const client = await this.getUser(booking.clientId);
+    const serviceBookingsList = await db.select().from(serviceBookings)
+      .where(eq(serviceBookings.bookingId, id));
+
+    return {
+      ...booking,
+      property,
+      client,
+      serviceBookings: serviceBookingsList,
+    };
   }
 
   async getUserBookings(userId: string): Promise<Booking[]> {

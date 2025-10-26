@@ -20,7 +20,12 @@ import {
   Plus,
   Edit,
   Trash2,
-  Search
+  Search,
+  Eye,
+  MapPin,
+  Mail,
+  Phone,
+  User
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -32,6 +37,8 @@ export default function AdminDashboard() {
   const [editingProperty, setEditingProperty] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [bookingDetailsDialogOpen, setBookingDetailsDialogOpen] = useState(false);
 
   // Redirect if not admin
   if (user?.role !== 'admin') {
@@ -54,6 +61,11 @@ export default function AdminDashboard() {
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery({
     queryKey: ['/api/admin/bookings'],
+  });
+
+  const { data: bookingDetails, isLoading: bookingDetailsLoading } = useQuery({
+    queryKey: ['/api/admin/bookings', selectedBookingId],
+    enabled: !!selectedBookingId && bookingDetailsDialogOpen,
   });
 
   // Update booking status mutation
@@ -805,6 +817,20 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </div>
+                        <div className="ml-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedBookingId(booking.id);
+                              setBookingDetailsDialogOpen(true);
+                            }}
+                            data-testid={`button-view-details-${booking.id}`}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View Details
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   ))}
@@ -816,6 +842,182 @@ export default function AdminDashboard() {
                   <p className="text-muted-foreground">Bookings will appear here once clients start making reservations</p>
                 </Card>
               )}
+
+              {/* Booking Details Modal */}
+              <Dialog open={bookingDetailsDialogOpen} onOpenChange={setBookingDetailsDialogOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Booking Details</DialogTitle>
+                  </DialogHeader>
+                  
+                  {bookingDetailsLoading ? (
+                    <div className="space-y-4">
+                      <div className="h-48 bg-muted rounded-lg animate-pulse"></div>
+                      <div className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                      <div className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                    </div>
+                  ) : bookingDetails ? (
+                    <div className="space-y-6">
+                      {/* Property Information */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-3">Property Information</h3>
+                        <Card className="p-4">
+                          {bookingDetails.property?.images && bookingDetails.property.images.length > 0 && (
+                            <div className="mb-4">
+                              <img 
+                                src={bookingDetails.property.images[0]} 
+                                alt={bookingDetails.property.title}
+                                className="w-full h-48 object-cover rounded-lg"
+                              />
+                            </div>
+                          )}
+                          <h4 className="font-semibold text-foreground mb-2">{bookingDetails.property?.title}</h4>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <MapPin className="w-4 h-4" />
+                              <span>{bookingDetails.property?.location}</span>
+                            </div>
+                            <div className="text-muted-foreground">
+                              <span className="font-medium">Price:</span> ${bookingDetails.property?.pricePerNight}/night
+                            </div>
+                            <div className="text-muted-foreground">
+                              <span className="font-medium">Max Guests:</span> {bookingDetails.property?.maxGuests}
+                            </div>
+                            <div className="text-muted-foreground">
+                              <span className="font-medium">Bedrooms:</span> {bookingDetails.property?.bedrooms}
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+
+                      {/* Client Information */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-3">Client Information</h3>
+                        <Card className="p-4">
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <User className="w-4 h-4" />
+                              <span className="text-foreground font-medium">
+                                {bookingDetails.client?.firstName} {bookingDetails.client?.lastName}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Mail className="w-4 h-4" />
+                              <span>{bookingDetails.client?.email}</span>
+                            </div>
+                            {bookingDetails.client?.phoneNumber && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <Phone className="w-4 h-4" />
+                                <span>{bookingDetails.client.phoneNumber}</span>
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      </div>
+
+                      {/* Booking Information */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-foreground mb-3">Booking Information</h3>
+                        <Card className="p-4">
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Booking Code:</span>
+                              <p className="text-foreground font-mono">{bookingDetails.bookingCode}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Status:</span>
+                              <p className="text-foreground">
+                                <span className={`inline-block px-2 py-1 rounded text-xs ${
+                                  bookingDetails.status === 'confirmed' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                    : bookingDetails.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100'
+                                }`}>
+                                  {bookingDetails.status}
+                                </span>
+                              </p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Check-in:</span>
+                              <p className="text-foreground">{new Date(bookingDetails.checkIn).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Check-out:</span>
+                              <p className="text-foreground">{new Date(bookingDetails.checkOut).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Guests:</span>
+                              <p className="text-foreground">{bookingDetails.guests}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Payment Status:</span>
+                              <p className="text-foreground">
+                                <span className={`inline-block px-2 py-1 rounded text-xs ${
+                                  bookingDetails.paymentStatus === 'paid'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                                }`}>
+                                  {bookingDetails.paymentStatus}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 pt-4 border-t border-border">
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <span className="font-medium text-muted-foreground">Property Total:</span>
+                                <p className="text-foreground">${bookingDetails.propertyTotal}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-muted-foreground">Services Total:</span>
+                                <p className="text-foreground">${bookingDetails.servicesTotal}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-muted-foreground">Discount:</span>
+                                <p className="text-foreground">-${bookingDetails.discountAmount}</p>
+                              </div>
+                              <div>
+                                <span className="font-medium text-muted-foreground">Total Amount:</span>
+                                <p className="text-foreground font-semibold text-lg">${bookingDetails.totalAmount}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+
+                      {/* Service Bookings */}
+                      {bookingDetails.serviceBookings && bookingDetails.serviceBookings.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground mb-3">Service Bookings</h3>
+                          <div className="space-y-2">
+                            {bookingDetails.serviceBookings.map((service: any) => (
+                              <Card key={service.id} className="p-3">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium text-foreground">{service.serviceName}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {new Date(service.serviceDate).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Price: ${service.price}</p>
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No booking details available</p>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           )}
 

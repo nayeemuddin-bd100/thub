@@ -304,6 +304,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/admin/bookings/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const bookingDetails = await storage.getBookingDetails(req.params.id);
+      if (!bookingDetails) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      res.json(bookingDetails);
+    } catch (error) {
+      console.error("Error fetching booking details:", error);
+      res.status(500).json({ message: "Failed to fetch booking details" });
+    }
+  });
+
   app.patch('/api/admin/bookings/:id/status', requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;
