@@ -13,6 +13,7 @@ import PropertyDetail from "@/pages/property-detail";
 import Services from "@/pages/services";
 import Booking from "@/pages/booking";
 import Dashboard from "@/pages/dashboard";
+import AdminDashboard from "@/pages/admin";
 import About from "@/pages/about";
 import Careers from "@/pages/careers";
 import Contact from "@/pages/contact";
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/services" component={Services} />
           <Route path="/booking" component={Booking} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/admin" component={AdminDashboard} />
         </>
       )}
       
