@@ -39,6 +39,8 @@ export default function AdminDashboard() {
   const [roleFilter, setRoleFilter] = useState('all');
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
   const [bookingDetailsDialogOpen, setBookingDetailsDialogOpen] = useState(false);
+  const [serviceProviderDialogOpen, setServiceProviderDialogOpen] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<any>(null);
 
   // Redirect if not admin
   if (user?.role !== 'admin') {
@@ -66,6 +68,14 @@ export default function AdminDashboard() {
   const { data: bookingDetails, isLoading: bookingDetailsLoading } = useQuery({
     queryKey: ['/api/admin/bookings', selectedBookingId],
     enabled: !!selectedBookingId && bookingDetailsDialogOpen,
+  });
+
+  const { data: serviceProviders, isLoading: providersLoading } = useQuery({
+    queryKey: ['/api/admin/service-providers'],
+  });
+
+  const { data: serviceCategories } = useQuery({
+    queryKey: ['/api/service-categories'],
   });
 
   // Update booking status mutation
@@ -101,6 +111,21 @@ export default function AdminDashboard() {
     bathrooms: '',
     amenities: '',
     images: '',
+  });
+
+  // Service provider form state
+  const [providerForm, setProviderForm] = useState({
+    userId: '',
+    categoryId: '',
+    businessName: '',
+    description: '',
+    hourlyRate: '',
+    fixedRate: '',
+    location: '',
+    radius: '50',
+    certifications: '',
+    isVerified: false,
+    isActive: true,
   });
 
   // Create/Update property mutation
@@ -225,8 +250,101 @@ export default function AdminDashboard() {
     setPropertyDialogOpen(true);
   };
 
+  // Service provider mutations
+  const saveProviderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const url = editingProvider 
+        ? `/api/admin/service-providers/${editingProvider.id}`
+        : '/api/admin/service-providers';
+      
+      const method = editingProvider ? 'PATCH' : 'POST';
+      const response = await apiRequest(method, url, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      toast({
+        title: "Success",
+        description: editingProvider ? "Service provider updated successfully" : "Service provider created successfully",
+      });
+      setServiceProviderDialogOpen(false);
+      setEditingProvider(null);
+      resetProviderForm();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save service provider",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteProviderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await apiRequest('DELETE', `/api/admin/service-providers/${id}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
+      toast({
+        title: "Success",
+        description: "Service provider deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete service provider",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resetProviderForm = () => {
+    setProviderForm({
+      userId: '',
+      categoryId: '',
+      businessName: '',
+      description: '',
+      hourlyRate: '',
+      fixedRate: '',
+      location: '',
+      radius: '50',
+      certifications: '',
+      isVerified: false,
+      isActive: true,
+    });
+  };
+
+  const handleEditProvider = (provider: any) => {
+    setEditingProvider(provider);
+    setProviderForm({
+      userId: provider.userId || '',
+      categoryId: provider.categoryId || '',
+      businessName: provider.businessName || '',
+      description: provider.description || '',
+      hourlyRate: provider.hourlyRate || '',
+      fixedRate: provider.fixedRate || '',
+      location: provider.location || '',
+      radius: provider.radius?.toString() || '50',
+      certifications: Array.isArray(provider.certifications) ? provider.certifications.join(', ') : '',
+      isVerified: provider.isVerified || false,
+      isActive: provider.isActive !== false,
+    });
+    setServiceProviderDialogOpen(true);
+  };
+
+  const handleNewProvider = () => {
+    setEditingProvider(null);
+    resetProviderForm();
+    setServiceProviderDialogOpen(true);
+  };
+
   const handleNewProperty = () => {
-    setEditingProperty(null);
+    setEditingProvider(null);
     resetPropertyForm();
     setPropertyDialogOpen(true);
   };
@@ -723,12 +841,296 @@ export default function AdminDashboard() {
           {/* Services Section */}
           {activeSection === 'services' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Service Provider Management</h2>
-              <Card className="p-12 text-center">
-                <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground">Service provider management will be available here</p>
-              </Card>
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-3xl font-bold text-foreground">Service Provider Management</h2>
+                <Button onClick={handleNewProvider} data-testid="button-add-provider">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Provider
+                </Button>
+                
+                <Dialog open={serviceProviderDialogOpen} onOpenChange={setServiceProviderDialogOpen}>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>{editingProvider ? 'Edit Service Provider' : 'Create Service Provider'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="userId">User ID *</Label>
+                        <Input
+                          id="userId"
+                          value={providerForm.userId}
+                          onChange={(e) => setProviderForm({ ...providerForm, userId: e.target.value })}
+                          placeholder="user-id-123"
+                          data-testid="input-provider-userid"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">User must have service_provider role</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="categoryId">Service Category *</Label>
+                        <Select
+                          value={providerForm.categoryId}
+                          onValueChange={(value) => setProviderForm({ ...providerForm, categoryId: value })}
+                        >
+                          <SelectTrigger data-testid="select-provider-category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {serviceCategories?.map((category: any) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="businessName">Business Name *</Label>
+                        <Input
+                          id="businessName"
+                          value={providerForm.businessName}
+                          onChange={(e) => setProviderForm({ ...providerForm, businessName: e.target.value })}
+                          placeholder="e.g., Professional Cleaning Services"
+                          data-testid="input-provider-name"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={providerForm.description}
+                          onChange={(e) => setProviderForm({ ...providerForm, description: e.target.value })}
+                          placeholder="Describe the services offered..."
+                          rows={3}
+                          data-testid="input-provider-description"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
+                          <Input
+                            id="hourlyRate"
+                            type="number"
+                            step="0.01"
+                            value={providerForm.hourlyRate}
+                            onChange={(e) => setProviderForm({ ...providerForm, hourlyRate: e.target.value })}
+                            placeholder="25.00"
+                            data-testid="input-provider-hourly"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="fixedRate">Fixed Rate ($)</Label>
+                          <Input
+                            id="fixedRate"
+                            type="number"
+                            step="0.01"
+                            value={providerForm.fixedRate}
+                            onChange={(e) => setProviderForm({ ...providerForm, fixedRate: e.target.value })}
+                            placeholder="150.00"
+                            data-testid="input-provider-fixed"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="location">Location</Label>
+                          <Input
+                            id="location"
+                            value={providerForm.location}
+                            onChange={(e) => setProviderForm({ ...providerForm, location: e.target.value })}
+                            placeholder="City, State"
+                            data-testid="input-provider-location"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="radius">Service Radius (km)</Label>
+                          <Input
+                            id="radius"
+                            type="number"
+                            value={providerForm.radius}
+                            onChange={(e) => setProviderForm({ ...providerForm, radius: e.target.value })}
+                            data-testid="input-provider-radius"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="certifications">Certifications (comma separated)</Label>
+                        <Input
+                          id="certifications"
+                          value={providerForm.certifications}
+                          onChange={(e) => setProviderForm({ ...providerForm, certifications: e.target.value })}
+                          placeholder="License 1, Certification 2"
+                          data-testid="input-provider-certs"
+                        />
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="isVerified"
+                            checked={providerForm.isVerified}
+                            onChange={(e) => setProviderForm({ ...providerForm, isVerified: e.target.checked })}
+                            className="rounded"
+                            data-testid="checkbox-provider-verified"
+                          />
+                          <Label htmlFor="isVerified">Verified</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="isActive"
+                            checked={providerForm.isActive}
+                            onChange={(e) => setProviderForm({ ...providerForm, isActive: e.target.checked })}
+                            className="rounded"
+                            data-testid="checkbox-provider-active"
+                          />
+                          <Label htmlFor="isActive">Active</Label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end space-x-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setServiceProviderDialogOpen(false);
+                            setEditingProvider(null);
+                            resetProviderForm();
+                          }}
+                          data-testid="button-cancel-provider"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            const certArray = providerForm.certifications
+                              ? providerForm.certifications.split(',').map(c => c.trim()).filter(Boolean)
+                              : [];
+                            
+                            saveProviderMutation.mutate({
+                              userId: providerForm.userId,
+                              categoryId: providerForm.categoryId,
+                              businessName: providerForm.businessName,
+                              description: providerForm.description || null,
+                              hourlyRate: providerForm.hourlyRate ? parseFloat(providerForm.hourlyRate) : null,
+                              fixedRate: providerForm.fixedRate ? parseFloat(providerForm.fixedRate) : null,
+                              location: providerForm.location || null,
+                              radius: parseInt(providerForm.radius) || 50,
+                              certifications: certArray,
+                              isVerified: providerForm.isVerified,
+                              isActive: providerForm.isActive,
+                            });
+                          }}
+                          disabled={saveProviderMutation.isPending || !providerForm.userId || !providerForm.categoryId || !providerForm.businessName}
+                          data-testid="button-save-provider"
+                        >
+                          {saveProviderMutation.isPending ? 'Saving...' : (editingProvider ? 'Update' : 'Create')}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {providersLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-64 bg-muted rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : serviceProviders && serviceProviders.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {serviceProviders.map((provider: any) => {
+                    const category = serviceCategories?.find((c: any) => c.id === provider.categoryId);
+                    return (
+                      <Card key={provider.id} className="overflow-hidden" data-testid={`provider-card-${provider.id}`}>
+                        <div className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="font-semibold text-lg text-foreground">{provider.businessName}</h3>
+                            <div className="flex gap-1">
+                              {provider.isVerified && (
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100 text-xs rounded">
+                                  Verified
+                                </span>
+                              )}
+                              {provider.isActive && (
+                                <span className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100 text-xs rounded">
+                                  Active
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-3">{category?.name || 'Uncategorized'}</p>
+                          {provider.description && (
+                            <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{provider.description}</p>
+                          )}
+                          <div className="space-y-2 text-sm mb-4">
+                            {provider.location && (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                <MapPin className="w-4 h-4" />
+                                <span>{provider.location}</span>
+                              </div>
+                            )}
+                            <div className="flex gap-4">
+                              {provider.hourlyRate && (
+                                <div>
+                                  <span className="text-muted-foreground">Hourly: </span>
+                                  <span className="font-semibold text-foreground">${provider.hourlyRate}/hr</span>
+                                </div>
+                              )}
+                              {provider.fixedRate && (
+                                <div>
+                                  <span className="text-muted-foreground">Fixed: </span>
+                                  <span className="font-semibold text-foreground">${provider.fixedRate}</span>
+                                </div>
+                              )}
+                            </div>
+                            {provider.rating && parseFloat(provider.rating) > 0 && (
+                              <div>
+                                <span className="text-yellow-500">★</span>
+                                <span className="ml-1 font-semibold">{parseFloat(provider.rating).toFixed(1)}</span>
+                                <span className="text-muted-foreground ml-1">({provider.reviewCount} reviews)</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditProvider(provider)}
+                              data-testid={`button-edit-provider-${provider.id}`}
+                            >
+                              <Edit className="w-4 h-4 mr-1" />
+                              Edit
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this service provider?')) {
+                                  deleteProviderMutation.mutate(provider.id);
+                                }
+                              }}
+                              disabled={deleteProviderMutation.isPending}
+                              data-testid={`button-delete-provider-${provider.id}`}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              ) : (
+                <Card className="p-12 text-center">
+                  <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Service Providers Yet</h3>
+                  <p className="text-muted-foreground mb-4">Get started by adding your first service provider</p>
+                  <Button onClick={handleNewProvider} data-testid="button-add-first-provider">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Provider
+                  </Button>
+                </Card>
+              )}
             </div>
           )}
 

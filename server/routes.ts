@@ -342,6 +342,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin service providers routes
+  app.get('/api/admin/service-providers', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const providers = await storage.getServiceProviders();
+      res.json(providers);
+    } catch (error) {
+      console.error("Error fetching service providers:", error);
+      res.status(500).json({ message: "Failed to fetch service providers" });
+    }
+  });
+
+  app.post('/api/admin/service-providers', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const provider = await storage.createServiceProvider(req.body);
+      res.status(201).json(provider);
+    } catch (error) {
+      console.error("Error creating service provider:", error);
+      res.status(500).json({ message: "Failed to create service provider" });
+    }
+  });
+
+  app.patch('/api/admin/service-providers/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const provider = await storage.updateServiceProvider(req.params.id, req.body);
+      res.json(provider);
+    } catch (error) {
+      console.error("Error updating service provider:", error);
+      res.status(500).json({ message: "Failed to update service provider" });
+    }
+  });
+
+  app.delete('/api/admin/service-providers/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      await storage.deleteServiceProvider(req.params.id);
+      res.json({ message: "Service provider deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting service provider:", error);
+      res.status(500).json({ message: "Failed to delete service provider" });
+    }
+  });
+
   // Property routes
   app.get('/api/properties', async (req, res) => {
     try {
