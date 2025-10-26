@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { 
   LayoutDashboard, 
   Users, 
@@ -1061,7 +1062,6 @@ export default function AdminDashboard() {
                     </div>
                   </DialogContent>
                 </Dialog>
-              </div>
 
               {providersLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1165,6 +1165,18 @@ export default function AdminDashboard() {
                   </Button>
                 </Card>
               )}
+                </TabsContent>
+
+                {/* Pending Applications Tab */}
+                <TabsContent value="pending" className="space-y-4">
+                  <p className="text-muted-foreground">Pending provider applications will appear here for admin review.</p>
+                </TabsContent>
+
+                {/* Rejected Tab */}
+                <TabsContent value="rejected" className="space-y-4">
+                  <p className="text-muted-foreground">Rejected provider applications will appear here.</p>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
 
