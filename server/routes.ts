@@ -286,6 +286,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin bookings route
+  app.get('/api/admin/bookings', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const bookings = await storage.getAllBookings();
+      res.json(bookings);
+    } catch (error) {
+      console.error("Error fetching admin bookings:", error);
+      res.status(500).json({ message: "Failed to fetch bookings" });
+    }
+  });
+
   // Property routes
   app.get('/api/properties', async (req, res) => {
     try {

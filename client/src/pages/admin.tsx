@@ -52,6 +52,10 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/properties'],
   });
 
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ['/api/admin/bookings'],
+  });
+
   // Property form state
   const [propertyForm, setPropertyForm] = useState({
     title: '',
@@ -698,11 +702,88 @@ export default function AdminDashboard() {
           {activeSection === 'bookings' && (
             <div>
               <h2 className="text-3xl font-bold text-foreground mb-8">Booking Management</h2>
-              <Card className="p-12 text-center">
-                <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-foreground mb-2">No Bookings Yet</h3>
-                <p className="text-muted-foreground">Bookings will appear here once clients start making reservations</p>
-              </Card>
+              
+              {bookingsLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : bookings && bookings.length > 0 ? (
+                <div className="space-y-4">
+                  {bookings.map((booking: any) => (
+                    <Card key={booking.id} className="p-6" data-testid={`booking-card-${booking.id}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg text-foreground" data-testid={`booking-code-${booking.id}`}>
+                              Booking: {booking.bookingCode}
+                            </h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              booking.status === 'confirmed' 
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                : booking.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                                : booking.status === 'cancelled'
+                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100'
+                            }`} data-testid={`booking-status-${booking.id}`}>
+                              {booking.status}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Property ID:</span>
+                              <p className="text-foreground">{booking.propertyId}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Client ID:</span>
+                              <p className="text-foreground">{booking.clientId}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Guests:</span>
+                              <p className="text-foreground">{booking.numberOfGuests}</p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Total Price:</span>
+                              <p className="text-foreground font-semibold">${booking.totalPrice}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex gap-6 text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Check-in:</span>
+                              <span className="ml-2 text-foreground">
+                                {new Date(booking.checkInDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Check-out:</span>
+                              <span className="ml-2 text-foreground">
+                                {new Date(booking.checkOutDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {booking.specialRequests && (
+                            <div className="mt-3 text-sm">
+                              <span className="font-medium text-muted-foreground">Special Requests:</span>
+                              <p className="text-foreground mt-1">{booking.specialRequests}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-12 text-center">
+                  <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Bookings Yet</h3>
+                  <p className="text-muted-foreground">Bookings will appear here once clients start making reservations</p>
+                </Card>
+              )}
             </div>
           )}
 
