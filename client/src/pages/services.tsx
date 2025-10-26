@@ -228,7 +228,7 @@ export default function Services() {
             </p>
             <Button 
               data-testid="button-become-provider"
-              onClick={() => window.location.href = '/dashboard?tab=provider'}
+              onClick={() => window.location.href = '/dashboard?tab=services'}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Get Started
