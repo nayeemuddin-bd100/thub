@@ -132,10 +132,16 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
       toast({
         title: "Success!",
-        description: "You are now a service provider! Reloading page...",
+        description: user?.role === 'admin' 
+          ? "You are now a service provider! Redirecting to admin panel..."
+          : "You are now a service provider! Reloading page...",
       });
       setTimeout(() => {
-        window.location.reload();
+        if (user?.role === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.reload();
+        }
       }, 1500);
     },
     onError: (error: any) => {

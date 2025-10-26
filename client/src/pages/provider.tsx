@@ -49,11 +49,16 @@ export default function Provider() {
             Offer your services to travelers and grow your business with TravelHub
           </p>
           {isAuthenticated ? (
-            <Link href="/dashboard?tab=services">
-              <Button size="lg" data-testid="button-start-providing">
-                Start Providing Services
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              data-testid="button-start-providing"
+              onClick={() => {
+                const redirectUrl = user?.role === 'admin' ? '/admin' : '/dashboard?tab=services';
+                window.location.href = redirectUrl;
+              }}
+            >
+              Start Providing Services
+            </Button>
           ) : (
             <Button size="lg" onClick={() => window.location.href = "/api/login"} data-testid="button-start-providing">
               Start Providing Services

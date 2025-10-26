@@ -228,7 +228,10 @@ export default function Services() {
             </p>
             <Button 
               data-testid="button-become-provider"
-              onClick={() => window.location.href = '/dashboard?tab=services'}
+              onClick={() => {
+                const redirectUrl = user?.role === 'admin' ? '/admin' : '/dashboard?tab=services';
+                window.location.href = redirectUrl;
+              }}
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Get Started
