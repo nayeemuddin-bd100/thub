@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   LayoutDashboard, 
   Users, 
@@ -399,6 +400,19 @@ export default function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveSection('providers')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+              activeSection === 'providers'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            data-testid="nav-providers"
+          >
+            <Briefcase className="w-5 h-5" />
+            <span>Service Providers</span>
+          </button>
+
+          <button
             onClick={() => setActiveSection('services')}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
               activeSection === 'services'
@@ -407,8 +421,8 @@ export default function AdminDashboard() {
             }`}
             data-testid="nav-services"
           >
-            <Briefcase className="w-5 h-5" />
-            <span>Service Providers</span>
+            <Settings className="w-5 h-5" />
+            <span>Services</span>
           </button>
 
           <button
@@ -838,8 +852,8 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Services Section */}
-          {activeSection === 'services' && (
+          {/* Service Providers Section */}
+          {activeSection === 'providers' && (
             <div>
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold text-foreground">Service Provider Management</h2>
@@ -1131,6 +1145,93 @@ export default function AdminDashboard() {
                   </Button>
                 </Card>
               )}
+            </div>
+          )}
+
+          {/* Services Section - Categories & Tasks */}
+          {activeSection === 'services' && (
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-8">Services Management</h2>
+              
+              <Tabs defaultValue="categories" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="categories">Service Categories</TabsTrigger>
+                  <TabsTrigger value="tasks">Service Tasks</TabsTrigger>
+                </TabsList>
+
+                {/* Service Categories Tab */}
+                <TabsContent value="categories" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold">Service Categories</h3>
+                    <Button size="sm" data-testid="button-add-category">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </div>
+
+                  {serviceCategories && serviceCategories.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {serviceCategories.map((category: any) => (
+                        <Card key={category.id} className="p-4" data-testid={`category-card-${category.id}`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-foreground mb-1">{category.name}</h4>
+                              {category.description && (
+                                <p className="text-sm text-muted-foreground line-clamp-2">{category.description}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-testid={`button-edit-category-${category.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="p-8 text-center">
+                      <p className="text-muted-foreground">No service categories found</p>
+                    </Card>
+                  )}
+                </TabsContent>
+
+                {/* Service Tasks Tab */}
+                <TabsContent value="tasks" className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-xl font-semibold">Service Tasks</h3>
+                    <Button size="sm" data-testid="button-add-task">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </div>
+
+                  <div className="flex gap-4 mb-4">
+                    <Select defaultValue="all">
+                      <SelectTrigger className="w-[200px]">
+                        <SelectValue placeholder="Filter by category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {serviceCategories?.map((category: any) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Card className="p-8 text-center">
+                    <p className="text-muted-foreground">Service tasks management coming soon</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      This will display all 36+ predefined maid service tasks and other service-specific tasks
+                    </p>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
           )}
 
