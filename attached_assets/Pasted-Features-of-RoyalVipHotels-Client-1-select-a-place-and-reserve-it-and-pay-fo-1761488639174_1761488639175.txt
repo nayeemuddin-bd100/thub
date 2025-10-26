@@ -1,0 +1,57 @@
+Features  of  RoyalVipHotels  
+
+Client  
+    1. select  a  place   and  reserve   it    and  pay  for  it   and  get  confirmation  
+    2. add   service       reserve    the  service   --   detail   the  service  that  need   it   and  pay  for  it  
+        1. each  service  we  need  to  create the  full   detail  page  for  the  service      for  example maid  services    so  client  can    order      for  a maid  service    for  a    specific   day    that  mean     he   have  an  option     to   select     what  days     he  want  to  have    maid service   --   once    he  select a specific   date   a  menu   for  what   task  the   maid  need  todo    in  that   day 
+so  again   for  each   day  a  full   menu   of  task  must   apear  
+    A) Strip and replace all bed linens and pillowcases
+    B) Change towels (bath, hand, kitchen)
+    C) Make beds neatly
+    D) Empty all trash cans and replace liners
+    E) Sweep, vacuum, and mop all floors
+    F) Dust all surfaces (shelves, nightstands, decor)
+    G) Clean windows and mirrors
+    H) Check for and remove stains or marks on walls/furniture
+    I) Wipe and disinfect light switches, door handles, remotes, and other high-touch surfaces
+    J) Wash and put away dishes, cookware, and utensils
+    K) Wipe countertops, cabinets, and backsplash
+    L) Clean and disinfect sink, faucet, and handles
+    M) Clean inside and outside of refrigerator, microwave, and oven (lightly if not heavily soiled)
+    N) Refill essentials: coffee, sugar, salt, paper towels, dish soap, etc.
+    O) Empty trash and recycling
+    P) Clean and disinfect toilet, sink, shower, and tub
+    Q) Refill toilet paper, soap, shampoo, conditioner, and other amenities
+    R) Wipe mirrors and glass doors
+    S) Replace bath mats if used
+    T) Ensure no hair or residue remains
+    U) Change bedding and check for stains or damage
+    V) Vacuum carpets and rugs
+    W) Dust lamps, picture frames, and furniture
+    X) Reposition decor items neatly
+    Y) Ensure remote controls, chargers, and amenities are in place
+    Z) Check that lights, AC, and appliances work
+    AA) Open windows briefly to air out
+    BB) Spray air freshener or use mild scent diffuser
+    CC) Stage the property for photos or guest readiness
+    DD) 
+    EE) Clean inside oven and refrigerator thoroughly
+    FF) Wash curtains, duvets, and throw blankets
+    GG) Clean under furniture and behind appliances
+    HH) Remove limescale from faucets and shower heads
+    II) Clean windows inside and outside
+    JJ) Wipe down walls and baseboards
+    KK) Check for maintenance issues (leaks, broken bulbs, etc.)
+
+
+   
+    3. since  the  service   provider      will   need    to    update   the  system    that  the  task s   was  done     the  client   can Monitor    if    each   of  the   services    was      delivered and  done   
+    4. interact    via    the  system     to  the     whatsapp   of  the  service   provider  
+    5. each  service   will  have    the  same  breakdown    for  the  service  provider     use    chat gpt to get    the  breakdown     so  you  can presented  to  replite
+    6. the  country manager  will  be  able   to   assign  a  specific   service  provider  to  a specific client  
+        1. once  the  service  provider   was  assigned   the  system  will atomatcly notify  the  service provider    the a job  was  assigned 
+        2. the  service  provider   can  accepted  or   reject   it  
+        3. if  the  service  provider  rejected   an  alert  to  to  go  to  the  country  manager  
+        4. if  the service provider   accpet  the  job   then  
+    7.  
+    8. 
