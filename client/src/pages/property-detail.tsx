@@ -78,7 +78,7 @@ export default function PropertyDetail() {
   const amenityIcons: { [key: string]: any } = {
     parking: Car,
     wifi: Wifi,
-    pool: WavesLadder,
+    pool: Waves,
     mountain: Mountain,
     coffee: Coffee,
     tv: Tv,
