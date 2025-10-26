@@ -217,6 +217,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin property management routes
+  app.get('/api/admin/properties', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const properties = await storage.getAllProperties();
+      res.json(properties);
+    } catch (error) {
+      console.error("Error fetching properties:", error);
+      res.status(500).json({ message: "Failed to fetch properties" });
+    }
+  });
+
+  app.post('/api/admin/properties', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const property = await storage.createProperty(req.body);
+      res.json(property);
+    } catch (error) {
+      console.error("Error creating property:", error);
+      res.status(500).json({ message: "Failed to create property" });
+    }
+  });
+
+  app.put('/api/admin/properties/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const property = await storage.updateProperty(req.params.id, req.body);
+      res.json(property);
+    } catch (error) {
+      console.error("Error updating property:", error);
+      res.status(500).json({ message: "Failed to update property" });
+    }
+  });
+
+  app.delete('/api/admin/properties/:id', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      await storage.deleteProperty(req.params.id);
+      res.json({ message: "Property deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      res.status(500).json({ message: "Failed to delete property" });
+    }
+  });
+
   // Property routes
   app.get('/api/properties', async (req, res) => {
     try {

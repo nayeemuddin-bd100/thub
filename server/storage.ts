@@ -55,9 +55,11 @@ export interface IStorage {
     checkIn?: Date;
     checkOut?: Date;
   }): Promise<Property[]>;
+  getAllProperties(): Promise<Property[]>;
   getProperty(id: string): Promise<Property | undefined>;
   createProperty(property: InsertProperty): Promise<Property>;
   updateProperty(id: string, updates: Partial<InsertProperty>): Promise<Property>;
+  deleteProperty(id: string): Promise<void>;
   
   // Service operations
   getServiceCategories(): Promise<ServiceCategory[]>;
@@ -134,6 +136,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Property operations
+  async getAllProperties(): Promise<Property[]> {
+    return await db.select().from(properties).orderBy(desc(properties.createdAt));
+  }
+
   async getProperties(filters?: {
     location?: string;
     maxPrice?: number;
@@ -177,6 +183,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(properties.id, id))
       .returning();
     return updatedProperty;
+  }
+
+  async deleteProperty(id: string): Promise<void> {
+    await db.delete(properties).where(eq(properties.id, id));
   }
 
   // Service operations
