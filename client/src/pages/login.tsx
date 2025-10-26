@@ -21,13 +21,22 @@ export default function Login() {
     mutationFn: async () => {
       return await apiRequest("POST", "/api/auth/login", { email, password });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    onSuccess: async () => {
+      // Fetch user data to check role
+      const userData = await apiRequest("GET", "/api/auth/user", {});
+      queryClient.setQueryData(['/api/auth/user'], userData);
+      
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
-      setLocation("/");
+      
+      // Redirect based on user role
+      if (userData.role === 'admin') {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     },
     onError: (error: any) => {
       toast({

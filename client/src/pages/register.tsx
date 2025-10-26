@@ -35,13 +35,22 @@ export default function Register() {
         lastName,
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    onSuccess: async () => {
+      // Fetch user data to check role
+      const userData = await apiRequest("GET", "/api/auth/user", {});
+      queryClient.setQueryData(['/api/auth/user'], userData);
+      
       toast({
         title: "Welcome to TravelHub!",
         description: "Your account has been created successfully.",
       });
-      setLocation("/");
+      
+      // Redirect based on user role (new users are typically clients)
+      if (userData.role === 'admin') {
+        setLocation("/admin");
+      } else {
+        setLocation("/dashboard");
+      }
     },
     onError: (error: any) => {
       toast({
