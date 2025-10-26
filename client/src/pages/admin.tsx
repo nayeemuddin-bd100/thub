@@ -56,6 +56,28 @@ export default function AdminDashboard() {
     queryKey: ['/api/admin/bookings'],
   });
 
+  // Update booking status mutation
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: string; status: string }) => {
+      const response = await apiRequest('PATCH', `/api/admin/bookings/${bookingId}/status`, { status });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/bookings'] });
+      toast({
+        title: "Success",
+        description: "Booking status updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update booking status",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Property form state
   const [propertyForm, setPropertyForm] = useState({
     title: '',
@@ -719,35 +741,42 @@ export default function AdminDashboard() {
                             <h3 className="font-semibold text-lg text-foreground" data-testid={`booking-code-${booking.id}`}>
                               Booking: {booking.bookingCode}
                             </h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              booking.status === 'confirmed' 
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                                : booking.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
-                                : booking.status === 'cancelled'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-100'
-                            }`} data-testid={`booking-status-${booking.id}`}>
-                              {booking.status}
-                            </span>
+                            <Select
+                              value={booking.status}
+                              onValueChange={(value) => updateBookingStatusMutation.mutate({ 
+                                bookingId: booking.id, 
+                                status: value 
+                              })}
+                              disabled={updateBookingStatusMutation.isPending}
+                            >
+                              <SelectTrigger className="w-[140px] h-7" data-testid={`select-status-${booking.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                             <div>
                               <span className="font-medium">Property ID:</span>
-                              <p className="text-foreground">{booking.propertyId}</p>
+                              <p className="text-foreground">{booking.propertyId?.substring(0, 8)}...</p>
                             </div>
                             <div>
                               <span className="font-medium">Client ID:</span>
-                              <p className="text-foreground">{booking.clientId}</p>
+                              <p className="text-foreground">{booking.clientId?.substring(0, 8)}...</p>
                             </div>
                             <div>
                               <span className="font-medium">Guests:</span>
-                              <p className="text-foreground">{booking.numberOfGuests}</p>
+                              <p className="text-foreground">{booking.guests}</p>
                             </div>
                             <div>
-                              <span className="font-medium">Total Price:</span>
-                              <p className="text-foreground font-semibold">${booking.totalPrice}</p>
+                              <span className="font-medium">Total:</span>
+                              <p className="text-foreground font-semibold">${booking.totalAmount}</p>
                             </div>
                           </div>
                           
@@ -755,23 +784,26 @@ export default function AdminDashboard() {
                             <div>
                               <span className="font-medium">Check-in:</span>
                               <span className="ml-2 text-foreground">
-                                {new Date(booking.checkInDate).toLocaleDateString()}
+                                {new Date(booking.checkIn).toLocaleDateString()}
                               </span>
                             </div>
                             <div>
                               <span className="font-medium">Check-out:</span>
                               <span className="ml-2 text-foreground">
-                                {new Date(booking.checkOutDate).toLocaleDateString()}
+                                {new Date(booking.checkOut).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Payment:</span>
+                              <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                                booking.paymentStatus === 'paid'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                              }`}>
+                                {booking.paymentStatus}
                               </span>
                             </div>
                           </div>
-                          
-                          {booking.specialRequests && (
-                            <div className="mt-3 text-sm">
-                              <span className="font-medium text-muted-foreground">Special Requests:</span>
-                              <p className="text-foreground mt-1">{booking.specialRequests}</p>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </Card>

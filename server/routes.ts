@@ -304,6 +304,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/admin/bookings/:id/status', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const { status } = req.body;
+      const booking = await storage.updateBookingStatus(req.params.id, status);
+      res.json(booking);
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+      res.status(500).json({ message: "Failed to update booking status" });
+    }
+  });
+
   // Property routes
   app.get('/api/properties', async (req, res) => {
     try {
