@@ -97,6 +97,11 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" data-testid="link-dashboard">Dashboard</Link>
                   </DropdownMenuItem>
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" data-testid="link-admin">Admin Panel</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/bookings" data-testid="link-bookings">My Bookings</Link>
                   </DropdownMenuItem>
