@@ -122,6 +122,31 @@ export default function Dashboard() {
     },
   });
 
+  // Self-service become provider mutation
+  const becomeProviderMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('POST', '/api/user/become-provider');
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      toast({
+        title: "Success!",
+        description: "You are now a service provider! Reloading page...",
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to upgrade account",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     if (bookingsError && isUnauthorizedError(bookingsError as Error)) {
       toast({
@@ -574,12 +599,10 @@ export default function Dashboard() {
               ) : (
                 <Button 
                   data-testid="button-become-provider"
-                  onClick={() => toast({
-                    title: "Role Change Required",
-                    description: "Contact admin to become a service provider.",
-                  })}
+                  onClick={() => becomeProviderMutation.mutate()}
+                  disabled={becomeProviderMutation.isPending}
                 >
-                  Become a Provider
+                  {becomeProviderMutation.isPending ? 'Upgrading...' : 'Become a Provider'}
                 </Button>
               )}
             </div>

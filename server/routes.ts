@@ -286,6 +286,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Self-service role upgrade
+  app.post('/api/user/become-provider', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.role === 'service_provider') {
+        return res.status(400).json({ message: "You are already a service provider" });
+      }
+
+      // Update user role to service_provider
+      const updatedUser = await storage.updateUserRole(userId, 'service_provider');
+      res.json({ message: "Successfully upgraded to service provider", user: updatedUser });
+    } catch (error) {
+      console.error("Error upgrading to service provider:", error);
+      res.status(500).json({ message: "Failed to upgrade account" });
+    }
+  });
+
   // Admin bookings route
   app.get('/api/admin/bookings', requireAuth, async (req, res) => {
     try {
