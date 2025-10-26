@@ -8,6 +8,11 @@ import {
   reviews,
   messages,
   propertyServices,
+  serviceTasks,
+  serviceTaskAssignments,
+  jobAssignments,
+  notifications,
+  payments,
   type User,
   type UpsertUser,
   type Property,
@@ -22,6 +27,14 @@ import {
   type ServiceBooking,
   type Message,
   type PropertyService,
+  type ServiceTask,
+  type InsertServiceTask,
+  type ServiceTaskAssignment,
+  type JobAssignment,
+  type Notification,
+  type InsertNotification,
+  type Payment,
+  type InsertPayment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";

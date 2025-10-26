@@ -34,7 +34,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role", { enum: ["admin", "property_owner", "service_provider", "client"] }).notNull().default("client"),
+  role: varchar("role", { enum: ["admin", "property_owner", "service_provider", "client", "country_manager"] }).notNull().default("client"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -116,13 +116,13 @@ export const bookings = pgTable("bookings", {
 export const serviceBookings = pgTable("service_bookings", {
   id: uuid("id").defaultRandom().primaryKey(),
   bookingId: uuid("booking_id").references(() => bookings.id).notNull(),
-  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id),
   serviceName: varchar("service_name").notNull(),
   serviceDate: timestamp("service_date").notNull(),
   duration: integer("duration"), // in hours
   rate: decimal("rate", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).default("pending"),
+  status: varchar("status", { enum: ["pending", "awaiting_assignment", "assigned", "confirmed", "completed", "cancelled"] }).default("pending"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -164,6 +164,74 @@ export const propertyServices = pgTable("property_services", {
   serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
   isRecommended: boolean("is_recommended").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Service task templates (maid tasks, transport tasks, etc.)
+export const serviceTasks = pgTable("service_tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  categoryId: uuid("category_id").references(() => serviceCategories.id).notNull(),
+  taskCode: varchar("task_code").notNull(),
+  taskName: varchar("task_name").notNull(),
+  description: text("description"),
+  isRequired: boolean("is_required").default(false),
+  defaultDuration: integer("default_duration"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Service task assignments for bookings
+export const serviceTaskAssignments = pgTable("service_task_assignments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceBookingId: uuid("service_booking_id").references(() => serviceBookings.id).notNull(),
+  taskId: uuid("task_id").references(() => serviceTasks.id).notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  completedBy: varchar("completed_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Job assignments (country manager assigns providers to clients)
+export const jobAssignments = pgTable("job_assignments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceBookingId: uuid("service_booking_id").references(() => serviceBookings.id).notNull(),
+  assignedBy: varchar("assigned_by").references(() => users.id).notNull(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  status: varchar("status", { enum: ["pending", "accepted", "rejected", "cancelled"] }).default("pending"),
+  rejectionReason: text("rejection_reason"),
+  respondedAt: timestamp("responded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  type: varchar("type", { 
+    enum: ["job_assigned", "job_accepted", "job_rejected", "task_completed", "booking_confirmed", "payment_received", "message_received"] 
+  }).notNull(),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  relatedId: uuid("related_id"),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Payment records table
+export const payments = pgTable("payments", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bookingId: uuid("booking_id").references(() => bookings.id).notNull(),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id").unique(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  currency: varchar("currency").default("usd"),
+  status: varchar("status", { enum: ["pending", "succeeded", "failed", "refunded"] }).default("pending"),
+  paymentMethod: varchar("payment_method"),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }).default("0"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Relations
@@ -330,3 +398,27 @@ export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type ServiceBooking = typeof serviceBookings.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PropertyService = typeof propertyServices.$inferSelect;
+export type ServiceTask = typeof serviceTasks.$inferSelect;
+export type ServiceTaskAssignment = typeof serviceTaskAssignments.$inferSelect;
+export type JobAssignment = typeof jobAssignments.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type Payment = typeof payments.$inferSelect;
+
+export const insertServiceTaskSchema = createInsertSchema(serviceTasks).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertServiceTask = z.infer<typeof insertServiceTaskSchema>;
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export const insertPaymentSchema = createInsertSchema(payments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPayment = z.infer<typeof insertPaymentSchema>;
