@@ -475,7 +475,12 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" data-testid={`button-view-booking-${booking.id}`}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => window.location.href = `/properties/${booking.propertyId}`}
+                          data-testid={`button-view-booking-${booking.id}`}
+                        >
                           View Details
                         </Button>
                         {booking.status === 'pending' && (
