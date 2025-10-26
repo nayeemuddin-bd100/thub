@@ -65,8 +65,10 @@ export interface IStorage {
   getServiceCategories(): Promise<ServiceCategory[]>;
   getServiceProviders(categoryId?: string, location?: string): Promise<ServiceProvider[]>;
   getServiceProvider(id: string): Promise<ServiceProvider | undefined>;
+  getServiceProviderByUserId(userId: string): Promise<ServiceProvider | undefined>;
   createServiceProvider(provider: InsertServiceProvider): Promise<ServiceProvider>;
   updateServiceProvider(id: string, updates: Partial<InsertServiceProvider>): Promise<ServiceProvider>;
+  updateServiceProviderApproval(id: string, status: 'approved' | 'rejected', reason: string | null): Promise<ServiceProvider>;
   deleteServiceProvider(id: string): Promise<void>;
   
   // Booking operations
@@ -215,6 +217,11 @@ export class DatabaseStorage implements IStorage {
     return provider;
   }
 
+  async getServiceProviderByUserId(userId: string): Promise<ServiceProvider | undefined> {
+    const [provider] = await db.select().from(serviceProviders).where(eq(serviceProviders.userId, userId));
+    return provider;
+  }
+
   async createServiceProvider(provider: InsertServiceProvider): Promise<ServiceProvider> {
     const [newProvider] = await db.insert(serviceProviders).values(provider).returning();
     return newProvider;
@@ -224,6 +231,19 @@ export class DatabaseStorage implements IStorage {
     const [updatedProvider] = await db
       .update(serviceProviders)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(serviceProviders.id, id))
+      .returning();
+    return updatedProvider;
+  }
+
+  async updateServiceProviderApproval(id: string, status: 'approved' | 'rejected', reason: string | null): Promise<ServiceProvider> {
+    const [updatedProvider] = await db
+      .update(serviceProviders)
+      .set({ 
+        approvalStatus: status, 
+        rejectionReason: reason,
+        updatedAt: new Date() 
+      })
       .where(eq(serviceProviders.id, id))
       .returning();
     return updatedProvider;

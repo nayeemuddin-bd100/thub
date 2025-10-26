@@ -7,6 +7,7 @@ import { pool } from "./db";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword, requireAuth } from "./auth";
 import { generateBookingCode } from "./base44";
+import { insertServiceProviderSchema } from "@shared/schema";
 import { z } from "zod";
 
 const PgSession = connectPg(session);
@@ -286,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Self-service role upgrade
+  // Self-service provider application with form data (pending approval)
   app.post('/api/user/become-provider', requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;
@@ -300,12 +301,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You are already a service provider" });
       }
 
-      // Update user role to service_provider
-      const updatedUser = await storage.updateUserRole(userId, 'service_provider');
-      res.json({ message: "Successfully upgraded to service provider", user: updatedUser });
+      // Check if user already has a pending application
+      const existingProvider = await storage.getServiceProviderByUserId(userId);
+      if (existingProvider) {
+        if (existingProvider.approvalStatus === 'pending') {
+          return res.status(400).json({ message: "You already have a pending application" });
+        } else if (existingProvider.approvalStatus === 'rejected') {
+          return res.status(400).json({ message: "Your previous application was rejected. Please contact support." });
+        }
+      }
+
+      // Validate the provider application data
+      const providerData = insertServiceProviderSchema.parse({
+        userId,
+        approvalStatus: 'pending',
+        ...req.body,
+      });
+
+      // Create service provider profile (pending approval)
+      const provider = await storage.createServiceProvider(providerData);
+      
+      res.json({ 
+        message: "Application submitted successfully! An admin will review it soon.", 
+        provider 
+      });
     } catch (error) {
-      console.error("Error upgrading to service provider:", error);
-      res.status(500).json({ message: "Failed to upgrade account" });
+      console.error("Error submitting provider application:", error);
+      res.status(500).json({ message: "Failed to submit application" });
+    }
+  });
+
+  // Admin: Approve provider application
+  app.post('/api/admin/providers/:providerId/approve', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { providerId } = req.params;
+      const provider = await storage.getServiceProvider(providerId);
+      
+      if (!provider) {
+        return res.status(404).json({ message: "Provider application not found" });
+      }
+
+      // Update provider approval status
+      const updatedProvider = await storage.updateServiceProviderApproval(providerId, 'approved', null);
+      
+      // Update user role to service_provider
+      await storage.updateUserRole(provider.userId, 'service_provider');
+      
+      res.json({ 
+        message: "Provider application approved successfully",
+        provider: updatedProvider
+      });
+    } catch (error) {
+      console.error("Error approving provider:", error);
+      res.status(500).json({ message: "Failed to approve application" });
+    }
+  });
+
+  // Admin: Reject provider application
+  app.post('/api/admin/providers/:providerId/reject', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { providerId } = req.params;
+      const { reason } = req.body;
+      const provider = await storage.getServiceProvider(providerId);
+      
+      if (!provider) {
+        return res.status(404).json({ message: "Provider application not found" });
+      }
+
+      // Update provider approval status
+      const updatedProvider = await storage.updateServiceProviderApproval(providerId, 'rejected', reason);
+      
+      res.json({ 
+        message: "Provider application rejected",
+        provider: updatedProvider
+      });
+    } catch (error) {
+      console.error("Error rejecting provider:", error);
+      res.status(500).json({ message: "Failed to reject application" });
     }
   });
 

@@ -857,10 +857,30 @@ export default function AdminDashboard() {
             <div>
               <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold text-foreground">Service Provider Management</h2>
-                <Button onClick={handleNewProvider} data-testid="button-add-provider">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Provider
-                </Button>
+              </div>
+
+              <Tabs defaultValue="all" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="all">All Providers</TabsTrigger>
+                  <TabsTrigger value="pending">
+                    Pending Applications
+                    {serviceProviders?.filter((p: any) => p.approvalStatus === 'pending').length > 0 && (
+                      <Badge variant="destructive" className="ml-2">
+                        {serviceProviders.filter((p: any) => p.approvalStatus === 'pending').length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                </TabsList>
+
+                {/* All Providers Tab */}
+                <TabsContent value="all" className="space-y-4">
+                  <div className="flex justify-end mb-4">
+                    <Button onClick={handleNewProvider} data-testid="button-add-provider">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Provider
+                    </Button>
+                  </div>
                 
                 <Dialog open={serviceProviderDialogOpen} onOpenChange={setServiceProviderDialogOpen}>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

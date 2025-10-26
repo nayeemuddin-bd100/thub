@@ -12,8 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -96,6 +103,42 @@ export default function Dashboard() {
   // State for user search and filter
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  
+  // State for provider application dialog
+  const [providerDialogOpen, setProviderDialogOpen] = useState(false);
+  
+  // Service categories query
+  const { data: serviceCategories } = useQuery({
+    queryKey: ['/api/service-categories'],
+    enabled: isAuthenticated,
+  });
+  
+  // Provider application form schema
+  const providerFormSchema = z.object({
+    categoryId: z.string().min(1, "Service category is required"),
+    businessName: z.string().min(2, "Business name must be at least 2 characters"),
+    description: z.string().min(10, "Description must be at least 10 characters"),
+    hourlyRate: z.string().optional(),
+    fixedRate: z.string().optional(),
+    location: z.string().min(2, "Location is required"),
+    radius: z.string().optional(),
+    certifications: z.string().optional(),
+  });
+  
+  type ProviderFormValues = z.infer<typeof providerFormSchema>;
+  
+  const providerForm = useForm<ProviderFormValues>({
+    resolver: zodResolver(providerFormSchema),
+    defaultValues: {
+      businessName: "",
+      description: "",
+      location: "",
+      radius: "50",
+      hourlyRate: "",
+      fixedRate: "",
+      certifications: "",
+    },
+  });
 
   // Mutation to assign user role
   const assignRoleMutation = useMutation({
@@ -122,36 +165,52 @@ export default function Dashboard() {
     },
   });
 
-  // Self-service become provider mutation
+  // Self-service become provider mutation with form data
   const becomeProviderMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/user/become-provider');
-      return await response.json();
+    mutationFn: async (formData: ProviderFormValues) => {
+      // Convert certifications string to array
+      const certifications = formData.certifications 
+        ? formData.certifications.split(',').map(cert => cert.trim()).filter(Boolean)
+        : [];
+      
+      return await apiRequest('/api/user/become-provider', {
+        method: 'POST',
+        body: JSON.stringify({
+          categoryId: formData.categoryId,
+          businessName: formData.businessName,
+          description: formData.description,
+          hourlyRate: formData.hourlyRate ? formData.hourlyRate : null,
+          fixedRate: formData.fixedRate ? formData.fixedRate : null,
+          location: formData.location,
+          radius: formData.radius ? parseInt(formData.radius) : 50,
+          certifications,
+          portfolio: [],
+          isVerified: false,
+          isActive: true,
+        }),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      setProviderDialogOpen(false);
+      providerForm.reset();
       toast({
-        title: "Success!",
-        description: user?.role === 'admin' 
-          ? "You are now a service provider! Redirecting to admin panel..."
-          : "You are now a service provider! Reloading page...",
+        title: "Application Submitted!",
+        description: "Your application has been submitted for review. An admin will review it shortly and you'll be notified once it's been approved.",
       });
-      setTimeout(() => {
-        if (user?.role === 'admin') {
-          window.location.href = '/admin';
-        } else {
-          window.location.reload();
-        }
-      }, 1500);
     },
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to upgrade account",
+        description: error.message || "Failed to submit application",
         variant: "destructive",
       });
     },
   });
+
+  const handleProviderFormSubmit = (values: ProviderFormValues) => {
+    becomeProviderMutation.mutate(values);
+  };
 
   useEffect(() => {
     if (bookingsError && isUnauthorizedError(bookingsError as Error)) {
@@ -605,10 +664,9 @@ export default function Dashboard() {
               ) : (
                 <Button 
                   data-testid="button-become-provider"
-                  onClick={() => becomeProviderMutation.mutate()}
-                  disabled={becomeProviderMutation.isPending}
+                  onClick={() => setProviderDialogOpen(true)}
                 >
-                  {becomeProviderMutation.isPending ? 'Upgrading...' : 'Become a Provider'}
+                  Become a Provider
                 </Button>
               )}
             </div>
@@ -709,6 +767,200 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Provider Application Dialog */}
+      <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Become a Service Provider</DialogTitle>
+            <DialogDescription>
+              Fill out the form below to apply as a service provider. All fields marked with * are required.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...providerForm}>
+            <form onSubmit={providerForm.handleSubmit(handleProviderFormSubmit)} className="space-y-4">
+              <FormField
+                control={providerForm.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Category *</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-category">
+                          <SelectValue placeholder="Select a service category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {serviceCategories?.map((category: any) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={providerForm.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Name *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Your business or professional name" 
+                        {...field}
+                        data-testid="input-business-name"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={providerForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description *</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe your services, experience, and what makes you unique..."
+                        className="min-h-[100px]"
+                        {...field}
+                        data-testid="textarea-description"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={providerForm.control}
+                  name="hourlyRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Hourly Rate ($)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          placeholder="25.00"
+                          step="0.01"
+                          {...field}
+                          data-testid="input-hourly-rate"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={providerForm.control}
+                  name="fixedRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fixed Rate ($)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          placeholder="100.00"
+                          step="0.01"
+                          {...field}
+                          data-testid="input-fixed-rate"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={providerForm.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location *</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="City, State or Region"
+                        {...field}
+                        data-testid="input-location"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={providerForm.control}
+                name="radius"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Service Radius (km)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        placeholder="50"
+                        {...field}
+                        data-testid="input-radius"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={providerForm.control}
+                name="certifications"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Certifications (comma-separated)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g., Licensed Professional, CPR Certified, Food Handler"
+                        {...field}
+                        data-testid="input-certifications"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setProviderDialogOpen(false)}
+                  disabled={becomeProviderMutation.isPending}
+                  data-testid="button-cancel-provider"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={becomeProviderMutation.isPending}
+                  data-testid="button-submit-provider"
+                >
+                  {becomeProviderMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

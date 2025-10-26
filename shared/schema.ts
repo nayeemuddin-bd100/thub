@@ -85,6 +85,8 @@ export const serviceProviders = pgTable("service_providers", {
   radius: integer("radius").default(50),
   certifications: jsonb("certifications").default([]),
   portfolio: jsonb("portfolio").default([]),
+  approvalStatus: varchar("approval_status", { enum: ["pending", "approved", "rejected"] }).default("pending"),
+  rejectionReason: text("rejection_reason"),
   isVerified: boolean("is_verified").default(false),
   isActive: boolean("is_active").default(true),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
