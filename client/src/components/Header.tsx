@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from 'react-i18next';
@@ -25,6 +26,7 @@ interface HeaderProps {
 export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated = false, user }: HeaderProps) {
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -38,6 +40,22 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
 
   const handleLogout = () => {
     logoutMutation.mutate();
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (searchQuery.trim()) {
+      const params = new URLSearchParams();
+      params.append('location', searchQuery.trim());
+      setLocation(`/properties?${params.toString()}`);
+      setSearchQuery(''); // Clear search after navigating
+    }
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
   };
 
   return (
@@ -64,8 +82,14 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                 type="text"
                 placeholder={t('header.search_placeholder')}
                 className="pl-10 pr-4 py-2 rounded-full focus:ring-2 focus:ring-ring bg-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleSearchKeyPress}
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search 
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 cursor-pointer hover:text-foreground transition-colors" 
+                onClick={handleSearch}
+              />
             </div>
           </div>
 
