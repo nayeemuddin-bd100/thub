@@ -7,6 +7,7 @@ import { pool } from "./db";
 import { storage } from "./storage";
 import { hashPassword, verifyPassword, requireAuth } from "./auth";
 import { generateBookingCode } from "./base44";
+import { whatsappService } from "./whatsapp";
 import { insertServiceProviderSchema } from "@shared/schema";
 import { z } from "zod";
 
@@ -853,6 +854,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // Get WhatsApp link for service provider
+  app.get('/api/whatsapp/link/:providerId', requireAuth, async (req, res) => {
+    try {
+      const provider = await storage.getServiceProvider(req.params.providerId);
+      
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider not found" });
+      }
+
+      if (!provider.whatsappNumber) {
+        return res.status(404).json({ message: "WhatsApp number not available for this provider" });
+      }
+
+      const link = whatsappService.getWhatsAppLink(provider.whatsappNumber);
+      
+      res.json({ 
+        link,
+        whatsappNumber: provider.whatsappNumber 
+      });
+    } catch (error) {
+      console.error("Error getting WhatsApp link:", error);
+      res.status(500).json({ message: "Failed to get WhatsApp link" });
+    }
+  });
+
+  // Send WhatsApp message notification (for system notifications)
+  app.post('/api/whatsapp/notify', requireAuth, async (req, res) => {
+    try {
+      const { phoneNumber, message } = req.body;
+
+      if (!phoneNumber || !message) {
+        return res.status(400).json({ message: "Phone number and message are required" });
+      }
+
+      const result = await whatsappService.sendMessage({
+        to: whatsappService.formatWhatsAppNumber(phoneNumber),
+        body: message
+      });
+
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || "Failed to send WhatsApp message" });
+      }
+
+      res.json({ 
+        success: true,
+        messageSid: result.messageSid 
+      });
+    } catch (error) {
+      console.error("Error sending WhatsApp message:", error);
+      res.status(500).json({ message: "Failed to send WhatsApp message" });
     }
   });
 

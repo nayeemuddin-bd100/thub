@@ -83,6 +83,7 @@ export const serviceProviders = pgTable("service_providers", {
   availability: jsonb("availability").default([]),
   location: varchar("location"),
   radius: integer("radius").default(50),
+  whatsappNumber: varchar("whatsapp_number"),
   certifications: jsonb("certifications").default([]),
   portfolio: jsonb("portfolio").default([]),
   approvalStatus: varchar("approval_status", { enum: ["pending", "approved", "rejected"] }).default("pending"),

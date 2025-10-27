@@ -122,6 +122,7 @@ export default function Dashboard() {
     fixedRate: z.string().optional(),
     location: z.string().min(2, "Location is required"),
     radius: z.string().optional(),
+    whatsappNumber: z.string().optional(),
     certifications: z.string().optional(),
   });
   
@@ -136,6 +137,7 @@ export default function Dashboard() {
       radius: "50",
       hourlyRate: "",
       fixedRate: "",
+      whatsappNumber: "",
       certifications: "",
     },
   });
@@ -914,6 +916,25 @@ export default function Dashboard() {
                         placeholder="50"
                         {...field}
                         data-testid="input-radius"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={providerForm.control}
+                name="whatsappNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>WhatsApp Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel"
+                        placeholder="+1234567890"
+                        {...field}
+                        data-testid="input-whatsapp-number"
                       />
                     </FormControl>
                     <FormMessage />
