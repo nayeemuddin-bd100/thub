@@ -1,0 +1,105 @@
+{
+  "common": {
+    "welcome": "Bienvenue",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "signup": "S'inscrire",
+    "search": "Rechercher",
+    "loading": "Chargement...",
+    "error": "Erreur",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "create": "Créer",
+    "submit": "Soumettre",
+    "close": "Fermer"
+  },
+  "header": {
+    "search_placeholder": "Où allez-vous?",
+    "host": "Hôte",
+    "dashboard": "Tableau de bord",
+    "admin_panel": "Panneau d'administration",
+    "my_bookings": "Mes Réservations",
+    "log_out": "Se déconnecter"
+  },
+  "home": {
+    "welcome_back": "Bon retour, {{name}}!",
+    "welcome_guest": "Bienvenue sur TravelHub!",
+    "next_adventure": "Prêt pour votre prochaine aventure?",
+    "quick_book": "Réservation Rapide",
+    "discover_world": "Découvrez le monde avec nous"
+  },
+  "properties": {
+    "title": "Trouvez Votre Séjour Parfait",
+    "subtitle": "Découvrez des propriétés incroyables avec des services intégrés",
+    "properties_found": "{{count}} propriétés trouvées",
+    "no_properties": "Aucune propriété trouvée",
+    "price_per_night": "{{price}} par nuit",
+    "guests": "Invités",
+    "max_guests": "Max {{count}} invités",
+    "bedrooms": "Chambres",
+    "bathrooms": "Salles de bain",
+    "view_details": "Voir les Détails"
+  },
+  "services": {
+    "title": "Trouvez des Fournisseurs de Services",
+    "subtitle": "Parcourez les fournisseurs de services professionnels",
+    "all_categories": "Toutes les Catégories",
+    "location_placeholder": "Entrez l'emplacement",
+    "search_button": "Rechercher",
+    "no_providers": "Aucun fournisseur de services trouvé",
+    "hourly_rate": "{{rate}}/heure",
+    "fixed_rate": "{{rate}} fixe",
+    "view_profile": "Voir le Profil"
+  },
+  "booking": {
+    "check_in": "Arrivée",
+    "check_out": "Départ",
+    "guests_count": "Nombre d'Invités",
+    "book_now": "Réserver Maintenant",
+    "reserve": "Réserver",
+    "complete_booking": "Terminer la Réservation",
+    "login_required": "Connexion Requise",
+    "login_to_book": "Veuillez vous connecter pour faire une réservation",
+    "booking_confirmed": "Réservation Confirmée!",
+    "booking_code": "Votre code de réservation est {{code}}",
+    "booking_failed": "Échec de la Réservation",
+    "add_services": "Ajouter des Services",
+    "total": "Total",
+    "nights": "{{count}} nuit",
+    "nights_plural": "{{count}} nuits"
+  },
+  "dashboard": {
+    "overview": "Aperçu",
+    "bookings": "Réservations",
+    "properties": "Propriétés",
+    "services": "Services",
+    "settings": "Paramètres",
+    "profile": "Profil"
+  },
+  "provider": {
+    "become_provider": "Devenir Fournisseur",
+    "business_name": "Nom de l'Entreprise",
+    "description": "Description",
+    "hourly_rate": "Tarif Horaire",
+    "fixed_rate": "Tarif Fixe",
+    "location": "Emplacement",
+    "service_radius": "Rayon de Service (km)",
+    "certifications": "Certifications",
+    "submit_application": "Soumettre la Demande",
+    "application_submitted": "Demande soumise avec succès! Un administrateur la examinera bientôt.",
+    "pending_approval": "En Attente d'Approbation",
+    "approved": "Approuvé",
+    "rejected": "Rejeté"
+  },
+  "footer": {
+    "about": "À propos",
+    "contact": "Contact",
+    "terms": "Conditions d'utilisation",
+    "privacy": "Politique de Confidentialité",
+    "help": "Aide",
+    "careers": "Carrières"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from 'react-i18next';
 import { useAuth } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
@@ -12,6 +13,7 @@ import { Link } from "wouter";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+  const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -45,10 +47,10 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                Welcome back, {user?.firstName || 'Traveler'}!
+                {t('home.welcome_back', { name: user?.firstName || 'Traveler' })}
               </h1>
               <p className="text-lg text-muted-foreground">
-                Ready for your next adventure?
+                {t('home.next_adventure')}
               </p>
             </div>
           </div>
@@ -69,7 +71,7 @@ export default function Home() {
             className="bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center space-x-2"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Quick Book</span>
+            <span className="hidden sm:inline">{t('home.quick_book')}</span>
           </Button>
         </Link>
       </div>

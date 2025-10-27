@@ -1,0 +1,105 @@
+{
+  "common": {
+    "welcome": "Bienvenido",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "signup": "Registrarse",
+    "search": "Buscar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "submit": "Enviar",
+    "close": "Cerrar"
+  },
+  "header": {
+    "search_placeholder": "¿A dónde vas?",
+    "host": "Anfitrión",
+    "dashboard": "Panel",
+    "admin_panel": "Panel de Admin",
+    "my_bookings": "Mis Reservas",
+    "log_out": "Cerrar sesión"
+  },
+  "home": {
+    "welcome_back": "¡Bienvenido de nuevo, {{name}}!",
+    "welcome_guest": "¡Bienvenido a TravelHub!",
+    "next_adventure": "¿Listo para tu próxima aventura?",
+    "quick_book": "Reservar Rápido",
+    "discover_world": "Descubre el mundo con nosotros"
+  },
+  "properties": {
+    "title": "Encuentra tu Estancia Perfecta",
+    "subtitle": "Descubre propiedades increíbles con servicios integrados",
+    "properties_found": "{{count}} propiedades encontradas",
+    "no_properties": "No se encontraron propiedades",
+    "price_per_night": "{{price}} por noche",
+    "guests": "Huéspedes",
+    "max_guests": "Máx {{count}} huéspedes",
+    "bedrooms": "Habitaciones",
+    "bathrooms": "Baños",
+    "view_details": "Ver Detalles"
+  },
+  "services": {
+    "title": "Encuentra Proveedores de Servicios",
+    "subtitle": "Explora proveedores de servicios profesionales",
+    "all_categories": "Todas las Categorías",
+    "location_placeholder": "Ingresa ubicación",
+    "search_button": "Buscar",
+    "no_providers": "No se encontraron proveedores de servicios",
+    "hourly_rate": "{{rate}}/hora",
+    "fixed_rate": "{{rate}} fijo",
+    "view_profile": "Ver Perfil"
+  },
+  "booking": {
+    "check_in": "Entrada",
+    "check_out": "Salida",
+    "guests_count": "Número de Huéspedes",
+    "book_now": "Reservar Ahora",
+    "reserve": "Reservar",
+    "complete_booking": "Completar Reserva",
+    "login_required": "Inicio de Sesión Requerido",
+    "login_to_book": "Por favor inicia sesión para hacer una reserva",
+    "booking_confirmed": "¡Reserva Confirmada!",
+    "booking_code": "Tu código de reserva es {{code}}",
+    "booking_failed": "Reserva Fallida",
+    "add_services": "Agregar Servicios",
+    "total": "Total",
+    "nights": "{{count}} noche",
+    "nights_plural": "{{count}} noches"
+  },
+  "dashboard": {
+    "overview": "Resumen",
+    "bookings": "Reservas",
+    "properties": "Propiedades",
+    "services": "Servicios",
+    "settings": "Configuración",
+    "profile": "Perfil"
+  },
+  "provider": {
+    "become_provider": "Convertirse en Proveedor",
+    "business_name": "Nombre del Negocio",
+    "description": "Descripción",
+    "hourly_rate": "Tarifa por Hora",
+    "fixed_rate": "Tarifa Fija",
+    "location": "Ubicación",
+    "service_radius": "Radio de Servicio (km)",
+    "certifications": "Certificaciones",
+    "submit_application": "Enviar Solicitud",
+    "application_submitted": "¡Solicitud enviada con éxito! Un administrador la revisará pronto.",
+    "pending_approval": "Pendiente de Aprobación",
+    "approved": "Aprobado",
+    "rejected": "Rechazado"
+  },
+  "footer": {
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "terms": "Términos de Servicio",
+    "privacy": "Política de Privacidad",
+    "help": "Ayuda",
+    "careers": "Carreras"
+  }
+}

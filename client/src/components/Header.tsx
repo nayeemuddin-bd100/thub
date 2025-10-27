@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
+import { useTranslation } from 'react-i18next';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Globe, Moon, Sun, User } from "lucide-react";
+import { Search, Moon, Sun, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -12,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface HeaderProps {
   onToggleDarkMode: () => void;
@@ -22,6 +24,7 @@ interface HeaderProps {
 
 export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated = false, user }: HeaderProps) {
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -59,7 +62,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
               <Input
                 data-testid="input-search"
                 type="text"
-                placeholder="Where are you going?"
+                placeholder={t('header.search_placeholder')}
                 className="pl-10 pr-4 py-2 rounded-full focus:ring-2 focus:ring-ring bg-input"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -68,9 +71,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
 
           {/* Navigation */}
           <nav className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" data-testid="button-language">
-              <Globe className="w-5 h-5" />
-            </Button>
+            <LanguageSwitcher />
             
             <Button variant="ghost" size="icon" onClick={onToggleDarkMode} data-testid="button-dark-mode">
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -95,19 +96,19 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" data-testid="link-dashboard">Dashboard</Link>
+                    <Link href="/dashboard" data-testid="link-dashboard">{t('header.dashboard')}</Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>
-                      <Link href="/admin" data-testid="link-admin">Admin Panel</Link>
+                      <Link href="/admin" data-testid="link-admin">{t('header.admin_panel')}</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link href="/bookings" data-testid="link-bookings">My Bookings</Link>
+                    <Link href="/bookings" data-testid="link-bookings">{t('header.my_bookings')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} data-testid="link-logout">
-                    Log out
+                    {t('header.log_out')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -115,7 +116,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
               <div className="flex items-center space-x-2 bg-muted rounded-full p-1">
                 <Link href="/host">
                   <Button variant="ghost" size="sm" data-testid="button-host">
-                    Host
+                    {t('header.host')}
                   </Button>
                 </Link>
                 <Link href="/login">
