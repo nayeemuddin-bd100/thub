@@ -6,6 +6,37 @@ TravelHub is a comprehensive travel ecosystem platform that serves as an evoluti
 
 Preferred communication style: Simple, everyday language.
 
+# Critical Requirements
+
+## 🚨 NEVER REMOVE: Public Browsing Policy
+**CRITICAL REQUIREMENT - DO NOT MODIFY OR REMOVE IN FUTURE IMPLEMENTATIONS**
+
+Users MUST be able to browse the website without logging in. Authentication is ONLY required when users attempt to place orders or bookings.
+
+**Public Access (No Login Required):**
+- Landing page (`/`)
+- Browse all properties (`/properties`)
+- View property details (`/properties/:id`)
+- View service providers and services
+- Browse service categories
+- Read reviews and ratings
+
+**Authentication Required:**
+- Creating bookings (`POST /api/bookings`)
+- Ordering services
+- Applying to become a service provider
+- Accessing user dashboard (`/dashboard`)
+- Posting reviews
+- Messaging
+- All admin functions
+
+**Implementation:**
+- Frontend: Public pages do NOT enforce authentication checks
+- Backend: All POST/PUT/DELETE endpoints for bookings, orders, and user actions use `requireAuth` middleware
+- User Experience: When unauthenticated users click "Book Now", they are redirected to login with a friendly message explaining they need to log in to complete the booking
+
+This design ensures maximum accessibility for browsing while protecting transactional operations.
+
 # System Architecture
 
 ## Frontend Architecture
