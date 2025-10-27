@@ -869,7 +869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const message = JSON.parse(data.toString());
         
-        if (message.type === 'auth') {
+        if (message.type === 'auth' && message.userId) {
           userId = message.userId;
           connectedClients.set(userId, ws);
           
