@@ -39,23 +39,13 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       
-      {/* Protected pages */}
-      {isAuthenticated && (
-        <>
-          <Route path="/" component={Home} />
-          <Route path="/properties" component={Properties} />
-          <Route path="/properties/:id" component={PropertyDetail} />
-          <Route path="/services" component={Services} />
-          <Route path="/booking" component={Booking} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/admin" component={AdminDashboard} />
-        </>
-      )}
+      {/* Public pages - accessible to all (CRITICAL: Public browsing without login) */}
+      <Route path="/" component={Home} />
+      <Route path="/properties" component={Properties} />
+      <Route path="/properties/:id" component={PropertyDetail} />
+      <Route path="/services" component={Services} />
       
-      {/* Redirect to login if not authenticated */}
-      {!isLoading && !isAuthenticated && <Route path="/" component={Login} />}
-      
-      {/* Public pages - accessible to all */}
+      {/* Public informational pages */}
       <Route path="/about" component={About} />
       <Route path="/careers" component={Careers} />
       <Route path="/contact" component={Contact} />
@@ -71,6 +61,15 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/community" component={Community} />
       <Route path="/sitemap" component={Sitemap} />
+      
+      {/* Protected pages - authentication required */}
+      {isAuthenticated && (
+        <>
+          <Route path="/booking" component={Booking} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/admin" component={AdminDashboard} />
+        </>
+      )}
       
       <Route component={NotFound} />
     </Switch>
