@@ -11,7 +11,7 @@ import { Plus } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -37,21 +37,23 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} isAuthenticated={true} user={user} />
+      <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} isAuthenticated={isAuthenticated} user={user} />
       
       {/* Welcome Section */}
-      <section className="py-8 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Welcome back, {user?.firstName || 'Traveler'}!
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Ready for your next adventure?
-            </p>
+      {isAuthenticated && (
+        <section className="py-8 bg-muted/30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Welcome back, {user?.firstName || 'Traveler'}!
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Ready for your next adventure?
+              </p>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <HeroSection />
       <ServiceCategories />

@@ -76,19 +76,6 @@ export default function Properties() {
     retry: false,
   });
 
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [error, toast]);
-
   const handleFiltersChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
     const params = new URLSearchParams();

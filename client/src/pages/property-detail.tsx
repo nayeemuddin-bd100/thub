@@ -62,19 +62,6 @@ export default function PropertyDetail() {
     retry: false,
   });
 
-  useEffect(() => {
-    if (propertyError && isUnauthorizedError(propertyError as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [propertyError, toast]);
-
   const amenityIcons: { [key: string]: any } = {
     parking: Car,
     wifi: Wifi,

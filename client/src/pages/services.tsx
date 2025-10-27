@@ -75,19 +75,6 @@ export default function Services() {
     retry: false,
   });
 
-  useEffect(() => {
-    if (error && isUnauthorizedError(error as Error)) {
-      toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 500);
-    }
-  }, [error, toast]);
-
   const filteredProviders = providers?.filter((provider: any) => {
     if (!filters.search) return true;
     const searchLower = filters.search.toLowerCase();
