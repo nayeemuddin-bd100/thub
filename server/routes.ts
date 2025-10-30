@@ -1499,6 +1499,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { serviceProviderId } = req.body;
+      
+      // Validate inputs
+      if (!serviceProviderId) {
+        return res.status(400).json({ message: "Service provider ID is required" });
+      }
+      
+      // Check if property exists
+      const property = await storage.getProperty(req.params.id);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      // Check if service provider exists
+      const provider = await storage.getServiceProvider(serviceProviderId);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider not found" });
+      }
+      
+      // Check if link already exists
+      const existingServices = await storage.getPropertyServices(req.params.id);
+      if (existingServices.some(s => s.id === serviceProviderId)) {
+        return res.status(409).json({ message: "Service provider already linked to this property" });
+      }
+      
       const propertyService = await storage.addPropertyService(req.params.id, serviceProviderId);
       res.status(201).json(propertyService);
     } catch (error) {
@@ -1514,6 +1538,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      // Check if property exists
+      const property = await storage.getProperty(req.params.propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      // Check if service provider exists
+      const provider = await storage.getServiceProvider(req.params.serviceProviderId);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider not found" });
+      }
+      
+      // Check if link exists
+      const existingServices = await storage.getPropertyServices(req.params.propertyId);
+      if (!existingServices.some(s => s.id === req.params.serviceProviderId)) {
+        return res.status(404).json({ message: "Service provider not linked to this property" });
       }
       
       await storage.removePropertyService(req.params.propertyId, req.params.serviceProviderId);
