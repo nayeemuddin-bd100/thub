@@ -14,6 +14,7 @@ import Services from "@/pages/services";
 import Booking from "@/pages/booking";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin";
+import ProviderConfig from "@/pages/provider-config";
 import About from "@/pages/about";
 import Careers from "@/pages/careers";
 import Contact from "@/pages/contact";
@@ -68,6 +69,7 @@ function Router() {
           <Route path="/booking" component={Booking} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/provider-config" component={ProviderConfig} />
         </>
       )}
       

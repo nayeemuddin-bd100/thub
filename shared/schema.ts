@@ -237,6 +237,63 @@ export const payments = pgTable("payments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Provider menus table (for chef services)
+export const providerMenus = pgTable("provider_menus", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  categoryName: varchar("category_name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Menu items table (for chef services)
+export const menuItems = pgTable("menu_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  menuId: uuid("menu_id").references(() => providerMenus.id).notNull(),
+  dishName: varchar("dish_name").notNull(),
+  description: text("description"),
+  cuisineType: varchar("cuisine_type"),
+  dietaryTags: jsonb("dietary_tags").default([]),
+  preparationTime: integer("preparation_time"),
+  servings: integer("servings"),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  ingredients: jsonb("ingredients").default([]),
+  images: jsonb("images").default([]),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Provider task configurations (maid can enable/disable and price tasks)
+export const providerTaskConfigs = pgTable("provider_task_configs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  taskId: uuid("task_id").references(() => serviceTasks.id).notNull(),
+  isEnabled: boolean("is_enabled").default(true),
+  customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
+  estimatedDuration: integer("estimated_duration"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Provider materials/supplies (what materials provider offers or requires)
+export const providerMaterials = pgTable("provider_materials", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  materialName: varchar("material_name").notNull(),
+  materialType: varchar("material_type", { enum: ["cleaning_supplies", "equipment", "ingredients", "other"] }).notNull(),
+  providedBy: varchar("provided_by", { enum: ["provider", "client", "either"] }).default("provider"),
+  additionalCost: decimal("additional_cost", { precision: 10, scale: 2 }).default("0"),
+  isRequired: boolean("is_required").default(false),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   properties: many(properties),
@@ -425,3 +482,35 @@ export const insertPaymentSchema = createInsertSchema(payments).omit({
   updatedAt: true,
 });
 export type InsertPayment = z.infer<typeof insertPaymentSchema>;
+
+export type ProviderMenu = typeof providerMenus.$inferSelect;
+export type MenuItem = typeof menuItems.$inferSelect;
+export type ProviderTaskConfig = typeof providerTaskConfigs.$inferSelect;
+export type ProviderMaterial = typeof providerMaterials.$inferSelect;
+
+export const insertProviderMenuSchema = createInsertSchema(providerMenus).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderMenu = z.infer<typeof insertProviderMenuSchema>;
+
+export const insertMenuItemSchema = createInsertSchema(menuItems).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertMenuItem = z.infer<typeof insertMenuItemSchema>;
+
+export const insertProviderTaskConfigSchema = createInsertSchema(providerTaskConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderTaskConfig = z.infer<typeof insertProviderTaskConfigSchema>;
+
+export const insertProviderMaterialSchema = createInsertSchema(providerMaterials).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertProviderMaterial = z.infer<typeof insertProviderMaterialSchema>;
