@@ -11,6 +11,7 @@ import {
   decimal,
   boolean,
   uuid,
+  date,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -294,6 +295,62 @@ export const providerMaterials = pgTable("provider_materials", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Provider availability calendar
+export const providerAvailability = pgTable("provider_availability", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  date: date("date").notNull(),
+  startTime: varchar("start_time").notNull(),
+  endTime: varchar("end_time").notNull(),
+  isAvailable: boolean("is_available").default(true),
+  maxBookings: integer("max_bookings").default(1),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Service orders (when clients order extra services)
+export const serviceOrders = pgTable("service_orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  clientId: uuid("client_id").references(() => users.id).notNull(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  orderCode: varchar("order_code").unique().notNull(),
+  serviceDate: date("service_date").notNull(),
+  startTime: varchar("start_time").notNull(),
+  endTime: varchar("end_time"),
+  duration: integer("duration"),
+  status: varchar("status", { 
+    enum: ["pending", "confirmed", "in_progress", "completed", "cancelled", "rejected"] 
+  }).default("pending"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+  taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: varchar("payment_status", { enum: ["pending", "paid", "refunded"] }).default("pending"),
+  specialInstructions: text("special_instructions"),
+  providerNotes: text("provider_notes"),
+  cancellationReason: text("cancellation_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Service order items (selected menu items or tasks)
+export const serviceOrderItems = pgTable("service_order_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id).notNull(),
+  itemType: varchar("item_type", { enum: ["menu_item", "task", "custom"] }).notNull(),
+  menuItemId: uuid("menu_item_id").references(() => menuItems.id),
+  taskId: uuid("task_id").references(() => serviceTasks.id),
+  itemName: varchar("item_name").notNull(),
+  quantity: integer("quantity").default(1),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   properties: many(properties),
@@ -514,3 +571,29 @@ export const insertProviderMaterialSchema = createInsertSchema(providerMaterials
   createdAt: true,
 });
 export type InsertProviderMaterial = z.infer<typeof insertProviderMaterialSchema>;
+
+// Service Orders
+export type ServiceOrder = typeof serviceOrders.$inferSelect;
+export type ServiceOrderItem = typeof serviceOrderItems.$inferSelect;
+export type ProviderAvailability = typeof providerAvailability.$inferSelect;
+
+export const insertServiceOrderSchema = createInsertSchema(serviceOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  orderCode: true,
+});
+export type InsertServiceOrder = z.infer<typeof insertServiceOrderSchema>;
+
+export const insertServiceOrderItemSchema = createInsertSchema(serviceOrderItems).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertServiceOrderItem = z.infer<typeof insertServiceOrderItemSchema>;
+
+export const insertProviderAvailabilitySchema = createInsertSchema(providerAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderAvailability = z.infer<typeof insertProviderAvailabilitySchema>;
