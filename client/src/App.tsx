@@ -17,6 +17,7 @@ import AdminDashboard from "@/pages/admin";
 import ProviderConfig from "@/pages/provider-config";
 import ProviderOrders from "@/pages/provider-orders";
 import MyServiceOrders from "@/pages/my-service-orders";
+import PayServiceOrder from "@/pages/pay-service-order";
 import ServiceProviderDetails from "@/pages/service-provider-details";
 import BookService from "@/pages/book-service";
 import About from "@/pages/about";
@@ -78,6 +79,7 @@ function Router() {
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />
           <Route path="/my-service-orders" component={MyServiceOrders} />
+          <Route path="/pay-service-order/:id" component={PayServiceOrder} />
         </>
       )}
       

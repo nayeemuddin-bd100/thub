@@ -157,6 +157,7 @@ export interface IStorage {
   getClientServiceOrders(clientId: string): Promise<ServiceOrder[]>;
   getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]>;
   updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder>;
+  updateServiceOrderPaymentStatus(id: string, paymentStatus: string): Promise<ServiceOrder>;
   getServiceOrderItems(orderId: string): Promise<ServiceOrderItem[]>;
   updateServiceOrderItem(id: string, updates: Partial<ServiceOrderItem>): Promise<ServiceOrderItem>;
   
@@ -667,6 +668,14 @@ export class DatabaseStorage implements IStorage {
   async updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder> {
     const [updatedOrder] = await db.update(serviceOrders)
       .set({ status, updatedAt: new Date() })
+      .where(eq(serviceOrders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+
+  async updateServiceOrderPaymentStatus(id: string, paymentStatus: string): Promise<ServiceOrder> {
+    const [updatedOrder] = await db.update(serviceOrders)
+      .set({ paymentStatus, updatedAt: new Date() })
       .where(eq(serviceOrders.id, id))
       .returning();
     return updatedOrder;

@@ -10,8 +10,16 @@ import { generateBookingCode } from "./base44";
 import { whatsappService } from "./whatsapp";
 import { insertServiceProviderSchema } from "@shared/schema";
 import { z } from "zod";
+import Stripe from "stripe";
 
 const PgSession = connectPg(session);
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2024-11-20.acacia",
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session middleware
@@ -1310,6 +1318,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating service order item:", error);
       res.status(500).json({ message: "Failed to update service order item" });
+    }
+  });
+
+  // Service Order Payment routes
+  app.post('/api/service-orders/:id/payment-intent', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const order = await storage.getServiceOrder(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Service order not found" });
+      }
+      
+      // Verify the user is the client who created the order
+      if (order.clientId !== userId) {
+        return res.status(403).json({ message: "Not authorized to pay for this order" });
+      }
+      
+      // Only allow payment if order is confirmed and payment is pending
+      if (order.status !== 'confirmed') {
+        return res.status(400).json({ message: "Order must be confirmed before payment" });
+      }
+      
+      if (order.paymentStatus === 'paid') {
+        return res.status(400).json({ message: "Order has already been paid" });
+      }
+      
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(parseFloat(order.totalAmount) * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          orderId: order.id,
+          orderCode: order.orderCode,
+        },
+      });
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  app.post('/api/service-orders/:id/confirm-payment', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { paymentIntentId } = req.body;
+      const order = await storage.getServiceOrder(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Service order not found" });
+      }
+      
+      // Verify the user is the client who created the order
+      if (order.clientId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      // Verify payment with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.orderId === order.id) {
+        // Update payment status in database
+        await storage.updateServiceOrderPaymentStatus(order.id, 'paid');
+        res.json({ success: true, message: "Payment confirmed" });
+      } else {
+        res.status(400).json({ message: "Payment verification failed" });
+      }
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ message: "Failed to confirm payment" });
     }
   });
 
