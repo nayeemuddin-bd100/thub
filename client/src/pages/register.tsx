@@ -28,16 +28,18 @@ export default function Register() {
       if (password.length < 6) {
         throw new Error("Password must be at least 6 characters");
       }
-      return await apiRequest("POST", "/api/auth/register", {
+      const response = await apiRequest("POST", "/api/auth/register", {
         email,
         password,
         firstName,
         lastName,
       });
+      return await response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (registerData: any) => {
       // Fetch user data to check role
-      const userData: any = await apiRequest("GET", "/api/auth/user", {});
+      const userResponse = await apiRequest("GET", "/api/auth/user", {});
+      const userData = await userResponse.json();
       queryClient.setQueryData(['/api/auth/user'], userData);
       
       toast({

@@ -19,11 +19,13 @@ export default function Login() {
 
   const loginMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("POST", "/api/auth/login", { email, password });
+      const response = await apiRequest("POST", "/api/auth/login", { email, password });
+      return await response.json();
     },
-    onSuccess: async () => {
+    onSuccess: async (loginData: any) => {
       // Fetch user data to check role
-      const userData: any = await apiRequest("GET", "/api/auth/user", {});
+      const userResponse = await apiRequest("GET", "/api/auth/user", {});
+      const userData = await userResponse.json();
       queryClient.setQueryData(['/api/auth/user'], userData);
       
       toast({
