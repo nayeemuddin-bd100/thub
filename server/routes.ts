@@ -1132,6 +1132,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/public/provider/:providerId/materials', async (req, res) => {
+    try {
+      const materials = await storage.getProviderMaterials(req.params.providerId);
+      
+      // Transform to match frontend expectations
+      const formattedMaterials = materials.map(material => ({
+        id: material.id,
+        name: material.materialName,
+        category: material.materialType,
+        unitCost: material.additionalCost || '0',
+        unit: 'item', // Default unit since not in schema
+        isClientProvided: material.providedBy === 'client' || material.providedBy === 'either',
+      }));
+      
+      res.json(formattedMaterials);
+    } catch (error) {
+      console.error("Error fetching provider materials:", error);
+      res.status(500).json({ message: "Failed to fetch materials" });
+    }
+  });
+
+  app.get('/api/service-providers/:providerId/reviews', async (req, res) => {
+    try {
+      const reviews = await storage.getServiceProviderReviews(req.params.providerId);
+      
+      // Format reviews with client names
+      const formattedReviews = await Promise.all(
+        reviews.map(async (review) => {
+          const reviewer = await storage.getUser(review.reviewerId);
+          const clientName = reviewer 
+            ? `${reviewer.firstName || ''} ${reviewer.lastName || ''}`.trim() || 'Anonymous'
+            : 'Anonymous';
+          return {
+            id: review.id,
+            clientName,
+            rating: review.rating,
+            comment: review.comment || '',
+            createdAt: review.createdAt,
+          };
+        })
+      );
+      
+      res.json(formattedReviews);
+    } catch (error) {
+      console.error("Error fetching provider reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
   // Service Order routes
   app.post('/api/service-orders', requireAuth, async (req: any, res) => {
     try {

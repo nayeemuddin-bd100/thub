@@ -15,10 +15,42 @@ import {
   ChefHat, 
   ClipboardList, 
   ShoppingCart,
-  ArrowLeft
+  ArrowLeft,
+  Calendar,
+  Package,
+  MessageCircle,
+  Award,
+  Languages,
+  ImageIcon
 } from "lucide-react";
 import { useState } from "react";
-import type { ServiceProvider, MenuItem, ServiceTask } from "@shared/schema";
+import { format } from "date-fns";
+import type { ServiceProvider } from "@shared/schema";
+
+interface MenuItemData {
+  id: string;
+  dishName: string;
+  description: string | null;
+  price: string | null;
+  ingredients: string[];
+  dietaryTags: string[];
+}
+
+interface MenuData {
+  id: string;
+  categoryName: string;
+  description: string | null;
+  items: MenuItemData[];
+}
+
+interface TaskData {
+  id: string;
+  taskName: string;
+  description: string | null;
+  effectivePrice: string;
+  customPrice?: string;
+  defaultDuration: number | null;
+}
 
 export default function ServiceProviderDetailsPage() {
   const params = useParams();
@@ -27,19 +59,44 @@ export default function ServiceProviderDetailsPage() {
   
   const [selectedMenuItems, setSelectedMenuItems] = useState<Set<string>>(new Set());
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [clientProvidedMaterials, setClientProvidedMaterials] = useState<Set<string>>(new Set());
 
   const { data: provider, isLoading: providerLoading } = useQuery<ServiceProvider>({
     queryKey: ['/api/service-providers', providerId],
     enabled: !!providerId,
   });
 
-  const { data: menus, isLoading: menusLoading } = useQuery<Array<any>>({
+  const { data: menus, isLoading: menusLoading } = useQuery<MenuData[]>({
     queryKey: ['/api/public/provider', providerId, 'menus'],
     enabled: !!providerId,
   });
 
-  const { data: tasks, isLoading: tasksLoading } = useQuery<Array<ServiceTask & { customPrice?: string; effectivePrice: string }>>({
+  const { data: tasks, isLoading: tasksLoading } = useQuery<TaskData[]>({
     queryKey: ['/api/public/provider', providerId, 'tasks'],
+    enabled: !!providerId,
+  });
+
+  const { data: materials } = useQuery<Array<{
+    id: string;
+    name: string;
+    category: string;
+    unitCost: string;
+    unit: string;
+    isClientProvided: boolean;
+  }>>({
+    queryKey: ['/api/public/provider', providerId, 'materials'],
+    enabled: !!providerId,
+  });
+
+  const { data: reviews } = useQuery<Array<{
+    id: string;
+    clientName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
+  }>>({
+    queryKey: ['/api/service-providers', providerId, 'reviews'],
     enabled: !!providerId,
   });
 
@@ -69,9 +126,9 @@ export default function ServiceProviderDetailsPage() {
     // Add menu items
     if (menus) {
       menus.forEach(menu => {
-        menu.items?.forEach((item: MenuItem) => {
+        menu.items?.forEach((item) => {
           if (selectedMenuItems.has(item.id)) {
-            total += parseFloat(item.price);
+            total += parseFloat(item.price || '0');
           }
         });
       });
@@ -90,11 +147,16 @@ export default function ServiceProviderDetailsPage() {
   };
 
   const handleProceedToBooking = () => {
-    const selectedItems = [];
+    const selectedItems: Array<{
+      type: string;
+      id: string;
+      name: string;
+      price: string | null;
+    }> = [];
     
     if (menus) {
       menus.forEach(menu => {
-        menu.items?.forEach((item: MenuItem) => {
+        menu.items?.forEach((item) => {
           if (selectedMenuItems.has(item.id)) {
             selectedItems.push({
               type: 'menu_item',
@@ -125,6 +187,8 @@ export default function ServiceProviderDetailsPage() {
       providerId,
       items: selectedItems,
       total: calculateTotal(),
+      clientProvidedMaterials: Array.from(clientProvidedMaterials),
+      selectedDate,
     }));
     
     navigate(`/book-service/${providerId}`);
@@ -170,7 +234,7 @@ export default function ServiceProviderDetailsPage() {
             </div>
             <div className="flex items-center gap-1" data-testid="provider-rating">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold" data-testid="text-rating">{provider.rating?.toFixed(1) || 'N/A'}</span>
+              <span className="font-semibold" data-testid="text-rating">{typeof provider.rating === 'number' ? provider.rating.toFixed(1) : provider.rating || 'N/A'}</span>
               <span className="text-sm text-gray-500 dark:text-gray-400" data-testid="text-review-count">
                 ({provider.reviewCount} reviews)
               </span>
@@ -202,6 +266,128 @@ export default function ServiceProviderDetailsPage() {
         </CardContent>
       </Card>
 
+      {materials && materials.length > 0 && (
+        <Card className="mb-6" data-testid="card-materials">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Materials & Ingredients
+            </CardTitle>
+            <CardDescription>
+              Select which items you'll provide to reduce costs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {materials.map((material) => (
+                <div
+                  key={material.id}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                  data-testid={`material-${material.id}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={clientProvidedMaterials.has(material.id)}
+                      onCheckedChange={(checked) => {
+                        const newSet = new Set(clientProvidedMaterials);
+                        if (checked) {
+                          newSet.add(material.id);
+                        } else {
+                          newSet.delete(material.id);
+                        }
+                        setClientProvidedMaterials(newSet);
+                      }}
+                      data-testid={`checkbox-material-${material.id}`}
+                    />
+                    <div>
+                      <p className="font-medium" data-testid={`text-material-name-${material.id}`}>
+                        {material.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {material.category}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium" data-testid={`text-material-cost-${material.id}`}>
+                      ${parseFloat(material.unitCost).toFixed(2)}/{material.unit}
+                    </p>
+                    {clientProvidedMaterials.has(material.id) && (
+                      <Badge variant="secondary" className="text-xs mt-1">
+                        You provide
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {clientProvidedMaterials.size > 0 && (
+              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <p className="text-sm text-green-800 dark:text-green-200 font-medium">
+                  You're providing {clientProvidedMaterials.size} item{clientProvidedMaterials.size !== 1 ? 's' : ''} - this will reduce your total cost!
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {reviews && reviews.length > 0 && (
+        <Card className="mb-6" data-testid="card-reviews">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5" />
+              Client Reviews
+            </CardTitle>
+            <CardDescription>
+              See what others are saying about this provider
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {reviews.slice(0, 5).map((review) => (
+                <div
+                  key={review.id}
+                  className="border-b last:border-0 pb-4 last:pb-0"
+                  data-testid={`review-${review.id}`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-medium" data-testid={`text-review-client-${review.id}`}>
+                        {review.clientName}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-4 w-4 ${
+                              i < review.rating
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300 dark:text-gray-600'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                      {format(new Date(review.createdAt), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300" data-testid={`text-review-comment-${review.id}`}>
+                    {review.comment}
+                  </p>
+                </div>
+              ))}
+            </div>
+            {reviews.length > 5 && (
+              <Button variant="outline" className="w-full mt-4" data-testid="button-view-all-reviews">
+                View all {reviews.length} reviews
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue={menus && menus.length > 0 ? "menu" : "tasks"} className="space-y-4">
         {menus && menus.length > 0 && (
           <TabsList>
@@ -231,7 +417,7 @@ export default function ServiceProviderDetailsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {menu.items?.map((item: MenuItem) => (
+                      {menu.items?.map((item) => (
                         <div
                           key={item.id}
                           className="flex items-start gap-4 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
@@ -250,12 +436,12 @@ export default function ServiceProviderDetailsPage() {
                                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1" data-testid={`text-item-description-${item.id}`}>
                                   {item.description}
                                 </p>
-                                {item.ingredients && (
+                                {item.ingredients && Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
                                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2" data-testid={`text-item-ingredients-${item.id}`}>
                                     Ingredients: {item.ingredients.join(', ')}
                                   </p>
                                 )}
-                                {item.dietaryTags && item.dietaryTags.length > 0 && (
+                                {item.dietaryTags && Array.isArray(item.dietaryTags) && item.dietaryTags.length > 0 && (
                                   <div className="flex gap-1 mt-2">
                                     {item.dietaryTags.map((tag: string) => (
                                       <Badge key={tag} variant="secondary" className="text-xs" data-testid={`badge-tag-${tag}`}>
@@ -266,7 +452,7 @@ export default function ServiceProviderDetailsPage() {
                                 )}
                               </div>
                               <span className="font-bold text-lg" data-testid={`text-item-price-${item.id}`}>
-                                ${parseFloat(item.price).toFixed(2)}
+                                ${parseFloat(item.price || '0').toFixed(2)}
                               </span>
                             </div>
                           </div>
@@ -309,12 +495,14 @@ export default function ServiceProviderDetailsPage() {
                           <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`text-task-description-${task.id}`}>
                             {task.description}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Clock className="h-3 w-3 text-gray-400" />
-                            <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-task-duration-${task.id}`}>
-                              ~{task.estimatedDuration} min
-                            </span>
-                          </div>
+                          {task.defaultDuration && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <Clock className="h-3 w-3 text-gray-400" />
+                              <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-task-duration-${task.id}`}>
+                                ~{task.defaultDuration} min
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="text-right">
