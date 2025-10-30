@@ -14,12 +14,13 @@ interface PropertyCardProps {
     rating: string;
     images: string[];
     amenities?: string[];
+    serviceCount?: number;
   };
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   const imageUrl = property.images?.[0] || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
-  const serviceCount = Math.floor(Math.random() * 10) + 3; // Mock service count
+  const serviceCount = property.serviceCount || 0; // Real service count from database
   
   return (
     <Link href={`/properties/${property.id}`}>
@@ -57,9 +58,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               ${parseFloat(property.pricePerNight).toLocaleString()} 
               <span className="text-sm font-normal text-muted-foreground"> / night</span>
             </span>
-            <Badge variant="secondary" className="text-xs" data-testid={`badge-services-${property.id}`}>
-              +{serviceCount} services
-            </Badge>
+            {serviceCount > 0 && (
+              <Badge variant="secondary" className="text-xs" data-testid={`badge-services-${property.id}`}>
+                +{serviceCount} service{serviceCount !== 1 ? 's' : ''}
+              </Badge>
+            )}
           </div>
           
           <div className="flex items-center space-x-4 text-xs text-muted-foreground">

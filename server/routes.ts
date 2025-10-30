@@ -543,7 +543,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (checkOut) filters.checkOut = new Date(checkOut as string);
       
       const properties = await storage.getProperties(filters);
-      res.json(properties);
+      
+      // Add real service counts from database for each property
+      const propertiesWithServiceCounts = await Promise.all(
+        properties.map(async (property) => {
+          const services = await storage.getPropertyServices(property.id);
+          return {
+            ...property,
+            serviceCount: services.length
+          };
+        })
+      );
+      
+      res.json(propertiesWithServiceCounts);
     } catch (error) {
       console.error("Error fetching properties:", error);
       res.status(500).json({ message: "Failed to fetch properties" });
