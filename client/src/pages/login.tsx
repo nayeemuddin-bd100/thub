@@ -23,7 +23,7 @@ export default function Login() {
     },
     onSuccess: async () => {
       // Fetch user data to check role
-      const userData = await apiRequest("GET", "/api/auth/user", {});
+      const userData: any = await apiRequest("GET", "/api/auth/user", {});
       queryClient.setQueryData(['/api/auth/user'], userData);
       
       toast({
