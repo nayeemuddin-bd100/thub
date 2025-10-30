@@ -1059,6 +1059,333 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public Provider Info routes (for clients to browse)
+  app.get('/api/public/provider/:providerId/menus', async (req, res) => {
+    try {
+      const menus = await storage.getProviderMenus(req.params.providerId);
+      const menusWithItems = await Promise.all(
+        menus.map(async (menu) => {
+          const items = await storage.getMenuItems(menu.id);
+          return { ...menu, items };
+        })
+      );
+      res.json(menusWithItems);
+    } catch (error) {
+      console.error("Error fetching provider menus:", error);
+      res.status(500).json({ message: "Failed to fetch menus" });
+    }
+  });
+
+  app.get('/api/public/provider/:providerId/tasks', async (req, res) => {
+    try {
+      const configs = await storage.getProviderTaskConfigs(req.params.providerId);
+      
+      // Get full task details for enabled tasks
+      if (configs.length > 0) {
+        const provider = await storage.getServiceProvider(req.params.providerId);
+        if (!provider) {
+          return res.status(404).json({ message: "Provider not found" });
+        }
+        
+        const allTasks = await storage.getServiceTasks(provider.categoryId);
+        const enabledTasks = allTasks
+          .filter(task => {
+            const config = configs.find(c => c.taskId === task.id);
+            return config?.isEnabled;
+          })
+          .map(task => {
+            const config = configs.find(c => c.taskId === task.id);
+            return {
+              ...task,
+              customPrice: config?.customPrice,
+              effectivePrice: config?.customPrice || task.estimatedPrice,
+            };
+          });
+        
+        res.json(enabledTasks);
+      } else {
+        res.json([]);
+      }
+    } catch (error) {
+      console.error("Error fetching provider tasks:", error);
+      res.status(500).json({ message: "Failed to fetch tasks" });
+    }
+  });
+
+  // Service Order routes
+  app.post('/api/service-orders', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { serviceProviderId, serviceDate, startTime, endTime, duration, items, specialInstructions, bookingId } = req.body;
+      
+      if (!serviceProviderId || !serviceDate || !startTime || !items || items.length === 0) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Verify provider exists
+      const provider = await storage.getServiceProvider(serviceProviderId);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider not found" });
+      }
+      
+      // Validate and recalculate prices from authoritative sources
+      const validatedItems = [];
+      let subtotal = 0;
+      
+      for (const item of items) {
+        if (item.itemType === 'menu_item' && item.menuItemId) {
+          // Fetch menu item from database
+          const menus = await storage.getProviderMenus(serviceProviderId);
+          let menuItem = null;
+          
+          for (const menu of menus) {
+            const items = await storage.getMenuItems(menu.id);
+            menuItem = items.find(i => i.id === item.menuItemId);
+            if (menuItem) break;
+          }
+          
+          if (!menuItem) {
+            return res.status(400).json({ message: `Menu item ${item.menuItemId} not found for this provider` });
+          }
+          
+          const price = parseFloat(menuItem.price);
+          validatedItems.push({
+            itemType: 'menu_item',
+            menuItemId: menuItem.id,
+            taskId: null,
+            itemName: menuItem.dishName,
+            quantity: item.quantity || 1,
+            unitPrice: price.toString(),
+            totalPrice: (price * (item.quantity || 1)).toString(),
+          });
+          subtotal += price * (item.quantity || 1);
+        } else if (item.itemType === 'task' && item.taskId) {
+          // Fetch task config
+          const configs = await storage.getProviderTaskConfigs(serviceProviderId);
+          const config = configs.find(c => c.taskId === item.taskId && c.isEnabled);
+          
+          if (!config) {
+            return res.status(400).json({ message: `Task ${item.taskId} not available for this provider` });
+          }
+          
+          // Get task details
+          const allTasks = await storage.getServiceTasks(provider.categoryId);
+          const task = allTasks.find(t => t.id === item.taskId);
+          
+          if (!task) {
+            return res.status(400).json({ message: `Task ${item.taskId} not found` });
+          }
+          
+          const price = parseFloat(config.customPrice || task.estimatedPrice);
+          validatedItems.push({
+            itemType: 'task',
+            menuItemId: null,
+            taskId: task.id,
+            itemName: task.taskName,
+            quantity: 1,
+            unitPrice: price.toString(),
+            totalPrice: price.toString(),
+          });
+          subtotal += price;
+        } else {
+          return res.status(400).json({ message: "Invalid item type or missing IDs" });
+        }
+      }
+      
+      const taxAmount = subtotal * 0.1; // 10% tax
+      const totalAmount = subtotal + taxAmount;
+      
+      const orderData = {
+        clientId: userId,
+        serviceProviderId,
+        bookingId: bookingId || null,
+        orderCode: generateBookingCode(),
+        serviceDate,
+        startTime,
+        endTime: endTime || null,
+        duration: duration || null,
+        status: 'pending' as const,
+        subtotal: subtotal.toString(),
+        taxAmount: taxAmount.toString(),
+        totalAmount: totalAmount.toString(),
+        paymentStatus: 'pending' as const,
+        specialInstructions: specialInstructions || null,
+      };
+      
+      const order = await storage.createServiceOrder(orderData, validatedItems);
+      res.status(201).json(order);
+    } catch (error) {
+      console.error("Error creating service order:", error);
+      res.status(500).json({ message: "Failed to create service order" });
+    }
+  });
+
+  app.get('/api/service-orders/client', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const orders = await storage.getClientServiceOrders(userId);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching client service orders:", error);
+      res.status(500).json({ message: "Failed to fetch service orders" });
+    }
+  });
+
+  app.get('/api/service-orders/provider', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      const orders = await storage.getProviderServiceOrders(provider.id);
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching provider service orders:", error);
+      res.status(500).json({ message: "Failed to fetch service orders" });
+    }
+  });
+
+  app.get('/api/service-orders/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const order = await storage.getServiceOrder(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Service order not found" });
+      }
+      
+      // Check authorization
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (order.clientId !== userId && (!provider || order.serviceProviderId !== provider.id)) {
+        return res.status(403).json({ message: "Not authorized to view this order" });
+      }
+      
+      const items = await storage.getServiceOrderItems(order.id);
+      res.json({ ...order, items });
+    } catch (error) {
+      console.error("Error fetching service order:", error);
+      res.status(500).json({ message: "Failed to fetch service order" });
+    }
+  });
+
+  app.patch('/api/service-orders/:id/status', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { status } = req.body;
+      const order = await storage.getServiceOrder(req.params.id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Service order not found" });
+      }
+      
+      // Check authorization
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider || order.serviceProviderId !== provider.id) {
+        return res.status(403).json({ message: "Not authorized to update this order" });
+      }
+      
+      const updatedOrder = await storage.updateServiceOrderStatus(req.params.id, status);
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating service order status:", error);
+      res.status(500).json({ message: "Failed to update service order status" });
+    }
+  });
+
+  app.patch('/api/service-order-items/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { isCompleted, notes } = req.body;
+      
+      // Verify provider owns this order item
+      const item = await storage.updateServiceOrderItem(req.params.id, {
+        isCompleted: isCompleted !== undefined ? isCompleted : undefined,
+        completedAt: isCompleted ? new Date() : undefined,
+        notes: notes !== undefined ? notes : undefined,
+      });
+      
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating service order item:", error);
+      res.status(500).json({ message: "Failed to update service order item" });
+    }
+  });
+
+  // Provider Availability routes
+  app.get('/api/provider/availability/:providerId', async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      if (!startDate || !endDate) {
+        return res.status(400).json({ message: "Start date and end date are required" });
+      }
+      
+      const availability = await storage.getProviderAvailability(
+        req.params.providerId,
+        startDate as string,
+        endDate as string
+      );
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching provider availability:", error);
+      res.status(500).json({ message: "Failed to fetch provider availability" });
+    }
+  });
+
+  app.post('/api/provider/availability', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      const availabilityData = {
+        ...req.body,
+        serviceProviderId: provider.id,
+      };
+      
+      const availability = await storage.createProviderAvailability(availabilityData);
+      res.status(201).json(availability);
+    } catch (error) {
+      console.error("Error creating provider availability:", error);
+      res.status(500).json({ message: "Failed to create provider availability" });
+    }
+  });
+
+  app.patch('/api/provider/availability/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      const availability = await storage.updateProviderAvailability(req.params.id, req.body);
+      res.json(availability);
+    } catch (error) {
+      console.error("Error updating provider availability:", error);
+      res.status(500).json({ message: "Failed to update provider availability" });
+    }
+  });
+
+  app.delete('/api/provider/availability/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      await storage.deleteProviderAvailability(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting provider availability:", error);
+      res.status(500).json({ message: "Failed to delete provider availability" });
+    }
+  });
+
   // Property services routes
   app.get('/api/properties/:id/services', async (req, res) => {
     try {

@@ -15,6 +15,8 @@ import Booking from "@/pages/booking";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/admin";
 import ProviderConfig from "@/pages/provider-config";
+import ServiceProviderDetails from "@/pages/service-provider-details";
+import BookService from "@/pages/book-service";
 import About from "@/pages/about";
 import Careers from "@/pages/careers";
 import Contact from "@/pages/contact";
@@ -45,6 +47,7 @@ function Router() {
       <Route path="/properties" component={Properties} />
       <Route path="/properties/:id" component={PropertyDetail} />
       <Route path="/services" component={Services} />
+      <Route path="/service-provider/:id" component={ServiceProviderDetails} />
       
       {/* Public informational pages */}
       <Route path="/about" component={About} />
@@ -67,6 +70,7 @@ function Router() {
       {isAuthenticated && (
         <>
           <Route path="/booking" component={Booking} />
+          <Route path="/book-service/:id" component={BookService} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />

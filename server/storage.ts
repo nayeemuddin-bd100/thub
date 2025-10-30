@@ -17,6 +17,9 @@ import {
   menuItems,
   providerTaskConfigs,
   providerMaterials,
+  serviceOrders,
+  serviceOrderItems,
+  providerAvailability,
   type User,
   type UpsertUser,
   type Property,
@@ -47,6 +50,12 @@ import {
   type InsertProviderTaskConfig,
   type ProviderMaterial,
   type InsertProviderMaterial,
+  type ServiceOrder,
+  type InsertServiceOrder,
+  type ServiceOrderItem,
+  type InsertServiceOrderItem,
+  type ProviderAvailability,
+  type InsertProviderAvailability,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";
@@ -140,6 +149,22 @@ export interface IStorage {
   
   // Service Tasks
   getServiceTasks(categoryId: string): Promise<ServiceTask[]>;
+  
+  // Service Orders
+  createServiceOrder(order: InsertServiceOrder, items: InsertServiceOrderItem[]): Promise<ServiceOrder>;
+  getServiceOrder(id: string): Promise<ServiceOrder | undefined>;
+  getServiceOrderByCode(orderCode: string): Promise<ServiceOrder | undefined>;
+  getClientServiceOrders(clientId: string): Promise<ServiceOrder[]>;
+  getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]>;
+  updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder>;
+  getServiceOrderItems(orderId: string): Promise<ServiceOrderItem[]>;
+  updateServiceOrderItem(id: string, updates: Partial<ServiceOrderItem>): Promise<ServiceOrderItem>;
+  
+  // Provider Availability
+  getProviderAvailability(providerId: string, startDate: string, endDate: string): Promise<ProviderAvailability[]>;
+  createProviderAvailability(availability: InsertProviderAvailability): Promise<ProviderAvailability>;
+  updateProviderAvailability(id: string, updates: Partial<InsertProviderAvailability>): Promise<ProviderAvailability>;
+  deleteProviderAvailability(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -191,22 +216,22 @@ export class DatabaseStorage implements IStorage {
     checkIn?: Date;
     checkOut?: Date;
   }): Promise<Property[]> {
-    let query = db.select().from(properties).where(eq(properties.isActive, true));
+    const conditions = [eq(properties.isActive, true)];
     
     if (filters?.location) {
-      query = query.where(like(properties.location, `%${filters.location}%`));
+      conditions.push(like(properties.location, `%${filters.location}%`));
     }
     if (filters?.maxPrice) {
-      query = query.where(lte(properties.pricePerNight, filters.maxPrice.toString()));
+      conditions.push(lte(properties.pricePerNight, filters.maxPrice.toString()));
     }
     if (filters?.minPrice) {
-      query = query.where(gte(properties.pricePerNight, filters.minPrice.toString()));
+      conditions.push(gte(properties.pricePerNight, filters.minPrice.toString()));
     }
     if (filters?.guests) {
-      query = query.where(gte(properties.maxGuests, filters.guests));
+      conditions.push(gte(properties.maxGuests, filters.guests));
     }
     
-    return await query.orderBy(desc(properties.rating));
+    return await db.select().from(properties).where(and(...conditions)).orderBy(desc(properties.rating));
   }
 
   async getProperty(id: string): Promise<Property | undefined> {
@@ -238,16 +263,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getServiceProviders(categoryId?: string, location?: string): Promise<ServiceProvider[]> {
-    let query = db.select().from(serviceProviders).where(eq(serviceProviders.isActive, true));
+    const conditions = [eq(serviceProviders.isActive, true)];
     
     if (categoryId) {
-      query = query.where(eq(serviceProviders.categoryId, categoryId));
+      conditions.push(eq(serviceProviders.categoryId, categoryId));
     }
     if (location) {
-      query = query.where(like(serviceProviders.location, `%${location}%`));
+      conditions.push(like(serviceProviders.location, `%${location}%`));
     }
     
-    return await query.orderBy(desc(serviceProviders.rating));
+    return await db.select().from(serviceProviders).where(and(...conditions)).orderBy(desc(serviceProviders.rating));
   }
 
   async getServiceProvider(id: string): Promise<ServiceProvider | undefined> {
@@ -600,6 +625,95 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(serviceTasks)
       .where(eq(serviceTasks.categoryId, categoryId))
       .orderBy(asc(serviceTasks.taskName));
+  }
+
+  // Service Orders
+  async createServiceOrder(order: InsertServiceOrder, items: InsertServiceOrderItem[]): Promise<ServiceOrder> {
+    const [newOrder] = await db.insert(serviceOrders).values(order).returning();
+    
+    if (items.length > 0) {
+      const itemsWithOrderId = items.map(item => ({
+        ...item,
+        serviceOrderId: newOrder.id,
+      }));
+      await db.insert(serviceOrderItems).values(itemsWithOrderId);
+    }
+    
+    return newOrder;
+  }
+
+  async getServiceOrder(id: string): Promise<ServiceOrder | undefined> {
+    const [order] = await db.select().from(serviceOrders).where(eq(serviceOrders.id, id));
+    return order;
+  }
+
+  async getServiceOrderByCode(orderCode: string): Promise<ServiceOrder | undefined> {
+    const [order] = await db.select().from(serviceOrders).where(eq(serviceOrders.orderCode, orderCode));
+    return order;
+  }
+
+  async getClientServiceOrders(clientId: string): Promise<ServiceOrder[]> {
+    return await db.select().from(serviceOrders)
+      .where(eq(serviceOrders.clientId, clientId))
+      .orderBy(desc(serviceOrders.createdAt));
+  }
+
+  async getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]> {
+    return await db.select().from(serviceOrders)
+      .where(eq(serviceOrders.serviceProviderId, providerId))
+      .orderBy(desc(serviceOrders.createdAt));
+  }
+
+  async updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder> {
+    const [updatedOrder] = await db.update(serviceOrders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(serviceOrders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+
+  async getServiceOrderItems(orderId: string): Promise<ServiceOrderItem[]> {
+    return await db.select().from(serviceOrderItems)
+      .where(eq(serviceOrderItems.serviceOrderId, orderId))
+      .orderBy(asc(serviceOrderItems.createdAt));
+  }
+
+  async updateServiceOrderItem(id: string, updates: Partial<ServiceOrderItem>): Promise<ServiceOrderItem> {
+    const [updatedItem] = await db.update(serviceOrderItems)
+      .set(updates)
+      .where(eq(serviceOrderItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  // Provider Availability
+  async getProviderAvailability(providerId: string, startDate: string, endDate: string): Promise<ProviderAvailability[]> {
+    return await db.select().from(providerAvailability)
+      .where(
+        and(
+          eq(providerAvailability.serviceProviderId, providerId),
+          gte(providerAvailability.date, startDate),
+          lte(providerAvailability.date, endDate)
+        )
+      )
+      .orderBy(asc(providerAvailability.date));
+  }
+
+  async createProviderAvailability(availability: InsertProviderAvailability): Promise<ProviderAvailability> {
+    const [newAvailability] = await db.insert(providerAvailability).values(availability).returning();
+    return newAvailability;
+  }
+
+  async updateProviderAvailability(id: string, updates: Partial<InsertProviderAvailability>): Promise<ProviderAvailability> {
+    const [updatedAvailability] = await db.update(providerAvailability)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(providerAvailability.id, id))
+      .returning();
+    return updatedAvailability;
+  }
+
+  async deleteProviderAvailability(id: string): Promise<void> {
+    await db.delete(providerAvailability).where(eq(providerAvailability.id, id));
   }
 }
 

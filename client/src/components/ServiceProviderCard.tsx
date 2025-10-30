@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
@@ -30,10 +31,11 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
   const availability = Math.random() > 0.5 ? 'Available today' : 'Book now';
   
   return (
-    <Card 
-      data-testid={`card-provider-${provider.id}`}
-      className="bg-card rounded-2xl p-6 border border-border hover:shadow-md transition-all cursor-pointer"
-    >
+    <Link href={`/service-provider/${provider.id}`} data-testid={`link-provider-${provider.id}`}>
+      <Card 
+        data-testid={`card-provider-${provider.id}`}
+        className="bg-card rounded-2xl p-6 border border-border hover:shadow-md transition-all cursor-pointer"
+      >
       <div className="flex items-start space-x-4">
         <img 
           src={avatarUrl}
@@ -71,6 +73,7 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
           </div>
         </div>
       </div>
-    </Card>
+      </Card>
+    </Link>
   );
 }
