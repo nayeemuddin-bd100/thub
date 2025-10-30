@@ -30,7 +30,7 @@ export default function HeroSection() {
   return (
     <section className="relative">
       {/* Hero Background Image */}
-      <div className="h-96 md:h-[500px] relative overflow-hidden">
+      <div className="h-[600px] sm:h-[550px] md:h-[500px] relative overflow-hidden">
         <img 
           src="https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2071&h=1000" 
           alt="Luxury villa with infinity pool" 
@@ -41,16 +41,16 @@ export default function HeroSection() {
 
       {/* Hero Content */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="text-center text-white max-w-4xl mx-auto px-4">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6" data-testid="text-hero-title">
+        <div className="text-center text-white max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight" data-testid="text-hero-title">
             Your Complete Travel Ecosystem
           </h1>
-          <p className="text-xl md:text-2xl mb-8 text-white/90" data-testid="text-hero-subtitle">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 text-white/90 px-2" data-testid="text-hero-subtitle">
             Book stunning accommodations and curated experiences in one seamless platform
           </p>
           
           {/* Search Widget */}
-          <div className="floating-search bg-card rounded-2xl p-6 max-w-4xl mx-auto">
+          <div className="floating-search bg-card rounded-2xl p-4 sm:p-6 max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="text-left">
                 <Label className="block text-sm font-medium text-muted-foreground mb-1">Where</Label>
