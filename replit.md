@@ -76,6 +76,14 @@ TravelHub is a comprehensive travel ecosystem platform that serves as an evoluti
 - ✅ Zero mock/placeholder data throughout the application
 - ✅ Service counts calculated from real database queries
 
+**Next Major Feature**:
+- Comprehensive Service Ordering Flow (see COMPREHENSIVE_SERVICE_ORDERING_FLOW.md)
+- Complete availability calendar system
+- Dynamic pricing configuration
+- Recurring service bookings
+- Real-time service delivery tracking
+- Provider earnings dashboard
+
 **Next Steps for Production**:
 - End-to-end testing with real Stripe test payments
 - Performance optimization (consider caching service counts)
