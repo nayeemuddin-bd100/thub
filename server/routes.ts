@@ -637,6 +637,428 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Provider Configuration Routes
+  app.get('/api/provider/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(404).json({ message: "Provider profile not found" });
+      }
+      res.json(provider);
+    } catch (error) {
+      console.error("Error fetching provider profile:", error);
+      res.status(500).json({ message: "Failed to fetch provider profile" });
+    }
+  });
+
+  app.patch('/api/provider/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(404).json({ message: "Provider profile not found" });
+      }
+      
+      // Only allow updating specific fields, not userId, categoryId, approvalStatus
+      const allowedUpdates = {
+        businessName: req.body.businessName,
+        description: req.body.description,
+        location: req.body.location,
+        whatsappNumber: req.body.whatsappNumber,
+        hourlyRate: req.body.hourlyRate,
+        fixedRate: req.body.fixedRate,
+      };
+      
+      // Remove undefined fields
+      Object.keys(allowedUpdates).forEach(key => 
+        allowedUpdates[key] === undefined && delete allowedUpdates[key]
+      );
+      
+      const updated = await storage.updateServiceProvider(provider.id, allowedUpdates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating provider profile:", error);
+      res.status(500).json({ message: "Failed to update provider profile" });
+    }
+  });
+
+  // Provider Menus
+  app.get('/api/provider/menus/:providerId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      if (provider.id !== req.params.providerId) {
+        return res.status(403).json({ message: "Not authorized to access this provider's menus" });
+      }
+      
+      const menus = await storage.getProviderMenus(req.params.providerId);
+      const menusWithItems = await Promise.all(
+        menus.map(async (menu) => {
+          const items = await storage.getMenuItems(menu.id);
+          return { ...menu, items };
+        })
+      );
+      res.json(menusWithItems);
+    } catch (error) {
+      console.error("Error fetching provider menus:", error);
+      res.status(500).json({ message: "Failed to fetch menus" });
+    }
+  });
+
+  app.post('/api/provider/menus', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Ensure menu is created for the authenticated provider
+      const menuData = {
+        serviceProviderId: provider.id,
+        categoryName: req.body.categoryName,
+        description: req.body.description,
+      };
+      
+      const menu = await storage.createProviderMenu(menuData);
+      res.status(201).json(menu);
+    } catch (error) {
+      console.error("Error creating menu:", error);
+      res.status(500).json({ message: "Failed to create menu" });
+    }
+  });
+
+  app.patch('/api/provider/menus/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership by fetching the menu
+      const menus = await storage.getProviderMenus(provider.id);
+      const menu = menus.find(m => m.id === req.params.id);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found or not authorized" });
+      }
+      
+      const allowedUpdates = {
+        categoryName: req.body.categoryName,
+        description: req.body.description,
+      };
+      
+      Object.keys(allowedUpdates).forEach(key => 
+        allowedUpdates[key] === undefined && delete allowedUpdates[key]
+      );
+      
+      const updated = await storage.updateProviderMenu(req.params.id, allowedUpdates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating menu:", error);
+      res.status(500).json({ message: "Failed to update menu" });
+    }
+  });
+
+  app.delete('/api/provider/menus/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      const menus = await storage.getProviderMenus(provider.id);
+      const menu = menus.find(m => m.id === req.params.id);
+      if (!menu) {
+        return res.status(404).json({ message: "Menu not found or not authorized" });
+      }
+      
+      await storage.deleteProviderMenu(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting menu:", error);
+      res.status(500).json({ message: "Failed to delete menu" });
+    }
+  });
+
+  // Menu Items
+  app.post('/api/provider/menu-items', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify the menu belongs to this provider
+      const menus = await storage.getProviderMenus(provider.id);
+      const menu = menus.find(m => m.id === req.body.menuId);
+      if (!menu) {
+        return res.status(403).json({ message: "Not authorized to add items to this menu" });
+      }
+      
+      const itemData = {
+        menuId: req.body.menuId,
+        dishName: req.body.dishName,
+        description: req.body.description,
+        price: req.body.price,
+        ingredients: req.body.ingredients,
+        dietaryTags: req.body.dietaryTags,
+        photoUrl: req.body.photoUrl,
+      };
+      
+      const item = await storage.createMenuItem(itemData);
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error creating menu item:", error);
+      res.status(500).json({ message: "Failed to create menu item" });
+    }
+  });
+
+  app.patch('/api/provider/menu-items/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership through menu
+      const menus = await storage.getProviderMenus(provider.id);
+      let authorized = false;
+      for (const menu of menus) {
+        const items = await storage.getMenuItems(menu.id);
+        if (items.find(item => item.id === req.params.id)) {
+          authorized = true;
+          break;
+        }
+      }
+      
+      if (!authorized) {
+        return res.status(404).json({ message: "Menu item not found or not authorized" });
+      }
+      
+      const allowedUpdates = {
+        dishName: req.body.dishName,
+        description: req.body.description,
+        price: req.body.price,
+        ingredients: req.body.ingredients,
+        dietaryTags: req.body.dietaryTags,
+        photoUrl: req.body.photoUrl,
+      };
+      
+      Object.keys(allowedUpdates).forEach(key => 
+        allowedUpdates[key] === undefined && delete allowedUpdates[key]
+      );
+      
+      const updated = await storage.updateMenuItem(req.params.id, allowedUpdates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating menu item:", error);
+      res.status(500).json({ message: "Failed to update menu item" });
+    }
+  });
+
+  app.delete('/api/provider/menu-items/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      const menus = await storage.getProviderMenus(provider.id);
+      let authorized = false;
+      for (const menu of menus) {
+        const items = await storage.getMenuItems(menu.id);
+        if (items.find(item => item.id === req.params.id)) {
+          authorized = true;
+          break;
+        }
+      }
+      
+      if (!authorized) {
+        return res.status(404).json({ message: "Menu item not found or not authorized" });
+      }
+      
+      await storage.deleteMenuItem(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting menu item:", error);
+      res.status(500).json({ message: "Failed to delete menu item" });
+    }
+  });
+
+  // Provider Task Configs
+  app.get('/api/provider/tasks/:providerId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      if (provider.id !== req.params.providerId) {
+        return res.status(403).json({ message: "Not authorized to access this provider's task configs" });
+      }
+      
+      const configs = await storage.getProviderTaskConfigs(req.params.providerId);
+      res.json(configs);
+    } catch (error) {
+      console.error("Error fetching task configs:", error);
+      res.status(500).json({ message: "Failed to fetch task configs" });
+    }
+  });
+
+  app.post('/api/provider/tasks', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Ensure task config is created for the authenticated provider
+      const configData = {
+        serviceProviderId: provider.id,
+        taskId: req.body.taskId,
+        isEnabled: req.body.isEnabled,
+        customPrice: req.body.customPrice,
+      };
+      
+      const config = await storage.upsertProviderTaskConfig(configData);
+      res.json(config);
+    } catch (error) {
+      console.error("Error upserting task config:", error);
+      res.status(500).json({ message: "Failed to update task config" });
+    }
+  });
+
+  // Service Tasks
+  app.get('/api/service-tasks/:categoryId', async (req, res) => {
+    try {
+      const tasks = await storage.getServiceTasks(req.params.categoryId);
+      res.json(tasks);
+    } catch (error) {
+      console.error("Error fetching service tasks:", error);
+      res.status(500).json({ message: "Failed to fetch service tasks" });
+    }
+  });
+
+  // Provider Materials
+  app.get('/api/provider/materials/:providerId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      if (provider.id !== req.params.providerId) {
+        return res.status(403).json({ message: "Not authorized to access this provider's materials" });
+      }
+      
+      const materials = await storage.getProviderMaterials(req.params.providerId);
+      res.json(materials);
+    } catch (error) {
+      console.error("Error fetching materials:", error);
+      res.status(500).json({ message: "Failed to fetch materials" });
+    }
+  });
+
+  app.post('/api/provider/materials', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Ensure material is created for the authenticated provider
+      const materialData = {
+        serviceProviderId: provider.id,
+        materialName: req.body.materialName,
+        description: req.body.description,
+        unitPrice: req.body.unitPrice,
+        isProvidedByProvider: req.body.isProvidedByProvider,
+      };
+      
+      const material = await storage.createProviderMaterial(materialData);
+      res.status(201).json(material);
+    } catch (error) {
+      console.error("Error creating material:", error);
+      res.status(500).json({ message: "Failed to create material" });
+    }
+  });
+
+  app.patch('/api/provider/materials/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      const materials = await storage.getProviderMaterials(provider.id);
+      const material = materials.find(m => m.id === req.params.id);
+      if (!material) {
+        return res.status(404).json({ message: "Material not found or not authorized" });
+      }
+      
+      const allowedUpdates = {
+        materialName: req.body.materialName,
+        description: req.body.description,
+        unitPrice: req.body.unitPrice,
+        isProvidedByProvider: req.body.isProvidedByProvider,
+      };
+      
+      Object.keys(allowedUpdates).forEach(key => 
+        allowedUpdates[key] === undefined && delete allowedUpdates[key]
+      );
+      
+      const updated = await storage.updateProviderMaterial(req.params.id, allowedUpdates);
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating material:", error);
+      res.status(500).json({ message: "Failed to update material" });
+    }
+  });
+
+  app.delete('/api/provider/materials/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      // Verify ownership
+      const materials = await storage.getProviderMaterials(provider.id);
+      const material = materials.find(m => m.id === req.params.id);
+      if (!material) {
+        return res.status(404).json({ message: "Material not found or not authorized" });
+      }
+      
+      await storage.deleteProviderMaterial(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting material:", error);
+      res.status(500).json({ message: "Failed to delete material" });
+    }
+  });
+
   // Property services routes
   app.get('/api/properties/:id/services', async (req, res) => {
     try {

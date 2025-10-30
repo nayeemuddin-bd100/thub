@@ -13,6 +13,10 @@ import {
   jobAssignments,
   notifications,
   payments,
+  providerMenus,
+  menuItems,
+  providerTaskConfigs,
+  providerMaterials,
   type User,
   type UpsertUser,
   type Property,
@@ -35,6 +39,14 @@ import {
   type InsertNotification,
   type Payment,
   type InsertPayment,
+  type ProviderMenu,
+  type InsertProviderMenu,
+  type MenuItem,
+  type InsertMenuItem,
+  type ProviderTaskConfig,
+  type InsertProviderTaskConfig,
+  type ProviderMaterial,
+  type InsertProviderMaterial,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";
@@ -102,6 +114,32 @@ export interface IStorage {
     totalBookings: number;
   }>;
   getAllUsers(): Promise<User[]>;
+  
+  // Provider Configuration - Menus
+  getProviderMenus(serviceProviderId: string): Promise<ProviderMenu[]>;
+  createProviderMenu(menu: InsertProviderMenu): Promise<ProviderMenu>;
+  updateProviderMenu(id: string, updates: Partial<InsertProviderMenu>): Promise<ProviderMenu>;
+  deleteProviderMenu(id: string): Promise<void>;
+  
+  // Provider Configuration - Menu Items
+  getMenuItems(menuId: string): Promise<MenuItem[]>;
+  createMenuItem(item: InsertMenuItem): Promise<MenuItem>;
+  updateMenuItem(id: string, updates: Partial<InsertMenuItem>): Promise<MenuItem>;
+  deleteMenuItem(id: string): Promise<void>;
+  
+  // Provider Configuration - Task Configs
+  getProviderTaskConfigs(serviceProviderId: string): Promise<ProviderTaskConfig[]>;
+  upsertProviderTaskConfig(config: InsertProviderTaskConfig): Promise<ProviderTaskConfig>;
+  deleteProviderTaskConfig(id: string): Promise<void>;
+  
+  // Provider Configuration - Materials
+  getProviderMaterials(serviceProviderId: string): Promise<ProviderMaterial[]>;
+  createProviderMaterial(material: InsertProviderMaterial): Promise<ProviderMaterial>;
+  updateProviderMaterial(id: string, updates: Partial<InsertProviderMaterial>): Promise<ProviderMaterial>;
+  deleteProviderMaterial(id: string): Promise<void>;
+  
+  // Service Tasks
+  getServiceTasks(categoryId: string): Promise<ServiceTask[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -459,6 +497,109 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  // Provider Configuration - Menus
+  async getProviderMenus(serviceProviderId: string): Promise<ProviderMenu[]> {
+    return await db.select().from(providerMenus)
+      .where(eq(providerMenus.serviceProviderId, serviceProviderId))
+      .orderBy(asc(providerMenus.createdAt));
+  }
+
+  async createProviderMenu(menu: InsertProviderMenu): Promise<ProviderMenu> {
+    const [newMenu] = await db.insert(providerMenus).values(menu).returning();
+    return newMenu;
+  }
+
+  async updateProviderMenu(id: string, updates: Partial<InsertProviderMenu>): Promise<ProviderMenu> {
+    const [updatedMenu] = await db.update(providerMenus)
+      .set(updates)
+      .where(eq(providerMenus.id, id))
+      .returning();
+    return updatedMenu;
+  }
+
+  async deleteProviderMenu(id: string): Promise<void> {
+    await db.delete(providerMenus).where(eq(providerMenus.id, id));
+  }
+
+  // Provider Configuration - Menu Items
+  async getMenuItems(menuId: string): Promise<MenuItem[]> {
+    return await db.select().from(menuItems)
+      .where(eq(menuItems.menuId, menuId))
+      .orderBy(asc(menuItems.createdAt));
+  }
+
+  async createMenuItem(item: InsertMenuItem): Promise<MenuItem> {
+    const [newItem] = await db.insert(menuItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateMenuItem(id: string, updates: Partial<InsertMenuItem>): Promise<MenuItem> {
+    const [updatedItem] = await db.update(menuItems)
+      .set(updates)
+      .where(eq(menuItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+
+  async deleteMenuItem(id: string): Promise<void> {
+    await db.delete(menuItems).where(eq(menuItems.id, id));
+  }
+
+  // Provider Configuration - Task Configs
+  async getProviderTaskConfigs(serviceProviderId: string): Promise<ProviderTaskConfig[]> {
+    return await db.select().from(providerTaskConfigs)
+      .where(eq(providerTaskConfigs.serviceProviderId, serviceProviderId));
+  }
+
+  async upsertProviderTaskConfig(config: InsertProviderTaskConfig): Promise<ProviderTaskConfig> {
+    const [result] = await db.insert(providerTaskConfigs)
+      .values(config)
+      .onConflictDoUpdate({
+        target: [providerTaskConfigs.serviceProviderId, providerTaskConfigs.taskId],
+        set: {
+          isEnabled: config.isEnabled,
+          customPrice: config.customPrice,
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async deleteProviderTaskConfig(id: string): Promise<void> {
+    await db.delete(providerTaskConfigs).where(eq(providerTaskConfigs.id, id));
+  }
+
+  // Provider Configuration - Materials
+  async getProviderMaterials(serviceProviderId: string): Promise<ProviderMaterial[]> {
+    return await db.select().from(providerMaterials)
+      .where(eq(providerMaterials.serviceProviderId, serviceProviderId))
+      .orderBy(asc(providerMaterials.createdAt));
+  }
+
+  async createProviderMaterial(material: InsertProviderMaterial): Promise<ProviderMaterial> {
+    const [newMaterial] = await db.insert(providerMaterials).values(material).returning();
+    return newMaterial;
+  }
+
+  async updateProviderMaterial(id: string, updates: Partial<InsertProviderMaterial>): Promise<ProviderMaterial> {
+    const [updatedMaterial] = await db.update(providerMaterials)
+      .set(updates)
+      .where(eq(providerMaterials.id, id))
+      .returning();
+    return updatedMaterial;
+  }
+
+  async deleteProviderMaterial(id: string): Promise<void> {
+    await db.delete(providerMaterials).where(eq(providerMaterials.id, id));
+  }
+
+  // Service Tasks
+  async getServiceTasks(categoryId: string): Promise<ServiceTask[]> {
+    return await db.select().from(serviceTasks)
+      .where(eq(serviceTasks.categoryId, categoryId))
+      .orderBy(asc(serviceTasks.taskName));
   }
 }
 
