@@ -24,7 +24,7 @@ export default function Login() {
     },
     onSuccess: async (loginData: any) => {
       // Fetch user data to check role
-      const userResponse = await apiRequest("GET", "/api/auth/user", {});
+      const userResponse = await apiRequest("GET", "/api/auth/user");
       const userData = await userResponse.json();
       queryClient.setQueryData(['/api/auth/user'], userData);
       
