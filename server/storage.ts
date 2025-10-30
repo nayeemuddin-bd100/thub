@@ -114,6 +114,7 @@ export interface IStorage {
   // Property-Service associations
   getPropertyServices(propertyId: string): Promise<ServiceProvider[]>;
   addPropertyService(propertyId: string, serviceProviderId: string): Promise<PropertyService>;
+  removePropertyService(propertyId: string, serviceProviderId: string): Promise<void>;
   
   // Admin statistics
   getAdminStats(): Promise<{
@@ -499,6 +500,14 @@ export class DatabaseStorage implements IStorage {
       serviceProviderId,
     }).returning();
     return propertyService;
+  }
+
+  async removePropertyService(propertyId: string, serviceProviderId: string): Promise<void> {
+    await db.delete(propertyServices)
+      .where(and(
+        eq(propertyServices.propertyId, propertyId),
+        eq(propertyServices.serviceProviderId, serviceProviderId)
+      ));
   }
 
   // Admin statistics

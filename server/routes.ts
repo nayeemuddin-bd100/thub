@@ -1489,6 +1489,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/admin/properties/:id/services', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const { serviceProviderId } = req.body;
+      const propertyService = await storage.addPropertyService(req.params.id, serviceProviderId);
+      res.status(201).json(propertyService);
+    } catch (error) {
+      console.error("Error adding property service:", error);
+      res.status(500).json({ message: "Failed to add property service" });
+    }
+  });
+
+  app.delete('/api/admin/properties/:propertyId/services/:serviceProviderId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      await storage.removePropertyService(req.params.propertyId, req.params.serviceProviderId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing property service:", error);
+      res.status(500).json({ message: "Failed to remove property service" });
+    }
+  });
+
   // Booking routes
   app.post('/api/bookings', requireAuth, async (req: any, res) => {
     try {
