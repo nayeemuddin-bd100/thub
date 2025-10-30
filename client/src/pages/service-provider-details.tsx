@@ -234,7 +234,7 @@ export default function ServiceProviderDetailsPage() {
             </div>
             <div className="flex items-center gap-1" data-testid="provider-rating">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold" data-testid="text-rating">{typeof provider.rating === 'number' ? provider.rating.toFixed(1) : provider.rating || 'N/A'}</span>
+              <span className="font-semibold" data-testid="text-rating">{provider.rating ? Number(provider.rating).toFixed(1) : 'N/A'}</span>
               <span className="text-sm text-gray-500 dark:text-gray-400" data-testid="text-review-count">
                 ({provider.reviewCount} reviews)
               </span>
