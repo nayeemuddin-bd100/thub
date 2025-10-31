@@ -1527,6 +1527,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Provider pricing routes
+  app.get('/api/provider/pricing/:providerId', async (req, res) => {
+    try {
+      const pricing = await storage.getProviderPricing(req.params.providerId);
+      res.json(pricing || {});
+    } catch (error) {
+      console.error("Error fetching provider pricing:", error);
+      res.status(500).json({ message: "Failed to fetch provider pricing" });
+    }
+  });
+
+  app.put('/api/provider/pricing', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const provider = await storage.getServiceProviderByUserId(userId);
+      if (!provider) {
+        return res.status(403).json({ message: "Not authorized as a service provider" });
+      }
+      
+      const pricingData = {
+        serviceProviderId: provider.id,
+        ...req.body,
+      };
+      
+      const pricing = await storage.upsertProviderPricing(pricingData);
+      res.json(pricing);
+    } catch (error) {
+      console.error("Error updating provider pricing:", error);
+      res.status(500).json({ message: "Failed to update provider pricing" });
+    }
+  });
+
   // Property services routes
   app.get('/api/properties/:id/services', async (req, res) => {
     try {
