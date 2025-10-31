@@ -270,9 +270,7 @@ export const menuItems = pgTable("menu_items", {
   servings: integer("servings"),
   price: decimal("price", { precision: 10, scale: 2 }),
   ingredients: jsonb("ingredients").default([]),
-  images: jsonb("images").default([]),
-  isActive: boolean("is_active").default(true),
-  sortOrder: integer("sort_order").default(0),
+  photoUrl: varchar("photo_url"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

@@ -82,7 +82,7 @@ export default function BookServicePage() {
         specialInstructions: data.specialInstructions,
       };
 
-      return await apiRequest('/api/service-orders', 'POST', payload);
+      return await apiRequest('POST', '/api/service-orders', payload);
     },
     onSuccess: (data) => {
       toast({

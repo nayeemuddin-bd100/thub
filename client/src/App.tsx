@@ -51,6 +51,7 @@ function Router() {
       <Route path="/properties/:id" component={PropertyDetail} />
       <Route path="/services" component={Services} />
       <Route path="/service-provider/:id" component={ServiceProviderDetails} />
+      <Route path="/book-service/:id" component={BookService} />
       
       {/* Public informational pages */}
       <Route path="/about" component={About} />
@@ -73,7 +74,6 @@ function Router() {
       {isAuthenticated && (
         <>
           <Route path="/booking" component={Booking} />
-          <Route path="/book-service/:id" component={BookService} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />
