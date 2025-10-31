@@ -266,6 +266,103 @@ export default function ServiceProviderDetailsPage() {
         </CardContent>
       </Card>
 
+      {provider.photoUrls && Array.isArray(provider.photoUrls) && provider.photoUrls.length > 0 && (
+        <Card className="mb-6" data-testid="card-photo-gallery">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="h-5 w-5" />
+              Photo Gallery
+            </CardTitle>
+            <CardDescription>View our work and business environment</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {(provider.photoUrls as string[]).map((url: string, index: number) => (
+                <div
+                  key={index}
+                  className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
+                  data-testid={`gallery-image-${index}`}
+                >
+                  <img
+                    src={url}
+                    alt={`${provider.businessName} - Photo ${index + 1}`}
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                    data-testid={`img-gallery-${index}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {(provider.yearsExperience || (Array.isArray(provider.languages) && provider.languages.length > 0) || (Array.isArray(provider.certifications) && provider.certifications.length > 0) || (Array.isArray(provider.awards) && provider.awards.length > 0)) && (
+        <Card className="mb-6" data-testid="card-provider-extended-info">
+          <CardHeader>
+            <CardTitle>About the Provider</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {provider.yearsExperience && (
+                <div className="flex items-start gap-3" data-testid="provider-experience">
+                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1" />
+                  <div>
+                    <p className="font-semibold">Experience</p>
+                    <p className="text-gray-600 dark:text-gray-300" data-testid="text-years-experience">
+                      {provider.yearsExperience} years in the industry
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {Array.isArray(provider.languages) && provider.languages.length > 0 && (
+                <div className="flex items-start gap-3" data-testid="provider-languages">
+                  <Languages className="h-5 w-5 text-green-600 dark:text-green-400 mt-1" />
+                  <div>
+                    <p className="font-semibold">Languages</p>
+                    <p className="text-gray-600 dark:text-gray-300" data-testid="text-languages">
+                      {(provider.languages as string[]).join(', ')}
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {Array.isArray(provider.certifications) && provider.certifications.length > 0 && (
+                <div className="flex items-start gap-3" data-testid="provider-certifications">
+                  <Award className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-1" />
+                  <div>
+                    <p className="font-semibold">Certifications</p>
+                    <div className="space-y-1" data-testid="list-certifications">
+                      {(provider.certifications as any[]).map((cert: any, index: number) => (
+                        <p key={index} className="text-gray-600 dark:text-gray-300">
+                          • {typeof cert === 'string' ? cert : cert.name}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {Array.isArray(provider.awards) && provider.awards.length > 0 && (
+                <div className="flex items-start gap-3" data-testid="provider-awards">
+                  <Award className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-1" />
+                  <div>
+                    <p className="font-semibold">Awards & Recognition</p>
+                    <div className="space-y-1" data-testid="list-awards">
+                      {(provider.awards as any[]).map((award: any, index: number) => (
+                        <p key={index} className="text-gray-600 dark:text-gray-300">
+                          • {typeof award === 'string' ? award : award.name}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {materials && materials.length > 0 && (
         <Card className="mb-6" data-testid="card-materials">
           <CardHeader>
