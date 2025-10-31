@@ -11,6 +11,7 @@ import { whatsappService } from "./whatsapp";
 import { insertServiceProviderSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import { format } from "date-fns";
 
 const PgSession = connectPg(session);
 
@@ -1458,14 +1459,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/provider/availability/:providerId', async (req, res) => {
     try {
       const { startDate, endDate } = req.query;
-      if (!startDate || !endDate) {
-        return res.status(400).json({ message: "Start date and end date are required" });
-      }
+      
+      // If dates not provided, get availability for next 90 days
+      const start = startDate as string || format(new Date(), 'yyyy-MM-dd');
+      const end = endDate as string || format(new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
       
       const availability = await storage.getProviderAvailability(
         req.params.providerId,
-        startDate as string,
-        endDate as string
+        start,
+        end
       );
       res.json(availability);
     } catch (error) {
