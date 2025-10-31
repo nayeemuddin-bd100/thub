@@ -93,6 +93,14 @@ export const serviceProviders = pgTable("service_providers", {
   isActive: boolean("is_active").default(true),
   rating: decimal("rating", { precision: 3, scale: 2 }).default("0"),
   reviewCount: integer("review_count").default(0),
+  
+  yearsExperience: integer("years_experience"),
+  languages: jsonb("languages").default([]),
+  photoUrls: jsonb("photo_urls").default([]),
+  profilePhotoUrl: varchar("profile_photo_url"),
+  videoUrl: varchar("video_url"),
+  awards: jsonb("awards").default([]),
+  
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -305,6 +313,23 @@ export const providerAvailability = pgTable("provider_availability", {
   isAvailable: boolean("is_available").default(true),
   maxBookings: integer("max_bookings").default(1),
   notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Provider pricing configuration
+export const providerPricing = pgTable("provider_pricing", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).unique().notNull(),
+  minimumOrder: decimal("minimum_order", { precision: 10, scale: 2 }).default("0"),
+  weekendSurcharge: decimal("weekend_surcharge", { precision: 5, scale: 2 }).default("0"),
+  holidaySurcharge: decimal("holiday_surcharge", { precision: 5, scale: 2 }).default("0"),
+  lastMinuteFee: decimal("last_minute_fee", { precision: 10, scale: 2 }).default("0"),
+  earlyBirdDiscount: decimal("early_bird_discount", { precision: 5, scale: 2 }).default("0"),
+  recurringDiscount: decimal("recurring_discount", { precision: 5, scale: 2 }).default("0"),
+  travelFeeFixed: decimal("travel_fee_fixed", { precision: 10, scale: 2 }).default("0"),
+  travelFeePerKm: decimal("travel_fee_per_km", { precision: 10, scale: 2 }).default("0"),
+  materialMarkup: decimal("material_markup", { precision: 5, scale: 2 }).default("0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -576,6 +601,21 @@ export type InsertProviderMaterial = z.infer<typeof insertProviderMaterialSchema
 export type ServiceOrder = typeof serviceOrders.$inferSelect;
 export type ServiceOrderItem = typeof serviceOrderItems.$inferSelect;
 export type ProviderAvailability = typeof providerAvailability.$inferSelect;
+export type ProviderPricing = typeof providerPricing.$inferSelect;
+
+export const insertProviderAvailabilitySchema = createInsertSchema(providerAvailability).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderAvailability = z.infer<typeof insertProviderAvailabilitySchema>;
+
+export const insertProviderPricingSchema = createInsertSchema(providerPricing).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderPricing = z.infer<typeof insertProviderPricingSchema>;
 
 export const insertServiceOrderSchema = createInsertSchema(serviceOrders).omit({
   id: true,
@@ -590,10 +630,3 @@ export const insertServiceOrderItemSchema = createInsertSchema(serviceOrderItems
   createdAt: true,
 });
 export type InsertServiceOrderItem = z.infer<typeof insertServiceOrderItemSchema>;
-
-export const insertProviderAvailabilitySchema = createInsertSchema(providerAvailability).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-export type InsertProviderAvailability = z.infer<typeof insertProviderAvailabilitySchema>;
