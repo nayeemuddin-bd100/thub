@@ -27,8 +27,6 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
   const rate = provider.hourlyRate ? 
     `$${parseFloat(provider.hourlyRate).toLocaleString()}/hour` :
     `$${parseFloat(provider.fixedRate || '0').toLocaleString()}/service`;
-
-  const availability = Math.random() > 0.5 ? 'Available today' : 'Book now';
   
   return (
     <Link href={`/service-provider/${provider.id}`} data-testid={`link-provider-${provider.id}`}>
@@ -63,13 +61,15 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
             <span className="text-lg font-bold text-foreground" data-testid={`text-provider-rate-${provider.id}`}>
               {rate}
             </span>
-            <Badge 
-              variant={availability === 'Available today' ? 'default' : 'secondary'}
-              className="text-xs"
-              data-testid={`badge-availability-${provider.id}`}
-            >
-              {availability}
-            </Badge>
+            {provider.isVerified && (
+              <Badge 
+                variant="default"
+                className="text-xs"
+                data-testid={`badge-verified-${provider.id}`}
+              >
+                Verified
+              </Badge>
+            )}
           </div>
         </div>
       </div>

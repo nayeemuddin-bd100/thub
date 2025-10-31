@@ -15,15 +15,6 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
   const [isMuted, setIsMuted] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Mock video data if no videos provided
-  const mockVideos = [
-    "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4",
-    "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4",
-    "https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_5mb.mp4",
-  ];
-
-  const displayVideos = videos.length > 0 ? videos : mockVideos;
-
   const handleVideoSelect = (index: number) => {
     setSelectedVideoIndex(index);
     setIsPlaying(false);
@@ -37,7 +28,7 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
     setIsMuted(!isMuted);
   };
 
-  if (displayVideos.length === 0) {
+  if (videos.length === 0) {
     return null;
   }
 
@@ -48,7 +39,7 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
           Video Tour
         </h2>
         <span className="text-sm text-muted-foreground" data-testid="text-video-count">
-          {displayVideos.length} videos
+          {videos.length} videos
         </span>
       </div>
 
@@ -63,7 +54,7 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
             autoPlay={isPlaying}
             data-testid="video-player"
           >
-            <source src={displayVideos[selectedVideoIndex]} type="video/mp4" />
+            <source src={videos[selectedVideoIndex]} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
 
@@ -108,7 +99,7 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
                       muted={isMuted}
                       data-testid="video-player-fullscreen"
                     >
-                      <source src={displayVideos[selectedVideoIndex]} type="video/mp4" />
+                      <source src={videos[selectedVideoIndex]} type="video/mp4" />
                       Your browser does not support the video tag.
                     </video>
                   </div>
@@ -131,9 +122,9 @@ export default function VideoGallery({ videos, title }: VideoGalleryProps) {
         </div>
 
         {/* Video Thumbnails */}
-        {displayVideos.length > 1 && (
+        {videos.length > 1 && (
           <div className="grid grid-cols-3 gap-3">
-            {displayVideos.map((video, index) => (
+            {videos.map((video, index) => (
               <div
                 key={index}
                 className={`relative aspect-video cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
