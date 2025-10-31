@@ -20,6 +20,7 @@ import {
   serviceOrders,
   serviceOrderItems,
   providerAvailability,
+  providerPricing,
   type User,
   type UpsertUser,
   type Property,
@@ -56,6 +57,8 @@ import {
   type InsertServiceOrderItem,
   type ProviderAvailability,
   type InsertProviderAvailability,
+  type ProviderPricing,
+  type InsertProviderPricing,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";
@@ -167,6 +170,19 @@ export interface IStorage {
   createProviderAvailability(availability: InsertProviderAvailability): Promise<ProviderAvailability>;
   updateProviderAvailability(id: string, updates: Partial<InsertProviderAvailability>): Promise<ProviderAvailability>;
   deleteProviderAvailability(id: string): Promise<void>;
+  
+  // Provider Pricing
+  getProviderPricing(providerId: string): Promise<ProviderPricing | undefined>;
+  upsertProviderPricing(pricing: InsertProviderPricing): Promise<ProviderPricing>;
+  calculateServicePrice(providerId: string, basePrice: number, options: {
+    isWeekend?: boolean;
+    isHoliday?: boolean;
+    isLastMinute?: boolean;
+    isEarlyBird?: boolean;
+    isRecurring?: boolean;
+    distance?: number;
+    materialsCost?: number;
+  }): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -732,6 +748,85 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProviderAvailability(id: string): Promise<void> {
     await db.delete(providerAvailability).where(eq(providerAvailability.id, id));
+  }
+
+  // Provider Pricing
+  async getProviderPricing(providerId: string): Promise<ProviderPricing | undefined> {
+    const [pricing] = await db.select().from(providerPricing)
+      .where(eq(providerPricing.serviceProviderId, providerId));
+    return pricing;
+  }
+
+  async upsertProviderPricing(pricing: InsertProviderPricing): Promise<ProviderPricing> {
+    const [result] = await db.insert(providerPricing)
+      .values(pricing)
+      .onConflictDoUpdate({
+        target: providerPricing.serviceProviderId,
+        set: {
+          ...pricing,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async calculateServicePrice(
+    providerId: string,
+    basePrice: number,
+    options: {
+      isWeekend?: boolean;
+      isHoliday?: boolean;
+      isLastMinute?: boolean;
+      isEarlyBird?: boolean;
+      isRecurring?: boolean;
+      distance?: number;
+      materialsCost?: number;
+    }
+  ): Promise<number> {
+    const pricing = await this.getProviderPricing(providerId);
+    
+    if (!pricing) {
+      return basePrice;
+    }
+
+    let finalPrice = basePrice;
+
+    if (options.isWeekend && pricing.weekendSurcharge) {
+      finalPrice += (basePrice * parseFloat(pricing.weekendSurcharge)) / 100;
+    }
+
+    if (options.isHoliday && pricing.holidaySurcharge) {
+      finalPrice += (basePrice * parseFloat(pricing.holidaySurcharge)) / 100;
+    }
+
+    if (options.isLastMinute && pricing.lastMinuteFee) {
+      finalPrice += parseFloat(pricing.lastMinuteFee);
+    }
+
+    if (options.isEarlyBird && pricing.earlyBirdDiscount) {
+      finalPrice -= (basePrice * parseFloat(pricing.earlyBirdDiscount)) / 100;
+    }
+
+    if (options.isRecurring && pricing.recurringDiscount) {
+      finalPrice -= (basePrice * parseFloat(pricing.recurringDiscount)) / 100;
+    }
+
+    if (options.distance) {
+      if (pricing.travelFeeFixed) {
+        finalPrice += parseFloat(pricing.travelFeeFixed);
+      }
+      if (pricing.travelFeePerKm) {
+        finalPrice += options.distance * parseFloat(pricing.travelFeePerKm);
+      }
+    }
+
+    if (options.materialsCost && pricing.materialMarkup) {
+      const markup = (options.materialsCost * parseFloat(pricing.materialMarkup)) / 100;
+      finalPrice += options.materialsCost + markup;
+    }
+
+    return finalPrice;
   }
 }
 
