@@ -24,8 +24,9 @@ import {
   ImageIcon
 } from "lucide-react";
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import type { ServiceProvider } from "@shared/schema";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 interface MenuItemData {
   id: string;
@@ -97,6 +98,18 @@ export default function ServiceProviderDetailsPage() {
     createdAt: string;
   }>>({
     queryKey: ['/api/service-providers', providerId, 'reviews'],
+    enabled: !!providerId,
+  });
+
+  const { data: availability } = useQuery<Array<{
+    id: string;
+    date: string;
+    isAvailable: boolean;
+    startTime: string | null;
+    endTime: string | null;
+    maxBookings: number | null;
+  }>>({
+    queryKey: ['/api/provider/availability', providerId],
     enabled: !!providerId,
   });
 
@@ -362,6 +375,88 @@ export default function ServiceProviderDetailsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="mb-6" data-testid="card-availability-calendar">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Availability Calendar
+          </CardTitle>
+          <CardDescription>
+            View available dates for booking this provider
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <CalendarComponent
+                mode="single"
+                selected={selectedDate ? parseISO(selectedDate) : undefined}
+                onSelect={(date) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : null)}
+                modifiers={{
+                  available: availability?.filter(a => a.isAvailable).map(a => parseISO(a.date)) || [],
+                  unavailable: availability?.filter(a => !a.isAvailable).map(a => parseISO(a.date)) || [],
+                }}
+                modifiersStyles={{
+                  available: {
+                    backgroundColor: 'rgb(34, 197, 94)',
+                    color: 'white',
+                    fontWeight: 'bold',
+                  },
+                  unavailable: {
+                    backgroundColor: 'rgb(239, 68, 68)',
+                    color: 'white',
+                    opacity: 0.6,
+                  },
+                }}
+                className="rounded-md border"
+                data-testid="availability-calendar"
+              />
+            </div>
+            <div className="md:w-64 space-y-4">
+              <div className="space-y-2">
+                <h3 className="font-semibold">Legend</h3>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded" />
+                    <span className="text-sm">Available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 opacity-60 rounded" />
+                    <span className="text-sm">Unavailable</span>
+                  </div>
+                </div>
+              </div>
+              
+              {selectedDate && availability && (
+                <div className="border-t pt-4">
+                  <h3 className="font-semibold mb-2">Selected Date</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="text-selected-date">
+                    {format(parseISO(selectedDate), 'MMMM d, yyyy')}
+                  </p>
+                  {(() => {
+                    const dayAvailability = availability.find(a => a.date === selectedDate);
+                    return dayAvailability ? (
+                      <div className="mt-2">
+                        <Badge variant={dayAvailability.isAvailable ? "default" : "destructive"} data-testid="badge-availability-status">
+                          {dayAvailability.isAvailable ? 'Available' : 'Unavailable'}
+                        </Badge>
+                        {dayAvailability.isAvailable && dayAvailability.startTime && dayAvailability.endTime && (
+                          <p className="text-sm mt-2 text-gray-600 dark:text-gray-300" data-testid="text-time-slots">
+                            {dayAvailability.startTime} - {dayAvailability.endTime}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500 mt-2">No information available</p>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {materials && materials.length > 0 && (
         <Card className="mb-6" data-testid="card-materials">
