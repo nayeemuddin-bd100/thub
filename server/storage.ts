@@ -103,6 +103,7 @@ export interface IStorage {
   getBookingByCode(code: string): Promise<Booking | undefined>;
   getUserBookings(userId: string): Promise<Booking[]>;
   updateBookingStatus(id: string, status: string): Promise<Booking>;
+  updateBookingPaymentStatus(id: string, paymentStatus: string): Promise<Booking>;
   
   // Review operations
   createReview(review: InsertReview): Promise<Review>;
@@ -393,6 +394,14 @@ export class DatabaseStorage implements IStorage {
     const [updatedBooking] = await db
       .update(bookings)
       .set({ status, updatedAt: new Date() })
+      .where(eq(bookings.id, id))
+      .returning();
+    return updatedBooking;
+  }
+
+  async updateBookingPaymentStatus(id: string, paymentStatus: string): Promise<Booking> {
+    const [updatedBooking] = await db.update(bookings)
+      .set({ paymentStatus, updatedAt: new Date() })
       .where(eq(bookings.id, id))
       .returning();
     return updatedBooking;

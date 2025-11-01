@@ -1786,6 +1786,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post('/api/bookings/:id/payment-intent', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const booking = await storage.getBooking(req.params.id);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Verify the user is the client who created the booking
+      if (booking.clientId !== userId) {
+        return res.status(403).json({ message: "Not authorized to pay for this booking" });
+      }
+      
+      // Only allow payment if booking is confirmed and payment is pending
+      if (booking.status !== 'confirmed') {
+        return res.status(400).json({ message: "Booking must be confirmed before payment" });
+      }
+      
+      if (booking.paymentStatus === 'paid') {
+        return res.status(400).json({ message: "Booking has already been paid" });
+      }
+      
+      // Create Stripe payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(parseFloat(booking.totalAmount) * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          bookingId: booking.id,
+          bookingCode: booking.bookingCode,
+        },
+      });
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  app.post('/api/bookings/:id/confirm-payment', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { paymentIntentId } = req.body;
+      const booking = await storage.getBooking(req.params.id);
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      // Verify the user is the client who created the booking
+      if (booking.clientId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      // Verify payment with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.bookingId === booking.id) {
+        // Update payment status in database
+        await storage.updateBookingPaymentStatus(booking.id, 'paid');
+        res.json({ success: true, message: "Payment confirmed" });
+      } else {
+        res.status(400).json({ message: "Payment verification failed" });
+      }
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ message: "Failed to confirm payment" });
+    }
+  });
+
   // Review routes
   app.post('/api/reviews', requireAuth, async (req: any, res) => {
     try {
