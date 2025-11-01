@@ -44,6 +44,21 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, and task completions.
 - **Stripe Payment Integration**: Complete payment flow with secure intent creation, UI, and status updates.
 - **Server-side Price Validation**: Critical security feature to recalculate all prices from authoritative database sources, ignore client-supplied pricing, and validate items belong to the specified provider, preventing tampering and injection attacks.
+- **Immediate Payment Flow**: Service orders are auto-confirmed upon creation to enable immediate payment, eliminating wait time for provider confirmation.
+
+## Payment Flow
+### Service Order Payment
+1. **Order Creation**: Client selects services and places order → Order created with status='confirmed' (auto-confirmed for immediate payment)
+2. **Automatic Redirect**: After successful order placement, client automatically redirected to payment page (`/pay-service-order/:orderId`) after 1.5 second delay
+3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates order is confirmed and unpaid
+4. **Payment Completion**: Upon successful payment, order's paymentStatus updated to 'paid'
+5. **Order Fulfillment**: Provider delivers service on scheduled date
+
+### Key Implementation Details
+- Orders created with `status='confirmed'` immediately (no provider pre-approval needed)
+- Payment requires: order status = 'confirmed' AND paymentStatus = 'pending'
+- Redirect includes order code in success toast: "Your order code is XXX. Redirecting to payment..."
+- Payment page includes loading states, error handling, and security notices
 
 # External Dependencies
 
