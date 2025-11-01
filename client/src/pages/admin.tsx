@@ -106,6 +106,28 @@ export default function AdminDashboard() {
     },
   });
 
+  // Update service order status mutation
+  const updateServiceOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      const response = await apiRequest('PATCH', `/api/admin/service-orders/${orderId}/status`, { status });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/service-orders'] });
+      toast({
+        title: "Success",
+        description: "Service order status updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update service order status",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Property form state
   const [propertyForm, setPropertyForm] = useState({
     title: '',
@@ -1594,17 +1616,25 @@ export default function AdminDashboard() {
                             <h3 className="font-semibold text-lg text-foreground" data-testid={`order-code-${order.id}`}>
                               Order: {order.orderCode}
                             </h3>
-                            <Badge 
-                              variant={
-                                order.status === 'completed' ? 'default' : 
-                                order.status === 'cancelled' ? 'destructive' : 
-                                order.status === 'in_progress' ? 'default' : 
-                                'secondary'
-                              }
-                              data-testid={`badge-status-${order.id}`}
+                            <Select
+                              value={order.status}
+                              onValueChange={(value) => updateServiceOrderStatusMutation.mutate({ 
+                                orderId: order.id, 
+                                status: value 
+                              })}
+                              disabled={updateServiceOrderStatusMutation.isPending}
                             >
-                              {order.status}
-                            </Badge>
+                              <SelectTrigger className="w-[140px] h-7" data-testid={`select-status-${order.id}`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pending">Pending</SelectItem>
+                                <SelectItem value="confirmed">Confirmed</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="completed">Completed</SelectItem>
+                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
