@@ -1731,7 +1731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         servicesTotal: servicesTotal.toString(),
         discountAmount: discountAmount.toString(),
         totalAmount: totalAmount.toString(),
-        status: 'pending' as const,
+        status: 'confirmed' as const, // Auto-confirm for immediate payment
         paymentStatus: 'pending' as const,
       };
       

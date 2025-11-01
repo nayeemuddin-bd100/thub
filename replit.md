@@ -54,11 +54,20 @@ Preferred communication style: Simple, everyday language.
 4. **Payment Completion**: Upon successful payment, order's paymentStatus updated to 'paid'
 5. **Order Fulfillment**: Provider delivers service on scheduled date
 
+### Property Booking Payment
+1. **Booking Creation**: Client selects property and dates → Booking created with status='confirmed' (auto-confirmed for immediate payment)
+2. **Automatic Redirect**: After successful booking, client automatically redirected to payment page (`/pay-booking/:bookingId`) after 1.5 second delay
+3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates booking is confirmed and unpaid
+4. **Payment Completion**: Upon successful payment, booking's paymentStatus updated to 'paid'
+5. **Property Access**: Client receives booking confirmation with property access details
+
 ### Key Implementation Details
-- Orders created with `status='confirmed'` immediately (no provider pre-approval needed)
-- Payment requires: order status = 'confirmed' AND paymentStatus = 'pending'
-- Redirect includes order code in success toast: "Your order code is XXX. Redirecting to payment..."
-- Payment page includes loading states, error handling, and security notices
+- Both service orders and property bookings created with `status='confirmed'` immediately (no provider/owner pre-approval needed)
+- Payment requires: status = 'confirmed' AND paymentStatus = 'pending'
+- Redirect includes booking/order code in success toast: "Your booking code is XXX. Redirecting to payment..."
+- Payment pages include loading states, error handling, and security notices
+- Stripe payment intents created server-side for security
+- Payment verification completed server-side before updating payment status
 
 # External Dependencies
 

@@ -91,16 +91,20 @@ export default function Booking() {
 
   const createBookingMutation = useMutation({
     mutationFn: async (booking: any) => {
-      return await apiRequest("POST", "/api/bookings", booking);
+      const response = await apiRequest("POST", "/api/bookings", booking);
+      return await response.json();
     },
-    onSuccess: async (response) => {
-      const booking = await response.json();
+    onSuccess: (booking) => {
       toast({
         title: "Booking Confirmed!",
-        description: `Your booking code is ${booking.bookingCode}`,
+        description: `Your booking code is ${booking.bookingCode}. Redirecting to payment...`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      window.location.href = `/dashboard?tab=bookings&booking=${booking.id}`;
+      
+      // Redirect to payment page after a short delay to show the success message
+      setTimeout(() => {
+        window.location.href = `/pay-booking/${booking.id}`;
+      }, 1500);
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
