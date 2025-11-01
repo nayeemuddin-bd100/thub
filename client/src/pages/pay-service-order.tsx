@@ -72,7 +72,22 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
   return (
     <form onSubmit={handleSubmit} data-testid="form-payment">
       <div className="space-y-6">
-        <PaymentElement />
+        <div className="min-h-[200px]">
+          {!stripe ? (
+            <div className="flex items-center justify-center h-40">
+              <div className="text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-sm text-muted-foreground">Loading payment form...</p>
+              </div>
+            </div>
+          ) : (
+            <PaymentElement 
+              options={{
+                layout: 'tabs'
+              }}
+            />
+          )}
+        </div>
         <div className="flex gap-3">
           <Link href="/my-service-orders">
             <Button type="button" variant="outline" className="flex-1" data-testid="button-back">
@@ -132,15 +147,30 @@ export default function PayServiceOrder() {
 
         // Create payment intent
         const paymentRes = await apiRequest('POST', `/api/service-orders/${orderId}/payment-intent`, {});
+        
+        if (!paymentRes.ok) {
+          const errorData = await paymentRes.json();
+          throw new Error(errorData.message || 'Failed to create payment intent');
+        }
+        
         const paymentData = await paymentRes.json();
+        
+        if (!paymentData.clientSecret) {
+          throw new Error('Payment initialization failed - no client secret received');
+        }
+        
         setClientSecret(paymentData.clientSecret);
       } catch (error: any) {
+        console.error('Payment initialization error:', error);
         toast({
-          title: "Error",
-          description: error.message || "Failed to initialize payment",
+          title: "Payment Initialization Failed",
+          description: error.message || "Failed to initialize payment. Please try again or contact support.",
           variant: "destructive",
         });
-        setLocation('/my-service-orders');
+        // Don't redirect immediately - show error on payment page
+        setTimeout(() => {
+          setLocation('/my-service-orders');
+        }, 3000);
       } finally {
         setIsLoading(false);
       }
@@ -164,20 +194,35 @@ export default function PayServiceOrder() {
     );
   }
 
-  if (!clientSecret) {
+  if (!clientSecret && !isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <Card>
-            <CardContent className="py-12">
-              <div className="text-center">
-                <p className="text-muted-foreground mb-4">Unable to process payment</p>
-                <Link href="/my-service-orders">
-                  <Button data-testid="button-back-to-orders">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Orders
-                  </Button>
-                </Link>
+            <CardHeader>
+              <CardTitle className="text-destructive">Payment Not Available</CardTitle>
+              <CardDescription>We couldn't initialize the payment for this order</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Possible reasons:</strong>
+                  </p>
+                  <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
+                    <li>This order may not be confirmed yet</li>
+                    <li>Payment has already been processed</li>
+                    <li>There was a technical error connecting to the payment processor</li>
+                  </ul>
+                </div>
+                <div className="text-center">
+                  <Link href="/my-service-orders">
+                    <Button data-testid="button-back-to-orders">
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back to My Orders
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -220,19 +265,32 @@ export default function PayServiceOrder() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Payment Details</CardTitle>
-            <CardDescription>Enter your payment information securely</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Payment Details
+            </CardTitle>
+            <CardDescription>Enter your payment information securely via Stripe</CardDescription>
           </CardHeader>
           <CardContent>
-            <Elements stripe={stripePromise} options={{ clientSecret }}>
-              <PaymentForm orderId={orderId!} />
-            </Elements>
+            {!clientSecret ? (
+              <div className="flex items-center justify-center h-40">
+                <div className="text-center">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p className="text-sm text-muted-foreground">Initializing secure payment...</p>
+                </div>
+              </div>
+            ) : (
+              <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <PaymentForm orderId={orderId!} />
+              </Elements>
+            )}
           </CardContent>
         </Card>
 
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground text-center">
-            <strong>Secure Payment:</strong> All transactions are encrypted and processed securely by Stripe.
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
+            <strong>🔒 Secure Payment:</strong> All transactions are encrypted and processed securely by Stripe. 
+            We never store your payment information.
           </p>
         </div>
       </div>
