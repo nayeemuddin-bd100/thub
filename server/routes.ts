@@ -1965,6 +1965,390 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ============ FAVORITES ENDPOINTS ============
+  // Add to favorites
+  app.post('/api/favorites', requireAuth, async (req: any, res) => {
+    try {
+      const { favoriteType, propertyId, serviceProviderId } = req.body;
+      
+      const favorite = await storage.addFavorite({
+        userId: req.user.id,
+        favoriteType,
+        propertyId,
+        serviceProviderId,
+      });
+      
+      res.status(201).json(favorite);
+    } catch (error) {
+      console.error("Error adding favorite:", error);
+      res.status(500).json({ message: "Failed to add favorite" });
+    }
+  });
+
+  // Remove from favorites
+  app.delete('/api/favorites/:id', requireAuth, async (req: any, res) => {
+    try {
+      await storage.removeFavorite(req.params.id, req.user.id);
+      res.json({ message: "Favorite removed successfully" });
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      res.status(500).json({ message: "Failed to remove favorite" });
+    }
+  });
+
+  // Get user's favorites
+  app.get('/api/favorites', requireAuth, async (req: any, res) => {
+    try {
+      const favorites = await storage.getUserFavorites(req.user.id);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error getting favorites:", error);
+      res.status(500).json({ message: "Failed to get favorites" });
+    }
+  });
+
+  // ============ PROMOTIONAL CODES ENDPOINTS ============
+  // Validate promo code
+  app.post('/api/promo-codes/validate', requireAuth, async (req: any, res) => {
+    try {
+      const { code, bookingId, serviceOrderId } = req.body;
+      
+      const result = await storage.validatePromoCode(code, req.user.id, bookingId, serviceOrderId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error validating promo code:", error);
+      res.status(500).json({ message: "Failed to validate promo code" });
+    }
+  });
+
+  // Admin: Create promo code
+  app.post('/api/admin/promo-codes', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const promoCode = await storage.createPromoCode(req.body);
+      res.status(201).json(promoCode);
+    } catch (error) {
+      console.error("Error creating promo code:", error);
+      res.status(500).json({ message: "Failed to create promo code" });
+    }
+  });
+
+  // Admin: Get all promo codes
+  app.get('/api/admin/promo-codes', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const promoCodes = await storage.getAllPromoCodes();
+      res.json(promoCodes);
+    } catch (error) {
+      console.error("Error getting promo codes:", error);
+      res.status(500).json({ message: "Failed to get promo codes" });
+    }
+  });
+
+  // ============ LOYALTY POINTS ENDPOINTS ============
+  // Get user loyalty points
+  app.get('/api/loyalty-points', requireAuth, async (req: any, res) => {
+    try {
+      const loyaltyPoints = await storage.getUserLoyaltyPoints(req.user.id);
+      res.json(loyaltyPoints);
+    } catch (error) {
+      console.error("Error getting loyalty points:", error);
+      res.status(500).json({ message: "Failed to get loyalty points" });
+    }
+  });
+
+  // Get loyalty points history
+  app.get('/api/loyalty-points/history', requireAuth, async (req: any, res) => {
+    try {
+      const history = await storage.getLoyaltyPointsHistory(req.user.id);
+      res.json(history);
+    } catch (error) {
+      console.error("Error getting loyalty points history:", error);
+      res.status(500).json({ message: "Failed to get loyalty points history" });
+    }
+  });
+
+  // ============ BOOKING CANCELLATION ENDPOINTS ============
+  // Request booking cancellation
+  app.post('/api/bookings/:id/cancel', requireAuth, async (req: any, res) => {
+    try {
+      const { reason } = req.body;
+      
+      const cancellation = await storage.requestBookingCancellation(
+        req.params.id,
+        req.user.id,
+        reason
+      );
+      
+      res.status(201).json(cancellation);
+    } catch (error) {
+      console.error("Error requesting cancellation:", error);
+      res.status(500).json({ message: "Failed to request cancellation" });
+    }
+  });
+
+  // Admin: Approve/reject cancellation
+  app.patch('/api/admin/cancellations/:id', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { status, rejectionReason } = req.body;
+      
+      const cancellation = await storage.updateCancellationStatus(
+        req.params.id,
+        status,
+        req.user.id,
+        rejectionReason
+      );
+      
+      res.json(cancellation);
+    } catch (error) {
+      console.error("Error updating cancellation:", error);
+      res.status(500).json({ message: "Failed to update cancellation" });
+    }
+  });
+
+  // ============ TRIP PLANS ENDPOINTS ============
+  // Create trip plan
+  app.post('/api/trip-plans', requireAuth, async (req: any, res) => {
+    try {
+      const tripPlan = await storage.createTripPlan({
+        ...req.body,
+        userId: req.user.id,
+      });
+      
+      res.status(201).json(tripPlan);
+    } catch (error) {
+      console.error("Error creating trip plan:", error);
+      res.status(500).json({ message: "Failed to create trip plan" });
+    }
+  });
+
+  // Get user's trip plans
+  app.get('/api/trip-plans', requireAuth, async (req: any, res) => {
+    try {
+      const tripPlans = await storage.getUserTripPlans(req.user.id);
+      res.json(tripPlans);
+    } catch (error) {
+      console.error("Error getting trip plans:", error);
+      res.status(500).json({ message: "Failed to get trip plans" });
+    }
+  });
+
+  // Get trip plan details
+  app.get('/api/trip-plans/:id', requireAuth, async (req: any, res) => {
+    try {
+      const tripPlan = await storage.getTripPlanWithItems(req.params.id, req.user.id);
+      res.json(tripPlan);
+    } catch (error) {
+      console.error("Error getting trip plan:", error);
+      res.status(500).json({ message: "Failed to get trip plan" });
+    }
+  });
+
+  // Add item to trip plan
+  app.post('/api/trip-plans/:id/items', requireAuth, async (req: any, res) => {
+    try {
+      const item = await storage.addTripPlanItem({
+        ...req.body,
+        tripPlanId: req.params.id,
+      });
+      
+      res.status(201).json(item);
+    } catch (error) {
+      console.error("Error adding trip plan item:", error);
+      res.status(500).json({ message: "Failed to add trip plan item" });
+    }
+  });
+
+  // ============ SERVICE PACKAGES ENDPOINTS ============
+  // Provider: Create service package
+  app.post('/api/provider/packages', requireAuth, async (req: any, res) => {
+    try {
+      const provider = await storage.getProviderByUserId(req.user.id);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider profile not found" });
+      }
+
+      const package_ = await storage.createServicePackage({
+        ...req.body,
+        serviceProviderId: provider.id,
+      });
+      
+      res.status(201).json(package_);
+    } catch (error) {
+      console.error("Error creating service package:", error);
+      res.status(500).json({ message: "Failed to create service package" });
+    }
+  });
+
+  // Get provider's service packages
+  app.get('/api/provider/packages/:providerId', async (req, res) => {
+    try {
+      const packages = await storage.getProviderPackages(req.params.providerId);
+      res.json(packages);
+    } catch (error) {
+      console.error("Error getting service packages:", error);
+      res.status(500).json({ message: "Failed to get service packages" });
+    }
+  });
+
+  // ============ PROVIDER EARNINGS ENDPOINTS ============
+  // Provider: Get earnings dashboard
+  app.get('/api/provider/earnings', requireAuth, async (req: any, res) => {
+    try {
+      const provider = await storage.getProviderByUserId(req.user.id);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider profile not found" });
+      }
+
+      const earnings = await storage.getProviderEarnings(provider.id);
+      res.json(earnings);
+    } catch (error) {
+      console.error("Error getting earnings:", error);
+      res.status(500).json({ message: "Failed to get earnings" });
+    }
+  });
+
+  // Provider: Request payout
+  app.post('/api/provider/payouts', requireAuth, async (req: any, res) => {
+    try {
+      const provider = await storage.getProviderByUserId(req.user.id);
+      if (!provider) {
+        return res.status(404).json({ message: "Service provider profile not found" });
+      }
+
+      const payout = await storage.requestPayout({
+        ...req.body,
+        serviceProviderId: provider.id,
+      });
+      
+      res.status(201).json(payout);
+    } catch (error) {
+      console.error("Error requesting payout:", error);
+      res.status(500).json({ message: "Failed to request payout" });
+    }
+  });
+
+  // ============ DISPUTES ENDPOINTS ============
+  // Create dispute
+  app.post('/api/disputes', requireAuth, async (req: any, res) => {
+    try {
+      const dispute = await storage.createDispute({
+        ...req.body,
+        raisedBy: req.user.id,
+      });
+      
+      res.status(201).json(dispute);
+    } catch (error) {
+      console.error("Error creating dispute:", error);
+      res.status(500).json({ message: "Failed to create dispute" });
+    }
+  });
+
+  // Get user's disputes
+  app.get('/api/disputes', requireAuth, async (req: any, res) => {
+    try {
+      const disputes = await storage.getUserDisputes(req.user.id);
+      res.json(disputes);
+    } catch (error) {
+      console.error("Error getting disputes:", error);
+      res.status(500).json({ message: "Failed to get disputes" });
+    }
+  });
+
+  // Admin: Get all disputes
+  app.get('/api/admin/disputes', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const disputes = await storage.getAllDisputes();
+      res.json(disputes);
+    } catch (error) {
+      console.error("Error getting disputes:", error);
+      res.status(500).json({ message: "Failed to get disputes" });
+    }
+  });
+
+  // Admin: Resolve dispute
+  app.patch('/api/admin/disputes/:id/resolve', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { resolution } = req.body;
+      
+      const dispute = await storage.resolveDispute(
+        req.params.id,
+        resolution,
+        req.user.id
+      );
+      
+      res.json(dispute);
+    } catch (error) {
+      console.error("Error resolving dispute:", error);
+      res.status(500).json({ message: "Failed to resolve dispute" });
+    }
+  });
+
+  // ============ PLATFORM SETTINGS ENDPOINTS ============
+  // Get public settings
+  app.get('/api/settings/public', async (req, res) => {
+    try {
+      const settings = await storage.getPublicSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error getting public settings:", error);
+      res.status(500).json({ message: "Failed to get settings" });
+    }
+  });
+
+  // Admin: Get all settings
+  app.get('/api/admin/settings', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const settings = await storage.getAllSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Error getting settings:", error);
+      res.status(500).json({ message: "Failed to get settings" });
+    }
+  });
+
+  // Admin: Update setting
+  app.put('/api/admin/settings/:key', requireAuth, async (req: any, res) => {
+    try {
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const setting = await storage.updateSetting(
+        req.params.key,
+        req.body.value,
+        req.user.id
+      );
+      
+      res.json(setting);
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
   // Get WhatsApp link for service provider
   app.get('/api/whatsapp/link/:providerId', requireAuth, async (req, res) => {
     try {

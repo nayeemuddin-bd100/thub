@@ -374,6 +374,280 @@ export const serviceOrderItems = pgTable("service_order_items", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Favorites (clients save favorite properties and service providers)
+export const favorites = pgTable("favorites", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  favoriteType: varchar("favorite_type", { enum: ["property", "service_provider"] }).notNull(),
+  propertyId: uuid("property_id").references(() => properties.id),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Promotional codes
+export const promotionalCodes = pgTable("promotional_codes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  code: varchar("code").unique().notNull(),
+  description: text("description"),
+  discountType: varchar("discount_type", { enum: ["percentage", "fixed_amount"] }).notNull(),
+  discountValue: decimal("discount_value", { precision: 10, scale: 2 }).notNull(),
+  minimumPurchase: decimal("minimum_purchase", { precision: 10, scale: 2 }).default("0"),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").default(0),
+  validFrom: timestamp("valid_from").notNull(),
+  validUntil: timestamp("valid_until").notNull(),
+  applicableTo: varchar("applicable_to", { enum: ["all", "properties", "services"] }).default("all"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Promotional code usage tracking
+export const promoCodeUsage = pgTable("promo_code_usage", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  promoCodeId: uuid("promo_code_id").references(() => promotionalCodes.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
+  discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Loyalty points
+export const loyaltyPoints = pgTable("loyalty_points", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  points: integer("points").default(0),
+  lifetimePoints: integer("lifetime_points").default(0),
+  tier: varchar("tier", { enum: ["bronze", "silver", "gold", "platinum"] }).default("bronze"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Loyalty points transactions
+export const loyaltyPointsTransactions = pgTable("loyalty_points_transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  points: integer("points").notNull(),
+  transactionType: varchar("transaction_type", { 
+    enum: ["earned", "redeemed", "expired", "adjustment"] 
+  }).notNull(),
+  reason: varchar("reason").notNull(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Booking cancellations and refunds
+export const bookingCancellations = pgTable("booking_cancellations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bookingId: uuid("booking_id").references(() => bookings.id).notNull(),
+  requestedBy: varchar("requested_by").references(() => users.id).notNull(),
+  reason: text("reason").notNull(),
+  cancellationFee: decimal("cancellation_fee", { precision: 10, scale: 2 }).default("0"),
+  refundAmount: decimal("refund_amount", { precision: 10, scale: 2 }).notNull(),
+  status: varchar("status", { enum: ["pending", "approved", "rejected", "refunded"] }).default("pending"),
+  approvedBy: varchar("approved_by").references(() => users.id),
+  rejectionReason: text("rejection_reason"),
+  refundedAt: timestamp("refunded_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Trip plans / Itineraries
+export const tripPlans = pgTable("trip_plans", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  destination: varchar("destination").notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  status: varchar("status", { enum: ["planning", "booked", "completed", "cancelled"] }).default("planning"),
+  isPublic: boolean("is_public").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Trip plan items (activities, bookings, notes)
+export const tripPlanItems = pgTable("trip_plan_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tripPlanId: uuid("trip_plan_id").references(() => tripPlans.id).notNull(),
+  itemType: varchar("item_type", { enum: ["booking", "activity", "note", "reminder"] }).notNull(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  title: varchar("title").notNull(),
+  description: text("description"),
+  scheduledDate: date("scheduled_date"),
+  scheduledTime: varchar("scheduled_time"),
+  location: varchar("location"),
+  cost: decimal("cost", { precision: 10, scale: 2 }),
+  status: varchar("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).default("pending"),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Property seasonal pricing
+export const propertySeasonalPricing = pgTable("property_seasonal_pricing", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  propertyId: uuid("property_id").references(() => properties.id).notNull(),
+  name: varchar("name").notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  pricePerNight: decimal("price_per_night", { precision: 10, scale: 2 }).notNull(),
+  minimumStay: integer("minimum_stay").default(1),
+  isActive: boolean("is_active").default(true),
+  priority: integer("priority").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Service packages / bundles
+export const servicePackages = pgTable("service_packages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  packageName: varchar("package_name").notNull(),
+  description: text("description"),
+  duration: integer("duration"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("0"),
+  includedServices: jsonb("included_services").default([]),
+  isRecurring: boolean("is_recurring").default(false),
+  recurringInterval: varchar("recurring_interval", { enum: ["daily", "weekly", "monthly"] }),
+  maxOccurrences: integer("max_occurrences"),
+  isActive: boolean("is_active").default(true),
+  photoUrl: varchar("photo_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Provider earnings / payouts
+export const providerEarnings = pgTable("provider_earnings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  month: varchar("month").notNull(),
+  year: integer("year").notNull(),
+  totalEarnings: decimal("total_earnings", { precision: 10, scale: 2 }).default("0"),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).default("0"),
+  netEarnings: decimal("net_earnings", { precision: 10, scale: 2 }).default("0"),
+  totalOrders: integer("total_orders").default(0),
+  completedOrders: integer("completed_orders").default(0),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Provider payouts
+export const providerPayouts = pgTable("provider_payouts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id).notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  payoutMethod: varchar("payout_method", { enum: ["bank_transfer", "paypal", "stripe"] }).notNull(),
+  status: varchar("status", { enum: ["pending", "processing", "completed", "failed"] }).default("pending"),
+  accountDetails: jsonb("account_details"),
+  transactionId: varchar("transaction_id"),
+  failureReason: text("failure_reason"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// User activity logs
+export const userActivityLogs = pgTable("user_activity_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  activityType: varchar("activity_type").notNull(),
+  description: text("description").notNull(),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Platform settings
+export const platformSettings = pgTable("platform_settings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  settingKey: varchar("setting_key").unique().notNull(),
+  settingValue: text("setting_value").notNull(),
+  settingType: varchar("setting_type", { enum: ["string", "number", "boolean", "json"] }).notNull(),
+  description: text("description"),
+  category: varchar("category").notNull(),
+  isPublic: boolean("is_public").default(false),
+  updatedBy: varchar("updated_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email templates
+export const emailTemplates = pgTable("email_templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  templateKey: varchar("template_key").unique().notNull(),
+  subject: varchar("subject").notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  variables: jsonb("variables").default([]),
+  category: varchar("category").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Disputes
+export const disputes = pgTable("disputes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bookingId: uuid("booking_id").references(() => bookings.id),
+  serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
+  raisedBy: varchar("raised_by").references(() => users.id).notNull(),
+  againstUser: varchar("against_user").references(() => users.id),
+  category: varchar("category", { 
+    enum: ["payment", "service_quality", "cancellation", "refund", "behavior", "other"] 
+  }).notNull(),
+  subject: varchar("subject").notNull(),
+  description: text("description").notNull(),
+  evidence: jsonb("evidence").default([]),
+  status: varchar("status", { enum: ["open", "investigating", "resolved", "closed"] }).default("open"),
+  resolution: text("resolution"),
+  resolvedBy: varchar("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Dispute messages
+export const disputeMessages = pgTable("dispute_messages", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  disputeId: uuid("dispute_id").references(() => disputes.id).notNull(),
+  senderId: varchar("sender_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  attachments: jsonb("attachments").default([]),
+  isAdminMessage: boolean("is_admin_message").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Regional territories (for country managers)
+export const territories = pgTable("territories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  country: varchar("country").notNull(),
+  regions: jsonb("regions").default([]),
+  managerId: varchar("manager_id").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Regional analytics
+export const regionalAnalytics = pgTable("regional_analytics", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  territoryId: uuid("territory_id").references(() => territories.id).notNull(),
+  month: varchar("month").notNull(),
+  year: integer("year").notNull(),
+  totalBookings: integer("total_bookings").default(0),
+  totalRevenue: decimal("total_revenue", { precision: 10, scale: 2 }).default("0"),
+  activeProviders: integer("active_providers").default(0),
+  newCustomers: integer("new_customers").default(0),
+  averageRating: decimal("average_rating", { precision: 3, scale: 2 }).default("0"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   properties: many(properties),
@@ -628,3 +902,86 @@ export const insertServiceOrderItemSchema = createInsertSchema(serviceOrderItems
   createdAt: true,
 });
 export type InsertServiceOrderItem = z.infer<typeof insertServiceOrderItemSchema>;
+
+// New feature types
+export type Favorite = typeof favorites.$inferSelect;
+export const insertFavoriteSchema = createInsertSchema(favorites).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertFavorite = z.infer<typeof insertFavoriteSchema>;
+
+export type PromotionalCode = typeof promotionalCodes.$inferSelect;
+export const insertPromotionalCodeSchema = createInsertSchema(promotionalCodes).omit({
+  id: true,
+  createdAt: true,
+  usedCount: true,
+});
+export type InsertPromotionalCode = z.infer<typeof insertPromotionalCodeSchema>;
+
+export type PromoCodeUsage = typeof promoCodeUsage.$inferSelect;
+export type LoyaltyPoints = typeof loyaltyPoints.$inferSelect;
+export type LoyaltyPointsTransaction = typeof loyaltyPointsTransactions.$inferSelect;
+
+export type BookingCancellation = typeof bookingCancellations.$inferSelect;
+export const insertBookingCancellationSchema = createInsertSchema(bookingCancellations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertBookingCancellation = z.infer<typeof insertBookingCancellationSchema>;
+
+export type TripPlan = typeof tripPlans.$inferSelect;
+export const insertTripPlanSchema = createInsertSchema(tripPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertTripPlan = z.infer<typeof insertTripPlanSchema>;
+
+export type TripPlanItem = typeof tripPlanItems.$inferSelect;
+export const insertTripPlanItemSchema = createInsertSchema(tripPlanItems).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertTripPlanItem = z.infer<typeof insertTripPlanItemSchema>;
+
+export type PropertySeasonalPricing = typeof propertySeasonalPricing.$inferSelect;
+export const insertPropertySeasonalPricingSchema = createInsertSchema(propertySeasonalPricing).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertPropertySeasonalPricing = z.infer<typeof insertPropertySeasonalPricingSchema>;
+
+export type ServicePackage = typeof servicePackages.$inferSelect;
+export const insertServicePackageSchema = createInsertSchema(servicePackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertServicePackage = z.infer<typeof insertServicePackageSchema>;
+
+export type ProviderEarnings = typeof providerEarnings.$inferSelect;
+export type ProviderPayout = typeof providerPayouts.$inferSelect;
+export const insertProviderPayoutSchema = createInsertSchema(providerPayouts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertProviderPayout = z.infer<typeof insertProviderPayoutSchema>;
+
+export type UserActivityLog = typeof userActivityLogs.$inferSelect;
+export type PlatformSetting = typeof platformSettings.$inferSelect;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+export type Dispute = typeof disputes.$inferSelect;
+export const insertDisputeSchema = createInsertSchema(disputes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertDispute = z.infer<typeof insertDisputeSchema>;
+
+export type DisputeMessage = typeof disputeMessages.$inferSelect;
+export type Territory = typeof territories.$inferSelect;
+export type RegionalAnalytics = typeof regionalAnalytics.$inferSelect;
