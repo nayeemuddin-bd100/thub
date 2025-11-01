@@ -72,6 +72,10 @@ export default function AdminDashboard() {
     enabled: !!selectedBookingId && bookingDetailsDialogOpen,
   });
 
+  const { data: serviceOrders, isLoading: serviceOrdersLoading } = useQuery({
+    queryKey: ['/api/admin/service-orders'],
+  });
+
   const { data: serviceProviders, isLoading: providersLoading } = useQuery({
     queryKey: ['/api/admin/service-providers'],
   });
@@ -437,6 +441,19 @@ export default function AdminDashboard() {
           >
             <Calendar className="w-5 h-5" />
             <span>Bookings</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSection('service-orders')}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+              activeSection === 'service-orders'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+            data-testid="nav-service-orders"
+          >
+            <Briefcase className="w-5 h-5" />
+            <span>Service Orders</span>
           </button>
 
           <button
@@ -1553,6 +1570,109 @@ export default function AdminDashboard() {
                   )}
                 </DialogContent>
               </Dialog>
+            </div>
+          )}
+
+          {/* Service Orders Section */}
+          {activeSection === 'service-orders' && (
+            <div>
+              <h2 className="text-3xl font-bold text-foreground mb-8">Service Order Management</h2>
+              
+              {serviceOrdersLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                  ))}
+                </div>
+              ) : serviceOrders && serviceOrders.length > 0 ? (
+                <div className="space-y-4">
+                  {serviceOrders.map((order: any) => (
+                    <Card key={order.id} className="p-6" data-testid={`service-order-card-${order.id}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-semibold text-lg text-foreground" data-testid={`order-code-${order.id}`}>
+                              Order: {order.orderCode}
+                            </h3>
+                            <Badge 
+                              variant={
+                                order.status === 'completed' ? 'default' : 
+                                order.status === 'cancelled' ? 'destructive' : 
+                                order.status === 'in_progress' ? 'default' : 
+                                'secondary'
+                              }
+                              data-testid={`badge-status-${order.id}`}
+                            >
+                              {order.status}
+                            </Badge>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Provider ID:</span>
+                              <p className="text-foreground">{order.serviceProviderId?.substring(0, 8)}...</p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Client ID:</span>
+                              <p className="text-foreground">{order.clientId?.substring(0, 8)}...</p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Service Date:</span>
+                              <p className="text-foreground">
+                                {new Date(order.serviceDate).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="font-medium">Total:</span>
+                              <p className="text-foreground font-semibold">${order.totalAmount}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3 flex gap-6 text-sm text-muted-foreground">
+                            <div>
+                              <span className="font-medium">Time:</span>
+                              <span className="ml-2 text-foreground">
+                                {order.startTime}{order.endTime && ` - ${order.endTime}`}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Payment:</span>
+                              <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
+                                order.paymentStatus === 'paid'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
+                                  : order.paymentStatus === 'refunded'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100'
+                              }`}>
+                                {order.paymentStatus}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium">Created:</span>
+                              <span className="ml-2 text-foreground">
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {order.specialInstructions && (
+                            <div className="mt-3 text-sm">
+                              <span className="font-medium text-muted-foreground">Special Instructions:</span>
+                              <p className="text-foreground mt-1">{order.specialInstructions}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-12 text-center">
+                  <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Service Orders Yet</h3>
+                  <p className="text-muted-foreground">Service orders will appear here once clients start booking services</p>
+                </Card>
+              )}
             </div>
           )}
 

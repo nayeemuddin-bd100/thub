@@ -423,6 +423,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin service orders route
+  app.get('/api/admin/service-orders', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const orders = await storage.getAllServiceOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching admin service orders:", error);
+      res.status(500).json({ message: "Failed to fetch service orders" });
+    }
+  });
+
   app.get('/api/admin/bookings/:id', requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;

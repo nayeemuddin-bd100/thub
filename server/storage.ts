@@ -160,6 +160,7 @@ export interface IStorage {
   getServiceOrderByCode(orderCode: string): Promise<ServiceOrder | undefined>;
   getClientServiceOrders(clientId: string): Promise<ServiceOrder[]>;
   getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]>;
+  getAllServiceOrders(): Promise<ServiceOrder[]>;
   updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder>;
   updateServiceOrderPaymentStatus(id: string, paymentStatus: string): Promise<ServiceOrder>;
   getServiceOrderItems(orderId: string): Promise<ServiceOrderItem[]>;
@@ -687,6 +688,11 @@ export class DatabaseStorage implements IStorage {
   async getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]> {
     return await db.select().from(serviceOrders)
       .where(eq(serviceOrders.serviceProviderId, providerId))
+      .orderBy(desc(serviceOrders.createdAt));
+  }
+
+  async getAllServiceOrders(): Promise<ServiceOrder[]> {
+    return await db.select().from(serviceOrders)
       .orderBy(desc(serviceOrders.createdAt));
   }
 
