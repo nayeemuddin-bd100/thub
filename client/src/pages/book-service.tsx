@@ -82,16 +82,21 @@ export default function BookServicePage() {
         specialInstructions: data.specialInstructions,
       };
 
-      return await apiRequest('POST', '/api/service-orders', payload);
+      const response = await apiRequest('POST', '/api/service-orders', payload);
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (order) => {
       toast({
         title: "Order placed successfully!",
-        description: `Your order code is ${data.orderCode}`,
+        description: `Your order code is ${order.orderCode}. Redirecting to payment...`,
       });
       sessionStorage.removeItem('serviceSelection');
       queryClient.invalidateQueries({ queryKey: ['/api/service-orders'] });
-      navigate('/dashboard');
+      
+      // Redirect to payment page after a short delay to show the success message
+      setTimeout(() => {
+        navigate(`/pay-service-order/${order.id}`);
+      }, 1500);
     },
     onError: (error: Error) => {
       toast({

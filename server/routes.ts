@@ -1310,7 +1310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startTime,
         endTime: endTime || null,
         duration: duration || null,
-        status: 'pending' as const,
+        status: 'confirmed' as const, // Auto-confirm for immediate payment
         subtotal: subtotal.toString(),
         taxAmount: taxAmount.toString(),
         totalAmount: totalAmount.toString(),
