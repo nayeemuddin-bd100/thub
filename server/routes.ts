@@ -441,6 +441,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/admin/service-orders/:id/status', requireAuth, async (req, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const { status } = req.body;
+      const order = await storage.updateServiceOrderStatus(req.params.id, status);
+      res.json(order);
+    } catch (error) {
+      console.error("Error updating service order status:", error);
+      res.status(500).json({ message: "Failed to update service order status" });
+    }
+  });
+
   app.get('/api/admin/bookings/:id', requireAuth, async (req, res) => {
     try {
       const userId = (req.session as any).userId;
