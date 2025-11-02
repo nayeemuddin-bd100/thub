@@ -29,6 +29,7 @@ import type {
   ProviderTaskConfig,
   ServiceTask 
 } from "@shared/schema";
+import ServicePackages from "@/components/ServicePackages";
 
 export default function ProviderConfig() {
   const { user } = useAuth();
@@ -139,6 +140,10 @@ export default function ProviderConfig() {
 
           <TabsContent value="pricing" className="space-y-6">
             <PricingManagement provider={provider} />
+          </TabsContent>
+
+          <TabsContent value="packages" className="space-y-6">
+            <ServicePackages providerId={provider.id} />
           </TabsContent>
 
           <TabsContent value="availability" className="space-y-6">
