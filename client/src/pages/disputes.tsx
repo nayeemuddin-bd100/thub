@@ -21,12 +21,21 @@ const disputeFormSchema = z.object({
   bookingId: z.string().optional(),
   orderId: z.string().optional(),
   description: z.string().min(20, "Description must be at least 20 characters"),
-}).refine((data) => {
-  if (data.itemType === "booking") return !!data.bookingId;
-  return !!data.orderId;
-}, {
-  message: "Please select a booking or order",
-  path: ["bookingId"],
+}).superRefine((data, ctx) => {
+  if (data.itemType === "booking" && !data.bookingId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select a booking",
+      path: ["bookingId"],
+    });
+  }
+  if (data.itemType === "order" && !data.orderId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please select an order",
+      path: ["orderId"],
+    });
+  }
 });
 
 type Dispute = {
