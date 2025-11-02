@@ -1969,10 +1969,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add to favorites
   app.post('/api/favorites', requireAuth, async (req: any, res) => {
     try {
+      const userId = (req.session as any).userId;
       const { favoriteType, propertyId, serviceProviderId } = req.body;
       
       const favorite = await storage.addFavorite({
-        userId: req.user.id,
+        userId,
         favoriteType,
         propertyId,
         serviceProviderId,
@@ -1988,7 +1989,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Remove from favorites
   app.delete('/api/favorites/:id', requireAuth, async (req: any, res) => {
     try {
-      await storage.removeFavorite(req.params.id, req.user.id);
+      const userId = (req.session as any).userId;
+      await storage.removeFavorite(req.params.id, userId);
       res.json({ message: "Favorite removed successfully" });
     } catch (error) {
       console.error("Error removing favorite:", error);
@@ -1999,7 +2001,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's favorites
   app.get('/api/favorites', requireAuth, async (req: any, res) => {
     try {
-      const favorites = await storage.getUserFavorites(req.user.id);
+      const userId = (req.session as any).userId;
+      const favorites = await storage.getUserFavorites(userId);
       res.json(favorites);
     } catch (error) {
       console.error("Error getting favorites:", error);
@@ -2011,9 +2014,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Validate promo code
   app.post('/api/promo-codes/validate', requireAuth, async (req: any, res) => {
     try {
+      const userId = (req.session as any).userId;
       const { code, bookingId, serviceOrderId } = req.body;
       
-      const result = await storage.validatePromoCode(code, req.user.id, bookingId, serviceOrderId);
+      const result = await storage.validatePromoCode(code, userId, bookingId, serviceOrderId);
       res.json(result);
     } catch (error) {
       console.error("Error validating promo code:", error);
@@ -2024,7 +2028,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Create promo code
   app.post('/api/admin/promo-codes', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2039,7 +2045,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Get all promo codes
   app.get('/api/admin/promo-codes', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2055,7 +2063,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user loyalty points
   app.get('/api/loyalty-points', requireAuth, async (req: any, res) => {
     try {
-      const loyaltyPoints = await storage.getUserLoyaltyPoints(req.user.id);
+      const userId = (req.session as any).userId;
+      const loyaltyPoints = await storage.getUserLoyaltyPoints(userId);
       res.json(loyaltyPoints);
     } catch (error) {
       console.error("Error getting loyalty points:", error);
@@ -2066,7 +2075,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get loyalty points history
   app.get('/api/loyalty-points/history', requireAuth, async (req: any, res) => {
     try {
-      const history = await storage.getLoyaltyPointsHistory(req.user.id);
+      const userId = (req.session as any).userId;
+      const history = await storage.getLoyaltyPointsHistory(userId);
       res.json(history);
     } catch (error) {
       console.error("Error getting loyalty points history:", error);
@@ -2078,11 +2088,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Request booking cancellation
   app.post('/api/bookings/:id/cancel', requireAuth, async (req: any, res) => {
     try {
+      const userId = (req.session as any).userId;
       const { reason } = req.body;
       
       const cancellation = await storage.requestBookingCancellation(
         req.params.id,
-        req.user.id,
+        userId,
         reason
       );
       
@@ -2096,7 +2107,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Approve/reject cancellation
   app.patch('/api/admin/cancellations/:id', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2105,7 +2118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const cancellation = await storage.updateCancellationStatus(
         req.params.id,
         status,
-        req.user.id,
+        userId,
         rejectionReason
       );
       
@@ -2120,9 +2133,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create trip plan
   app.post('/api/trip-plans', requireAuth, async (req: any, res) => {
     try {
+      const userId = (req.session as any).userId;
       const tripPlan = await storage.createTripPlan({
         ...req.body,
-        userId: req.user.id,
+        userId,
       });
       
       res.status(201).json(tripPlan);
@@ -2135,7 +2149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's trip plans
   app.get('/api/trip-plans', requireAuth, async (req: any, res) => {
     try {
-      const tripPlans = await storage.getUserTripPlans(req.user.id);
+      const userId = (req.session as any).userId;
+      const tripPlans = await storage.getUserTripPlans(userId);
       res.json(tripPlans);
     } catch (error) {
       console.error("Error getting trip plans:", error);
@@ -2146,7 +2161,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get trip plan details
   app.get('/api/trip-plans/:id', requireAuth, async (req: any, res) => {
     try {
-      const tripPlan = await storage.getTripPlanWithItems(req.params.id, req.user.id);
+      const userId = (req.session as any).userId;
+      const tripPlan = await storage.getTripPlanWithItems(req.params.id, userId);
       res.json(tripPlan);
     } catch (error) {
       console.error("Error getting trip plan:", error);
@@ -2173,7 +2189,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Provider: Create service package
   app.post('/api/provider/packages', requireAuth, async (req: any, res) => {
     try {
-      const provider = await storage.getProviderByUserId(req.user.id);
+      const userId = (req.session as any).userId;
+      const provider = await storage.getProviderByUserId(userId);
       if (!provider) {
         return res.status(404).json({ message: "Service provider profile not found" });
       }
@@ -2205,7 +2222,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Provider: Get earnings dashboard
   app.get('/api/provider/earnings', requireAuth, async (req: any, res) => {
     try {
-      const provider = await storage.getProviderByUserId(req.user.id);
+      const userId = (req.session as any).userId;
+      const provider = await storage.getProviderByUserId(userId);
       if (!provider) {
         return res.status(404).json({ message: "Service provider profile not found" });
       }
@@ -2221,7 +2239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Provider: Request payout
   app.post('/api/provider/payouts', requireAuth, async (req: any, res) => {
     try {
-      const provider = await storage.getProviderByUserId(req.user.id);
+      const userId = (req.session as any).userId;
+      const provider = await storage.getProviderByUserId(userId);
       if (!provider) {
         return res.status(404).json({ message: "Service provider profile not found" });
       }
@@ -2242,9 +2261,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create dispute
   app.post('/api/disputes', requireAuth, async (req: any, res) => {
     try {
+      const userId = (req.session as any).userId;
       const dispute = await storage.createDispute({
         ...req.body,
-        raisedBy: req.user.id,
+        raisedBy: userId,
       });
       
       res.status(201).json(dispute);
@@ -2257,7 +2277,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user's disputes
   app.get('/api/disputes', requireAuth, async (req: any, res) => {
     try {
-      const disputes = await storage.getUserDisputes(req.user.id);
+      const userId = (req.session as any).userId;
+      const disputes = await storage.getUserDisputes(userId);
       res.json(disputes);
     } catch (error) {
       console.error("Error getting disputes:", error);
@@ -2268,7 +2289,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Get all disputes
   app.get('/api/admin/disputes', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2283,7 +2306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Resolve dispute
   app.patch('/api/admin/disputes/:id/resolve', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2292,7 +2317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const dispute = await storage.resolveDispute(
         req.params.id,
         resolution,
-        req.user.id
+        userId
       );
       
       res.json(dispute);
@@ -2317,7 +2342,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Get all settings
   app.get('/api/admin/settings', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2332,14 +2359,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin: Update setting
   app.put('/api/admin/settings/:key', requireAuth, async (req: any, res) => {
     try {
-      if (req.user.role !== 'admin') {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
       const setting = await storage.updateSetting(
         req.params.key,
         req.body.value,
-        req.user.id
+        userId
       );
       
       res.json(setting);
