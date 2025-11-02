@@ -306,6 +306,7 @@ export default function Dashboard() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case 'pending_payment': return 'secondary';
       case 'confirmed': return 'default';
       case 'completed': return 'secondary';
       case 'cancelled': return 'destructive';

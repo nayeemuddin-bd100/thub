@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, MapPin, DollarSign, Package, CheckCircle, XCircle, Clock3, Phone, Mail } from "lucide-react";
+import { Calendar, Clock, User, MapPin, DollarSign, Package, CheckCircle, XCircle, Clock3, Phone, Mail, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ interface ServiceOrder {
   startTime: string;
   endTime?: string;
   duration?: string;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'pending_payment' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
   subtotal: string;
   taxAmount: string;
   totalAmount: string;
@@ -54,6 +54,12 @@ export default function MyServiceOrders() {
         variant: 'secondary' as const, 
         icon: Clock3,
         description: 'Waiting for provider to accept'
+      },
+      pending_payment: { 
+        label: 'Payment Required', 
+        variant: 'outline' as const, 
+        icon: AlertCircle,
+        description: 'Please complete payment to confirm'
       },
       confirmed: { 
         label: 'Confirmed', 
@@ -110,7 +116,7 @@ export default function MyServiceOrders() {
     if (!orders) return [];
     if (status === 'all') return orders;
     if (status === 'active') return orders.filter(order => 
-      ['pending', 'confirmed', 'in_progress'].includes(order.status)
+      ['pending', 'pending_payment', 'confirmed', 'in_progress'].includes(order.status)
     );
     return orders.filter(order => order.status === status);
   };
