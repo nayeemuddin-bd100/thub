@@ -90,7 +90,7 @@ export default function ProviderConfig() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">
               <ClipboardList className="w-4 h-4 mr-2" />
               Overview
@@ -110,6 +110,10 @@ export default function ProviderConfig() {
             <TabsTrigger value="pricing">
               <DollarSign className="w-4 h-4 mr-2" />
               Pricing
+            </TabsTrigger>
+            <TabsTrigger value="packages">
+              <Plus className="w-4 h-4 mr-2" />
+              Packages
             </TabsTrigger>
             <TabsTrigger value="availability">
               <Calendar className="w-4 h-4 mr-2" />

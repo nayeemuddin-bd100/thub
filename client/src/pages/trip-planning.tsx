@@ -119,10 +119,14 @@ export default function TripPlanning() {
 
   const createTripMutation = useMutation({
     mutationFn: async (data: z.infer<typeof createTripSchema>) => {
-      return await apiRequest("/api/trip-plans", {
+      const res = await fetch("/api/trip-plans", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
+      if (!res.ok) throw new Error("Failed to create trip");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trip-plans"] });
@@ -144,10 +148,14 @@ export default function TripPlanning() {
 
   const addItemMutation = useMutation({
     mutationFn: async ({ tripId, data }: { tripId: string; data: z.infer<typeof addItemSchema> }) => {
-      return await apiRequest(`/api/trip-plans/${tripId}/items`, {
+      const res = await fetch(`/api/trip-plans/${tripId}/items`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
+        credentials: "include",
       });
+      if (!res.ok) throw new Error("Failed to add item");
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/trip-plans"] });
