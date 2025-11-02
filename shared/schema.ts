@@ -118,7 +118,7 @@ export const bookings = pgTable("bookings", {
   servicesTotal: decimal("services_total", { precision: 10, scale: 2 }).default("0"),
   discountAmount: decimal("discount_amount", { precision: 10, scale: 2 }).default("0"),
   totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
-  status: varchar("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).default("pending"),
+  status: varchar("status", { enum: ["pending", "pending_payment", "confirmed", "completed", "cancelled"] }).default("pending"),
   paymentStatus: varchar("payment_status", { enum: ["pending", "paid", "refunded"] }).default("pending"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -344,7 +344,7 @@ export const serviceOrders = pgTable("service_orders", {
   endTime: varchar("end_time"),
   duration: integer("duration"),
   status: varchar("status", { 
-    enum: ["pending", "confirmed", "in_progress", "completed", "cancelled", "rejected"] 
+    enum: ["pending", "pending_payment", "confirmed", "in_progress", "completed", "cancelled", "rejected"] 
   }).default("pending"),
   subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
   taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),

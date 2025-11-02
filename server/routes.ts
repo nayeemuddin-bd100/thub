@@ -1310,7 +1310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startTime,
         endTime: endTime || null,
         duration: duration || null,
-        status: 'confirmed' as const, // Auto-confirm for immediate payment
+        status: 'pending_payment' as const, // Status will be updated to 'confirmed' after payment
         subtotal: subtotal.toString(),
         taxAmount: taxAmount.toString(),
         totalAmount: totalAmount.toString(),
@@ -1434,9 +1434,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to pay for this order" });
       }
       
-      // Only allow payment if order is confirmed and payment is pending
-      if (order.status !== 'confirmed') {
-        return res.status(400).json({ message: "Order must be confirmed before payment" });
+      // Only allow payment if order is pending payment
+      if (order.status !== 'pending_payment') {
+        return res.status(400).json({ message: "Order must be in pending_payment status" });
       }
       
       if (order.paymentStatus === 'paid') {
@@ -1479,8 +1479,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.orderId === order.id) {
-        // Update payment status in database
+        // Update both payment status and order status in database
         await storage.updateServiceOrderPaymentStatus(order.id, 'paid');
+        await storage.updateServiceOrderStatus(order.id, 'confirmed');
         res.json({ success: true, message: "Payment confirmed" });
       } else {
         res.status(400).json({ message: "Payment verification failed" });
@@ -1731,7 +1732,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         servicesTotal: servicesTotal.toString(),
         discountAmount: discountAmount.toString(),
         totalAmount: totalAmount.toString(),
-        status: 'confirmed' as const, // Auto-confirm for immediate payment
+        status: 'pending_payment' as const, // Status will be updated to 'confirmed' after payment
         paymentStatus: 'pending' as const,
       };
       
@@ -1800,9 +1801,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to pay for this booking" });
       }
       
-      // Only allow payment if booking is confirmed and payment is pending
-      if (booking.status !== 'confirmed') {
-        return res.status(400).json({ message: "Booking must be confirmed before payment" });
+      // Only allow payment if booking is pending payment
+      if (booking.status !== 'pending_payment') {
+        return res.status(400).json({ message: "Booking must be in pending_payment status" });
       }
       
       if (booking.paymentStatus === 'paid') {
@@ -1845,8 +1846,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
       
       if (paymentIntent.status === 'succeeded' && paymentIntent.metadata.bookingId === booking.id) {
-        // Update payment status in database
+        // Update both payment status and booking status in database
         await storage.updateBookingPaymentStatus(booking.id, 'paid');
+        await storage.updateBookingStatus(booking.id, 'confirmed');
         res.json({ success: true, message: "Payment confirmed" });
       } else {
         res.status(400).json({ message: "Payment verification failed" });
