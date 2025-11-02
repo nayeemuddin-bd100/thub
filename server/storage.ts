@@ -375,7 +375,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(serviceCategories).orderBy(asc(serviceCategories.name));
   }
 
-  async getServiceProviders(categoryId?: string, location?: string): Promise<ServiceProvider[]> {
+  async getServiceProviders(categoryId?: string, location?: string): Promise<any[]> {
     const conditions = [eq(serviceProviders.isActive, true)];
     
     if (categoryId) {
@@ -385,7 +385,47 @@ export class DatabaseStorage implements IStorage {
       conditions.push(like(serviceProviders.location, `%${location}%`));
     }
     
-    return await db.select().from(serviceProviders).where(and(...conditions)).orderBy(desc(serviceProviders.rating));
+    const results = await db.select({
+      id: serviceProviders.id,
+      userId: serviceProviders.userId,
+      categoryId: serviceProviders.categoryId,
+      businessName: serviceProviders.businessName,
+      description: serviceProviders.description,
+      hourlyRate: serviceProviders.hourlyRate,
+      fixedRate: serviceProviders.fixedRate,
+      availability: serviceProviders.availability,
+      location: serviceProviders.location,
+      radius: serviceProviders.radius,
+      whatsappNumber: serviceProviders.whatsappNumber,
+      certifications: serviceProviders.certifications,
+      portfolio: serviceProviders.portfolio,
+      approvalStatus: serviceProviders.approvalStatus,
+      rejectionReason: serviceProviders.rejectionReason,
+      isVerified: serviceProviders.isVerified,
+      isActive: serviceProviders.isActive,
+      rating: serviceProviders.rating,
+      reviewCount: serviceProviders.reviewCount,
+      yearsExperience: serviceProviders.yearsExperience,
+      languages: serviceProviders.languages,
+      photoUrls: serviceProviders.photoUrls,
+      profilePhotoUrl: serviceProviders.profilePhotoUrl,
+      videoUrl: serviceProviders.videoUrl,
+      awards: serviceProviders.awards,
+      createdAt: serviceProviders.createdAt,
+      updatedAt: serviceProviders.updatedAt,
+      category: {
+        id: serviceCategories.id,
+        name: serviceCategories.name,
+        description: serviceCategories.description,
+        icon: serviceCategories.icon,
+      },
+    })
+    .from(serviceProviders)
+    .leftJoin(serviceCategories, eq(serviceProviders.categoryId, serviceCategories.id))
+    .where(and(...conditions))
+    .orderBy(desc(serviceProviders.rating));
+    
+    return results;
   }
 
   async getServiceProvider(id: string): Promise<ServiceProvider | undefined> {
