@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search, Gift, Award } from "lucide-react";
+import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search, Gift, Award, Map } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -124,6 +124,13 @@ export default function Dashboard() {
     lifetimeEarned: number;
   }>({
     queryKey: ['/api/loyalty-points'],
+    enabled: isAuthenticated && user?.role !== 'admin',
+    retry: false,
+  });
+
+  // Trip plans query
+  const { data: tripPlans } = useQuery<any[]>({
+    queryKey: ['/api/trip-plans'],
     enabled: isAuthenticated && user?.role !== 'admin',
     retry: false,
   });
@@ -630,6 +637,48 @@ export default function Dashboard() {
                   data-testid="button-view-loyalty-details"
                 >
                   View Details →
+                </Button>
+              </Card>
+            )}
+
+            {/* Trip Planning Card */}
+            {tripPlans && tripPlans.length > 0 && (
+              <Card 
+                className="bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => window.location.href = '/trip-planning'}
+                data-testid="card-trip-planning"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Map className="w-5 h-5" />
+                      <h3 className="text-lg font-semibold">Trip Planning</h3>
+                    </div>
+                    <p className="text-green-100 text-sm mb-3">
+                      Organize your travel itineraries with properties and services
+                    </p>
+                    <div className="flex items-baseline gap-4">
+                      <div>
+                        <p className="text-3xl font-bold" data-testid="text-dashboard-trip-count">
+                          {tripPlans.length}
+                        </p>
+                        <p className="text-green-100 text-sm">Active Trips</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Calendar className="w-16 h-16 opacity-20" />
+                </div>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = '/trip-planning';
+                  }}
+                  data-testid="button-view-trips"
+                >
+                  View Trips →
                 </Button>
               </Card>
             )}
