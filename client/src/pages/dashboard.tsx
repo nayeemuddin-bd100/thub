@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search } from "lucide-react";
+import { Calendar, MapPin, Star, Users, Clock, DollarSign, Building, UserCheck, Search, Gift, Award } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,13 +106,40 @@ export default function Dashboard() {
   
   // State for provider application dialog
   const [providerDialogOpen, setProviderDialogOpen] = useState(false);
+
+  // State for booking cancellation dialog
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<string | null>(null);
   
   // Service categories query
   const { data: serviceCategories } = useQuery({
     queryKey: ['/api/service-categories'],
     enabled: isAuthenticated,
   });
+
+  // Loyalty points query
+  const { data: loyaltyPoints } = useQuery<{
+    id: string;
+    availablePoints: number;
+    lifetimeEarned: number;
+  }>({
+    queryKey: ['/api/loyalty-points'],
+    enabled: isAuthenticated && user?.role !== 'admin',
+    retry: false,
+  });
   
+  // Cancellation form schema
+  const cancellationFormSchema = z.object({
+    reason: z.string().min(10, "Cancellation reason must be at least 10 characters"),
+  });
+
+  const cancellationForm = useForm<z.infer<typeof cancellationFormSchema>>({
+    resolver: zodResolver(cancellationFormSchema),
+    defaultValues: {
+      reason: "",
+    },
+  });
+
   // Provider application form schema
   const providerFormSchema = z.object({
     categoryId: z.string().min(1, "Service category is required"),
@@ -212,6 +239,42 @@ export default function Dashboard() {
 
   const handleProviderFormSubmit = (values: ProviderFormValues) => {
     becomeProviderMutation.mutate(values);
+  };
+
+  // Booking cancellation mutation
+  const cancelBookingMutation = useMutation({
+    mutationFn: async ({ bookingId, reason }: { bookingId: string; reason: string }) => {
+      return await apiRequest(`/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
+      setCancelDialogOpen(false);
+      setSelectedBookingForCancel(null);
+      cancellationForm.reset();
+      toast({
+        title: "Cancellation Requested",
+        description: "Your cancellation request has been submitted and is pending admin approval.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to request cancellation",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCancelBooking = (values: z.infer<typeof cancellationFormSchema>) => {
+    if (selectedBookingForCancel) {
+      cancelBookingMutation.mutate({
+        bookingId: selectedBookingForCancel,
+        reason: values.reason,
+      });
+    }
   };
 
   useEffect(() => {
@@ -523,6 +586,54 @@ export default function Dashboard() {
               </Button>
             </div>
 
+            {/* Loyalty Points Card */}
+            {loyaltyPoints && (
+              <Card 
+                className="bg-gradient-to-br from-blue-500 to-purple-600 text-white p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => window.location.href = '/loyalty-points'}
+                data-testid="card-loyalty-points"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Gift className="w-5 h-5" />
+                      <h3 className="text-lg font-semibold">Loyalty Rewards</h3>
+                    </div>
+                    <p className="text-blue-100 text-sm mb-3">
+                      Earn points on every booking and redeem for discounts
+                    </p>
+                    <div className="flex items-baseline gap-4">
+                      <div>
+                        <p className="text-3xl font-bold" data-testid="text-dashboard-points">
+                          {loyaltyPoints.availablePoints.toLocaleString()}
+                        </p>
+                        <p className="text-blue-100 text-sm">Available Points</p>
+                      </div>
+                      <div>
+                        <p className="text-xl font-semibold" data-testid="text-dashboard-lifetime">
+                          {loyaltyPoints.lifetimeEarned.toLocaleString()}
+                        </p>
+                        <p className="text-blue-100 text-sm">Lifetime Earned</p>
+                      </div>
+                    </div>
+                  </div>
+                  <Award className="w-16 h-16 opacity-20" />
+                </div>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = '/loyalty-points';
+                  }}
+                  data-testid="button-view-loyalty-details"
+                >
+                  View Details →
+                </Button>
+              </Card>
+            )}
+
             {bookingsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
@@ -575,8 +686,16 @@ export default function Dashboard() {
                         >
                           View Details
                         </Button>
-                        {booking.status === 'pending' && (
-                          <Button variant="destructive" size="sm" data-testid={`button-cancel-booking-${booking.id}`}>
+                        {(booking.status === 'confirmed' || booking.status === 'pending') && (
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedBookingForCancel(booking.id);
+                              setCancelDialogOpen(true);
+                            }}
+                            data-testid={`button-cancel-booking-${booking.id}`}
+                          >
                             Cancel
                           </Button>
                         )}
@@ -976,6 +1095,65 @@ export default function Dashboard() {
                   data-testid="button-submit-provider"
                 >
                   {becomeProviderMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Booking Cancellation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Booking</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for cancelling your booking. This request will be reviewed by an admin.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Form {...cancellationForm}>
+            <form onSubmit={cancellationForm.handleSubmit(handleCancelBooking)} className="space-y-4">
+              <FormField
+                control={cancellationForm.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Cancellation Reason *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Please explain why you need to cancel this booking..."
+                        rows={5}
+                        {...field}
+                        data-testid="textarea-cancel-reason"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setCancelDialogOpen(false);
+                    setSelectedBookingForCancel(null);
+                    cancellationForm.reset();
+                  }}
+                  disabled={cancelBookingMutation.isPending}
+                  data-testid="button-cancel-request"
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  disabled={cancelBookingMutation.isPending}
+                  data-testid="button-submit-cancellation"
+                >
+                  {cancelBookingMutation.isPending ? 'Submitting...' : 'Submit Cancellation'}
                 </Button>
               </div>
             </form>

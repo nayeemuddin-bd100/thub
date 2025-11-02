@@ -2085,6 +2085,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============ BOOKING CANCELLATION ENDPOINTS ============
+  // Get all cancellations (admin only)
+  app.get('/api/admin/cancellations', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const cancellations = await storage.getCancellations();
+      res.json(cancellations);
+    } catch (error) {
+      console.error("Error getting cancellations:", error);
+      res.status(500).json({ message: "Failed to get cancellations" });
+    }
+  });
+
   // Request booking cancellation
   app.post('/api/bookings/:id/cancel', requireAuth, async (req: any, res) => {
     try {
