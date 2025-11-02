@@ -44,30 +44,32 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, and task completions.
 - **Stripe Payment Integration**: Complete payment flow with secure intent creation, UI, and status updates.
 - **Server-side Price Validation**: Critical security feature to recalculate all prices from authoritative database sources, ignore client-supplied pricing, and validate items belong to the specified provider, preventing tampering and injection attacks.
-- **Immediate Payment Flow**: Service orders are auto-confirmed upon creation to enable immediate payment, eliminating wait time for provider confirmation.
+- **Secure Payment-First Flow**: Service orders and bookings require payment completion before confirmation, preventing abandoned payments from creating orphaned orders in the system.
 
 ## Payment Flow
 ### Service Order Payment
-1. **Order Creation**: Client selects services and places order → Order created with status='confirmed' (auto-confirmed for immediate payment)
+1. **Order Creation**: Client selects services and places order → Order created with status='pending_payment' and paymentStatus='pending'
 2. **Automatic Redirect**: After successful order placement, client automatically redirected to payment page (`/pay-service-order/:orderId`) after 1.5 second delay
-3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates order is confirmed and unpaid
-4. **Payment Completion**: Upon successful payment, order's paymentStatus updated to 'paid'
+3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates order status is 'pending_payment'
+4. **Payment Completion**: Upon successful payment, order's paymentStatus updated to 'paid' AND status updated to 'confirmed'
 5. **Order Fulfillment**: Provider delivers service on scheduled date
 
 ### Property Booking Payment
-1. **Booking Creation**: Client selects property and dates → Booking created with status='confirmed' (auto-confirmed for immediate payment)
+1. **Booking Creation**: Client selects property and dates → Booking created with status='pending_payment' and paymentStatus='pending'
 2. **Automatic Redirect**: After successful booking, client automatically redirected to payment page (`/pay-booking/:bookingId`) after 1.5 second delay
-3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates booking is confirmed and unpaid
-4. **Payment Completion**: Upon successful payment, booking's paymentStatus updated to 'paid'
+3. **Payment Processing**: Payment page loads Stripe Elements for secure card input, validates booking status is 'pending_payment'
+4. **Payment Completion**: Upon successful payment, booking's paymentStatus updated to 'paid' AND status updated to 'confirmed'
 5. **Property Access**: Client receives booking confirmation with property access details
 
 ### Key Implementation Details
-- Both service orders and property bookings created with `status='confirmed'` immediately (no provider/owner pre-approval needed)
-- Payment requires: status = 'confirmed' AND paymentStatus = 'pending'
+- **CRITICAL SECURITY FIX**: Both service orders and property bookings created with `status='pending_payment'` initially (NOT 'confirmed')
+- Orders/bookings ONLY become 'confirmed' AFTER successful payment verification with Stripe
+- This prevents abandoned/failed payments from creating confirmed orders in the system
+- Payment requires: status = 'pending_payment' AND paymentStatus = 'pending'
 - Redirect includes booking/order code in success toast: "Your booking code is XXX. Redirecting to payment..."
 - Payment pages include loading states, error handling, and security notices
 - Stripe payment intents created server-side for security
-- Payment verification completed server-side before updating payment status
+- Payment verification completed server-side before updating both payment status AND order/booking status to confirmed
 
 # External Dependencies
 
