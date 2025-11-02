@@ -272,19 +272,11 @@ export default function MyServiceOrders() {
                         </div>
                       )}
 
-                      {order.status === 'pending' && order.paymentStatus === 'pending' && (
-                        <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-                          <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                            <strong>Next Step:</strong> Waiting for the service provider to confirm your order. Payment will be processed once confirmed.
-                          </p>
-                        </div>
-                      )}
-
-                      {order.status === 'confirmed' && order.paymentStatus === 'pending' && (
+                      {order.status === 'pending_payment' && order.paymentStatus === 'pending' && (
                         <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
                           <div className="flex items-start justify-between gap-4">
                             <p className="text-sm text-blue-800 dark:text-blue-200 flex-1">
-                              <strong>Order Confirmed!</strong> Your service provider has accepted your order. Please complete payment to proceed.
+                              <strong>Payment Required!</strong> Please complete payment to confirm your order.
                             </p>
                             <Link href={`/pay-service-order/${order.id}`}>
                               <Button size="sm" data-testid={`button-pay-${order.id}`}>

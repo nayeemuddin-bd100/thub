@@ -727,6 +727,15 @@ export default function Dashboard() {
                       </div>
                       
                       <div className="flex space-x-2">
+                        {booking.status === 'pending_payment' && booking.paymentStatus === 'pending' && (
+                          <Button 
+                            size="sm" 
+                            onClick={() => window.location.href = `/pay-booking/${booking.id}`}
+                            data-testid={`button-pay-booking-${booking.id}`}
+                          >
+                            Pay Now
+                          </Button>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm" 
@@ -735,7 +744,7 @@ export default function Dashboard() {
                         >
                           View Details
                         </Button>
-                        {(booking.status === 'confirmed' || booking.status === 'pending') && (
+                        {(booking.status === 'confirmed' || booking.status === 'pending_payment') && (
                           <Button 
                             variant="destructive" 
                             size="sm" 
