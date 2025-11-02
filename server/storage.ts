@@ -21,6 +21,25 @@ import {
   serviceOrderItems,
   providerAvailability,
   providerPricing,
+  favorites,
+  promotionalCodes,
+  promoCodeUsage,
+  loyaltyPoints,
+  loyaltyPointsTransactions,
+  bookingCancellations,
+  tripPlans,
+  tripPlanItems,
+  propertySeasonalPricing,
+  servicePackages,
+  providerEarnings,
+  providerPayouts,
+  userActivityLogs,
+  platformSettings,
+  emailTemplates,
+  disputes,
+  disputeMessages,
+  territories,
+  regionalAnalytics,
   type User,
   type UpsertUser,
   type Property,
@@ -59,6 +78,34 @@ import {
   type InsertProviderAvailability,
   type ProviderPricing,
   type InsertProviderPricing,
+  type Favorite,
+  type InsertFavorite,
+  type PromotionalCode,
+  type InsertPromotionalCode,
+  type PromoCodeUsage,
+  type LoyaltyPoints,
+  type LoyaltyPointsTransaction,
+  type BookingCancellation,
+  type InsertBookingCancellation,
+  type TripPlan,
+  type InsertTripPlan,
+  type TripPlanItem,
+  type InsertTripPlanItem,
+  type PropertySeasonalPricing,
+  type InsertPropertySeasonalPricing,
+  type ServicePackage,
+  type InsertServicePackage,
+  type ProviderEarnings,
+  type ProviderPayout,
+  type InsertProviderPayout,
+  type UserActivityLog,
+  type PlatformSetting,
+  type EmailTemplate,
+  type Dispute,
+  type InsertDispute,
+  type DisputeMessage,
+  type Territory,
+  type RegionalAnalytics,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";
@@ -185,6 +232,52 @@ export interface IStorage {
     distance?: number;
     materialsCost?: number;
   }): Promise<number>;
+  
+  // NEW FEATURES - Favorites
+  addFavorite(favorite: InsertFavorite): Promise<Favorite>;
+  removeFavorite(id: string, userId: string): Promise<void>;
+  getUserFavorites(userId: string): Promise<Favorite[]>;
+  
+  // NEW FEATURES - Promotional Codes
+  validatePromoCode(code: string, userId: string, bookingId?: string, serviceOrderId?: string): Promise<{ valid: boolean; discount?: number; message?: string }>;
+  createPromoCode(code: InsertPromotionalCode): Promise<PromotionalCode>;
+  getAllPromoCodes(): Promise<PromotionalCode[]>;
+  
+  // NEW FEATURES - Loyalty Points
+  getUserLoyaltyPoints(userId: string): Promise<LoyaltyPoints | undefined>;
+  getLoyaltyPointsHistory(userId: string): Promise<LoyaltyPointsTransaction[]>;
+  awardLoyaltyPoints(userId: string, points: number, reason: string, bookingId?: string, serviceOrderId?: string): Promise<void>;
+  redeemLoyaltyPoints(userId: string, points: number, reason: string): Promise<void>;
+  
+  // NEW FEATURES - Booking Cancellations
+  requestBookingCancellation(bookingId: string, userId: string, reason: string): Promise<BookingCancellation>;
+  updateCancellationStatus(id: string, status: string, approvedBy: string, rejectionReason?: string): Promise<BookingCancellation>;
+  
+  // NEW FEATURES - Trip Plans
+  createTripPlan(plan: InsertTripPlan): Promise<TripPlan>;
+  getUserTripPlans(userId: string): Promise<TripPlan[]>;
+  getTripPlanWithItems(id: string, userId: string): Promise<TripPlan & { items: TripPlanItem[] }>;
+  addTripPlanItem(item: InsertTripPlanItem): Promise<TripPlanItem>;
+  
+  // NEW FEATURES - Service Packages
+  createServicePackage(package_: InsertServicePackage): Promise<ServicePackage>;
+  getProviderPackages(providerId: string): Promise<ServicePackage[]>;
+  
+  // NEW FEATURES - Provider Earnings & Payouts
+  getProviderByUserId(userId: string): Promise<ServiceProvider | undefined>;
+  getProviderEarnings(providerId: string): Promise<ProviderEarnings[]>;
+  requestPayout(payout: InsertProviderPayout): Promise<ProviderPayout>;
+  
+  // NEW FEATURES - Disputes
+  createDispute(dispute: InsertDispute): Promise<Dispute>;
+  getUserDisputes(userId: string): Promise<Dispute[]>;
+  getAllDisputes(): Promise<Dispute[]>;
+  resolveDispute(id: string, resolution: string, resolvedBy: string): Promise<Dispute>;
+  
+  // NEW FEATURES - Platform Settings
+  getPublicSettings(): Promise<PlatformSetting[]>;
+  getAllSettings(): Promise<PlatformSetting[]>;
+  updateSetting(key: string, value: string, updatedBy: string): Promise<PlatformSetting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -217,7 +310,7 @@ export class DatabaseStorage implements IStorage {
   async updateUserRole(id: string, role: string): Promise<User> {
     const [user] = await db
       .update(users)
-      .set({ role, updatedAt: new Date() })
+      .set({ role: role as any, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
     return user;
@@ -393,7 +486,7 @@ export class DatabaseStorage implements IStorage {
   async updateBookingStatus(id: string, status: string): Promise<Booking> {
     const [updatedBooking] = await db
       .update(bookings)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(bookings.id, id))
       .returning();
     return updatedBooking;
@@ -401,7 +494,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateBookingPaymentStatus(id: string, paymentStatus: string): Promise<Booking> {
     const [updatedBooking] = await db.update(bookings)
-      .set({ paymentStatus, updatedAt: new Date() })
+      .set({ paymentStatus: paymentStatus as any, updatedAt: new Date() })
       .where(eq(bookings.id, id))
       .returning();
     return updatedBooking;
@@ -707,7 +800,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder> {
     const [updatedOrder] = await db.update(serviceOrders)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: status as any, updatedAt: new Date() })
       .where(eq(serviceOrders.id, id))
       .returning();
     return updatedOrder;
@@ -715,7 +808,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateServiceOrderPaymentStatus(id: string, paymentStatus: string): Promise<ServiceOrder> {
     const [updatedOrder] = await db.update(serviceOrders)
-      .set({ paymentStatus, updatedAt: new Date() })
+      .set({ paymentStatus: paymentStatus as any, updatedAt: new Date() })
       .where(eq(serviceOrders.id, id))
       .returning();
     return updatedOrder;
@@ -842,6 +935,296 @@ export class DatabaseStorage implements IStorage {
     }
 
     return finalPrice;
+  }
+
+  // NEW FEATURES - Favorites
+  async addFavorite(favorite: InsertFavorite): Promise<Favorite> {
+    const [result] = await db.insert(favorites).values(favorite).returning();
+    return result;
+  }
+
+  async removeFavorite(id: string, userId: string): Promise<void> {
+    await db.delete(favorites).where(
+      and(eq(favorites.id, id), eq(favorites.userId, userId))
+    );
+  }
+
+  async getUserFavorites(userId: string): Promise<Favorite[]> {
+    return await db.select().from(favorites).where(eq(favorites.userId, userId));
+  }
+
+  // NEW FEATURES - Promotional Codes
+  async validatePromoCode(code: string, userId: string, bookingId?: string, serviceOrderId?: string): Promise<{ valid: boolean; discount?: number; message?: string }> {
+    const [promoCode] = await db.select().from(promotionalCodes)
+      .where(eq(promotionalCodes.code, code));
+
+    if (!promoCode) {
+      return { valid: false, message: "Invalid promo code" };
+    }
+
+    if (!promoCode.isActive) {
+      return { valid: false, message: "This promo code is no longer active" };
+    }
+
+    const now = new Date();
+    if (now < new Date(promoCode.validFrom) || now > new Date(promoCode.validUntil)) {
+      return { valid: false, message: "This promo code has expired" };
+    }
+
+    if (promoCode.maxUses && (promoCode.usedCount || 0) >= promoCode.maxUses) {
+      return { valid: false, message: "This promo code has reached its usage limit" };
+    }
+
+    const userUsage = await db.select().from(promoCodeUsage)
+      .where(
+        and(
+          eq(promoCodeUsage.promoCodeId, promoCode.id),
+          eq(promoCodeUsage.userId, userId)
+        )
+      );
+
+    if (userUsage.length > 0) {
+      return { valid: false, message: "You have already used this promo code" };
+    }
+
+    return {
+      valid: true,
+      discount: parseFloat(promoCode.discountValue),
+      message: "Promo code applied successfully"
+    };
+  }
+
+  async createPromoCode(code: InsertPromotionalCode): Promise<PromotionalCode> {
+    const [result] = await db.insert(promotionalCodes).values(code).returning();
+    return result;
+  }
+
+  async getAllPromoCodes(): Promise<PromotionalCode[]> {
+    return await db.select().from(promotionalCodes).orderBy(desc(promotionalCodes.createdAt));
+  }
+
+  // NEW FEATURES - Loyalty Points
+  async getUserLoyaltyPoints(userId: string): Promise<LoyaltyPoints | undefined> {
+    const [points] = await db.select().from(loyaltyPoints).where(eq(loyaltyPoints.userId, userId));
+    
+    if (!points) {
+      const [newPoints] = await db.insert(loyaltyPoints).values({ userId, points: 0, lifetimePoints: 0 }).returning();
+      return newPoints;
+    }
+    
+    return points;
+  }
+
+  async getLoyaltyPointsHistory(userId: string): Promise<LoyaltyPointsTransaction[]> {
+    return await db.select().from(loyaltyPointsTransactions)
+      .where(eq(loyaltyPointsTransactions.userId, userId))
+      .orderBy(desc(loyaltyPointsTransactions.createdAt));
+  }
+
+  async awardLoyaltyPoints(userId: string, points: number, reason: string, bookingId?: string, serviceOrderId?: string): Promise<void> {
+    await db.insert(loyaltyPointsTransactions).values({
+      userId,
+      points,
+      transactionType: 'earned',
+      reason,
+      bookingId,
+      serviceOrderId,
+    });
+
+    const currentPoints = await this.getUserLoyaltyPoints(userId);
+    if (currentPoints) {
+      await db.update(loyaltyPoints)
+        .set({
+          points: (currentPoints.points || 0) + points,
+          lifetimePoints: (currentPoints.lifetimePoints || 0) + points,
+          updatedAt: new Date(),
+        })
+        .where(eq(loyaltyPoints.userId, userId));
+    }
+  }
+
+  async redeemLoyaltyPoints(userId: string, points: number, reason: string): Promise<void> {
+    const currentPoints = await this.getUserLoyaltyPoints(userId);
+    
+    if (!currentPoints || (currentPoints.points || 0) < points) {
+      throw new Error("Insufficient loyalty points");
+    }
+
+    await db.insert(loyaltyPointsTransactions).values({
+      userId,
+      points: -points,
+      transactionType: 'redeemed',
+      reason,
+    });
+
+    await db.update(loyaltyPoints)
+      .set({
+        points: (currentPoints.points || 0) - points,
+        updatedAt: new Date(),
+      })
+      .where(eq(loyaltyPoints.userId, userId));
+  }
+
+  // NEW FEATURES - Booking Cancellations
+  async requestBookingCancellation(bookingId: string, userId: string, reason: string): Promise<BookingCancellation> {
+    const booking = await this.getBooking(bookingId);
+    
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const refundAmount = parseFloat(booking.totalAmount);
+    const cancellationFee = refundAmount * 0.1;
+
+    const [cancellation] = await db.insert(bookingCancellations).values({
+      bookingId,
+      requestedBy: userId,
+      reason,
+      cancellationFee: cancellationFee.toString(),
+      refundAmount: (refundAmount - cancellationFee).toString(),
+      status: 'pending',
+    }).returning();
+
+    return cancellation;
+  }
+
+  async updateCancellationStatus(id: string, status: string, approvedBy: string, rejectionReason?: string): Promise<BookingCancellation> {
+    const updates: any = {
+      status,
+      approvedBy,
+      updatedAt: new Date(),
+    };
+
+    if (rejectionReason) {
+      updates.rejectionReason = rejectionReason;
+    }
+
+    if (status === 'refunded') {
+      updates.refundedAt = new Date();
+    }
+
+    const [result] = await db.update(bookingCancellations)
+      .set(updates)
+      .where(eq(bookingCancellations.id, id))
+      .returning();
+
+    return result;
+  }
+
+  // NEW FEATURES - Trip Plans
+  async createTripPlan(plan: InsertTripPlan): Promise<TripPlan> {
+    const [result] = await db.insert(tripPlans).values(plan).returning();
+    return result;
+  }
+
+  async getUserTripPlans(userId: string): Promise<TripPlan[]> {
+    return await db.select().from(tripPlans)
+      .where(eq(tripPlans.userId, userId))
+      .orderBy(desc(tripPlans.createdAt));
+  }
+
+  async getTripPlanWithItems(id: string, userId: string): Promise<TripPlan & { items: TripPlanItem[] }> {
+    const [plan] = await db.select().from(tripPlans)
+      .where(and(eq(tripPlans.id, id), eq(tripPlans.userId, userId)));
+
+    if (!plan) {
+      throw new Error("Trip plan not found");
+    }
+
+    const items = await db.select().from(tripPlanItems)
+      .where(eq(tripPlanItems.tripPlanId, id))
+      .orderBy(asc(tripPlanItems.sortOrder));
+
+    return { ...plan, items };
+  }
+
+  async addTripPlanItem(item: InsertTripPlanItem): Promise<TripPlanItem> {
+    const [result] = await db.insert(tripPlanItems).values(item).returning();
+    return result;
+  }
+
+  // NEW FEATURES - Service Packages
+  async createServicePackage(package_: InsertServicePackage): Promise<ServicePackage> {
+    const [result] = await db.insert(servicePackages).values(package_).returning();
+    return result;
+  }
+
+  async getProviderPackages(providerId: string): Promise<ServicePackage[]> {
+    return await db.select().from(servicePackages)
+      .where(eq(servicePackages.serviceProviderId, providerId))
+      .orderBy(desc(servicePackages.createdAt));
+  }
+
+  // NEW FEATURES - Provider Earnings & Payouts
+  async getProviderByUserId(userId: string): Promise<ServiceProvider | undefined> {
+    const [provider] = await db.select().from(serviceProviders)
+      .where(eq(serviceProviders.userId, userId));
+    return provider;
+  }
+
+  async getProviderEarnings(providerId: string): Promise<ProviderEarnings[]> {
+    return await db.select().from(providerEarnings)
+      .where(eq(providerEarnings.serviceProviderId, providerId))
+      .orderBy(desc(providerEarnings.year), desc(providerEarnings.month));
+  }
+
+  async requestPayout(payout: InsertProviderPayout): Promise<ProviderPayout> {
+    const [result] = await db.insert(providerPayouts).values(payout).returning();
+    return result;
+  }
+
+  // NEW FEATURES - Disputes
+  async createDispute(dispute: InsertDispute): Promise<Dispute> {
+    const [result] = await db.insert(disputes).values(dispute).returning();
+    return result;
+  }
+
+  async getUserDisputes(userId: string): Promise<Dispute[]> {
+    return await db.select().from(disputes)
+      .where(eq(disputes.raisedBy, userId))
+      .orderBy(desc(disputes.createdAt));
+  }
+
+  async getAllDisputes(): Promise<Dispute[]> {
+    return await db.select().from(disputes).orderBy(desc(disputes.createdAt));
+  }
+
+  async resolveDispute(id: string, resolution: string, resolvedBy: string): Promise<Dispute> {
+    const [result] = await db.update(disputes)
+      .set({
+        status: 'resolved',
+        resolution,
+        resolvedBy,
+        resolvedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(disputes.id, id))
+      .returning();
+
+    return result;
+  }
+
+  // NEW FEATURES - Platform Settings
+  async getPublicSettings(): Promise<PlatformSetting[]> {
+    return await db.select().from(platformSettings)
+      .where(eq(platformSettings.isPublic, true));
+  }
+
+  async getAllSettings(): Promise<PlatformSetting[]> {
+    return await db.select().from(platformSettings).orderBy(asc(platformSettings.category));
+  }
+
+  async updateSetting(key: string, value: string, updatedBy: string): Promise<PlatformSetting> {
+    const [result] = await db.update(platformSettings)
+      .set({
+        settingValue: value,
+        updatedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(platformSettings.settingKey, key))
+      .returning();
+
+    return result;
   }
 }
 

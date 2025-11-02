@@ -36,6 +36,7 @@ import Cancellation from "@/pages/cancellation";
 import Resources from "@/pages/resources";
 import Community from "@/pages/community";
 import Sitemap from "@/pages/sitemap";
+import Favorites from "@/pages/favorites";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -76,6 +77,7 @@ function Router() {
         <>
           <Route path="/booking" component={Booking} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/favorites" component={Favorites} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />

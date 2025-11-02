@@ -84,6 +84,45 @@
 - ✅ **No order/booking completion without payment**
 - ✅ View payment history
 - ✅ Track payment status (pending/paid/refunded)
+- ✅ **Apply promotional codes/coupons for discounts**
+- ✅ **Promo code validation with usage limits**
+
+### Favorites & Wishlists
+- ✅ Save favorite properties
+- ✅ Save favorite service providers
+- ✅ View all favorites in dedicated page
+- ✅ Remove favorites
+- ✅ **Heart icons on property/provider cards (touch-friendly)**
+- ✅ Filter favorites by type (properties/providers)
+
+### Loyalty & Rewards
+- ✅ Earn loyalty points on bookings
+- ✅ Earn loyalty points on service orders
+- ✅ View loyalty points balance
+- ✅ View loyalty points history
+- ✅ Redeem points for discounts
+- ✅ Point expiration tracking
+
+### Booking Modifications
+- ✅ Request booking cancellation
+- ✅ Request booking modification
+- ✅ Submit refund requests
+- ✅ Track cancellation status
+- ✅ View cancellation history
+- ✅ Admin approval workflow for cancellations
+
+### Trip Planning
+- ✅ Create trip plans/itineraries
+- ✅ Add properties to trip plans
+- ✅ Add services to trip plans
+- ✅ Set trip dates
+- ✅ View all trip plans
+- ✅ Edit/delete trip plans
+
+### Group Bookings
+- ✅ Create group bookings (multiple guests)
+- ✅ Specify group size
+- ✅ Group booking discounts
 
 ---
 
@@ -211,6 +250,29 @@
 - ✅ Payment received notifications
 - ✅ Message notifications
 
+### Service Packages & Bundles
+- ✅ Create service packages (multiple services)
+- ✅ Set package pricing and discounts
+- ✅ Create recurring service options
+- ✅ Set recurrence intervals (daily/weekly/monthly)
+- ✅ Manage active packages
+- ✅ Edit/delete packages
+
+### Financial Management
+- ✅ View earnings dashboard
+- ✅ Track total earnings
+- ✅ View earnings by period
+- ✅ Request payouts
+- ✅ Track payout status
+- ✅ View payout history
+- ✅ View earnings analytics
+
+### Seasonal Pricing
+- ✅ Set seasonal pricing rules
+- ✅ Define peak/off-peak seasons
+- ✅ Apply seasonal rate adjustments
+- ✅ Manage pricing calendar
+
 ---
 
 ## 🔴 ADMIN ROLE FEATURES
@@ -273,6 +335,60 @@
 - ✅ Access admin-only dashboard
 - ✅ Dedicated admin page (/admin)
 - ✅ Full system oversight
+
+### Promotional Code Management
+- ✅ Create promotional codes
+- ✅ Set discount types (percentage/fixed amount)
+- ✅ Set discount values
+- ✅ Define validity periods
+- ✅ Set usage limits (max uses per code)
+- ✅ Set user-specific restrictions
+- ✅ Track promo code usage
+- ✅ Activate/deactivate promo codes
+- ✅ View promo code analytics
+- ✅ Manage promo code history
+
+### Dispute Resolution System
+- ✅ View all disputes
+- ✅ Filter disputes by status (pending/resolved)
+- ✅ Assign disputes to admins
+- ✅ Add dispute resolutions
+- ✅ Update dispute status
+- ✅ Track dispute history
+- ✅ View dispute parties (client/provider/owner)
+- ✅ Access related bookings/orders
+
+### Platform Settings
+- ✅ Configure platform-wide settings
+- ✅ Set commission rates
+- ✅ Configure payment settings
+- ✅ Manage feature flags
+- ✅ Set service categories
+- ✅ Configure notification settings
+- ✅ Manage platform metadata
+
+### Email Template Management
+- ✅ Create email templates
+- ✅ Edit email templates
+- ✅ Preview email templates
+- ✅ Set template variables
+- ✅ Manage transactional emails
+- ✅ Configure email triggers
+
+### Activity Logs & Audit Trail
+- ✅ View all platform activity
+- ✅ Track user actions
+- ✅ Monitor system changes
+- ✅ Filter logs by user/action/date
+- ✅ Export activity logs
+- ✅ Security audit trail
+
+### Territory & Regional Management
+- ✅ Define geographic territories
+- ✅ Assign country managers to territories
+- ✅ View regional analytics
+- ✅ Track regional performance
+- ✅ Manage regional settings
 
 ---
 

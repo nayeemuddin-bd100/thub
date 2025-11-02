@@ -25,6 +25,8 @@ export default function Booking() {
     guests: 1,
     services: [] as any[],
   });
+  const [promoCode, setPromoCode] = useState('');
+  const [validatedPromo, setValidatedPromo] = useState<{ valid: boolean; discount?: number; message?: string } | null>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -126,9 +128,33 @@ export default function Booking() {
     },
   });
 
+  const validatePromo = async () => {
+    if (!promoCode.trim()) return;
+    
+    try {
+      const response = await apiRequest('POST', '/api/promotional-codes/validate', {
+        code: promoCode,
+        userId: user?.id,
+      });
+      const result = await response.json();
+      setValidatedPromo(result);
+      toast({
+        title: result.valid ? "Promo code applied!" : "Invalid code",
+        description: result.message,
+        variant: result.valid ? "default" : "destructive",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to validate promo code",
+        variant: "destructive",
+      });
+    }
+  };
+
   const calculateTotals = () => {
     if (!property || !bookingData.checkIn || !bookingData.checkOut) {
-      return { propertyTotal: 0, servicesTotal: 0, discountAmount: 0, totalAmount: 0, nights: 0 };
+      return { propertyTotal: 0, servicesTotal: 0, bundleDiscount: 0, promoDiscount: 0, totalAmount: 0, nights: 0 };
     }
 
     const checkInDate = new Date(bookingData.checkIn);
@@ -144,10 +170,13 @@ export default function Booking() {
     }, 0);
 
     const discountRate = bookingData.services.length >= 3 ? 0.1 : bookingData.services.length > 0 ? 0.05 : 0;
-    const discountAmount = (propertyTotal + servicesTotal) * discountRate;
-    const totalAmount = propertyTotal + servicesTotal - discountAmount;
+    const bundleDiscount = (propertyTotal + servicesTotal) * discountRate;
+    
+    const promoDiscount = validatedPromo?.valid ? ((propertyTotal + servicesTotal - bundleDiscount) * (validatedPromo.discount || 0) / 100) : 0;
+    
+    const totalAmount = propertyTotal + servicesTotal - bundleDiscount - promoDiscount;
 
-    return { propertyTotal, servicesTotal, discountAmount, totalAmount, nights };
+    return { propertyTotal, servicesTotal, bundleDiscount, promoDiscount, totalAmount, nights };
   };
 
   const handleBooking = () => {
@@ -179,7 +208,7 @@ export default function Booking() {
     });
   };
 
-  const { propertyTotal, servicesTotal, discountAmount, totalAmount, nights } = calculateTotals();
+  const { propertyTotal, servicesTotal, bundleDiscount, promoDiscount, totalAmount, nights } = calculateTotals();
 
   if (authLoading) {
     return (
@@ -397,13 +426,48 @@ export default function Booking() {
                     </div>
                   )}
                   
-                  {discountAmount > 0 && (
+                  {bundleDiscount > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground" data-testid="text-discount-label">
+                      <span className="text-muted-foreground" data-testid="text-bundle-discount-label">
                         Bundle Discount ({bookingData.services.length >= 3 ? '10%' : '5%'})
                       </span>
-                      <span className="text-accent" data-testid="text-discount-value">
-                        -${discountAmount.toLocaleString()}
+                      <span className="text-accent" data-testid="text-bundle-discount-value">
+                        -${bundleDiscount.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Promo Code */}
+                  <div className="space-y-2">
+                    <Label htmlFor="promo-code">Promo Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="promo-code"
+                        placeholder="Enter code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        data-testid="input-promo-code"
+                      />
+                      <Button 
+                        onClick={validatePromo} 
+                        variant="outline"
+                        data-testid="button-apply-promo"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                    {validatedPromo && !validatedPromo.valid && (
+                      <p className="text-sm text-destructive">{validatedPromo.message}</p>
+                    )}
+                  </div>
+                  
+                  {promoDiscount > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground" data-testid="text-promo-discount-label">
+                        Promo Discount ({validatedPromo?.discount}%)
+                      </span>
+                      <span className="text-accent" data-testid="text-promo-discount-value">
+                        -${promoDiscount.toLocaleString()}
                       </span>
                     </div>
                   )}

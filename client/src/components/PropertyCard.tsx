@@ -1,7 +1,13 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Star, Users, Bed, Car } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Star, Users, Bed, Car, Heart } from "lucide-react";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface PropertyCardProps {
   property: {
@@ -20,7 +26,56 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property }: PropertyCardProps) {
   const imageUrl = property.images?.[0] || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
-  const serviceCount = property.serviceCount || 0; // Real service count from database
+  const serviceCount = property.serviceCount || 0;
+  const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['/api/favorites'],
+    enabled: isAuthenticated,
+  });
+
+  const isFavorite = favorites.some((fav: any) => fav.propertyId === property.id);
+
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      if (isFavorite) {
+        const favorite = favorites.find((fav: any) => fav.propertyId === property.id);
+        await apiRequest('DELETE', `/api/favorites/${favorite.id}`);
+      } else {
+        await apiRequest('POST', '/api/favorites', { propertyId: property.id });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/favorites'] });
+      toast({
+        title: isFavorite ? "Removed from favorites" : "Added to favorites",
+        description: isFavorite 
+          ? "Property removed from your favorites" 
+          : "Property added to your favorites",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      toast({
+        title: "Login required",
+        description: "Please log in to add favorites",
+        variant: "destructive",
+      });
+      return;
+    }
+    toggleFavoriteMutation.mutate();
+  };
   
   return (
     <Link href={`/properties/${property.id}`}>
@@ -34,6 +89,19 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             alt={property.title}
             className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
           />
+          {isAuthenticated && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-3 right-3 bg-white/90 dark:bg-black/90 hover:bg-white dark:hover:bg-black transition-all shadow-md"
+              onClick={handleFavoriteClick}
+              data-testid={`button-favorite-${property.id}`}
+            >
+              <Heart 
+                className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-700 dark:text-gray-300'}`}
+              />
+            </Button>
+          )}
         </div>
         
         <div className="p-5">
