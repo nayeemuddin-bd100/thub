@@ -19,7 +19,7 @@ type Cancellation = {
 export default function CancellationManagement() {
   const { toast } = useToast();
 
-  const { data: cancellations = [], isLoading } = useQuery<Cancellation[]>({
+  const { data: cancellations = [], isLoading, error } = useQuery<Cancellation[]>({
     queryKey: ["/api/admin/cancellations"],
   });
 
@@ -38,36 +38,66 @@ export default function CancellationManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/cancellations"] });
       toast({ title: "Success", description: "Cancellation status updated!" });
     },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update cancellation status.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
-    return <div className="animate-pulse space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted rounded-lg" />)}</div>;
+    return (
+      <div className="animate-pulse space-y-4" data-testid="loading-cancellations">
+        {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted rounded-lg" data-testid={`skeleton-cancellation-${i}`} />)}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-destructive" data-testid="error-cancellations">
+            Failed to load cancellation requests. Please try again.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cancellation Requests</CardTitle>
+        <CardTitle data-testid="heading-cancellation-management">Cancellation Requests</CardTitle>
       </CardHeader>
       <CardContent>
         {cancellations.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No cancellation requests</p>
+          <p className="text-center text-muted-foreground py-8" data-testid="empty-cancellations">
+            No cancellation requests
+          </p>
         ) : (
           <div className="space-y-4">
             {cancellations.map((cancellation) => (
               <div key={cancellation.id} className="border rounded-lg p-4" data-testid={`cancellation-${cancellation.id}`}>
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <p className="font-semibold">Booking: {cancellation.bookingCode || cancellation.bookingId}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-semibold" data-testid={`text-booking-${cancellation.id}`}>
+                      Booking: {cancellation.bookingCode || cancellation.bookingId}
+                    </p>
+                    <p className="text-sm text-muted-foreground" data-testid={`text-date-${cancellation.id}`}>
                       Requested: {new Date(cancellation.requestDate).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant={cancellation.status === "pending" ? "secondary" : "default"}>
+                  <Badge 
+                    variant={cancellation.status === "pending" ? "secondary" : "default"}
+                    data-testid={`badge-status-${cancellation.id}`}
+                  >
                     {cancellation.status}
                   </Badge>
                 </div>
-                <p className="text-sm mb-3">{cancellation.reason}</p>
+                <p className="text-sm mb-3" data-testid={`text-reason-${cancellation.id}`}>{cancellation.reason}</p>
                 {cancellation.status === "pending" && (
                   <div className="flex gap-2">
                     <Button

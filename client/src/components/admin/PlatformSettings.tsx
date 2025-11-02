@@ -1,12 +1,27 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { Settings } from "lucide-react";
+
+const settingsSchema = z.object({
+  commissionRate: z.string()
+    .refine((val) => val === "" || !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => val === "" || (parseFloat(val) >= 0 && parseFloat(val) <= 100), "Must be between 0 and 100"),
+  platformFee: z.string()
+    .refine((val) => val === "" || !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => val === "" || parseFloat(val) >= 0, "Must be non-negative"),
+  minBookingAmount: z.string()
+    .refine((val) => val === "" || !isNaN(parseFloat(val)), "Must be a valid number")
+    .refine((val) => val === "" || parseFloat(val) >= 0, "Must be non-negative"),
+});
 
 type PlatformSetting = {
   id: string;
@@ -16,29 +31,36 @@ type PlatformSetting = {
 
 export default function PlatformSettings() {
   const { toast } = useToast();
-  const [settings, setSettings] = useState({
-    commissionRate: "",
-    platformFee: "",
-    minBookingAmount: "",
+
+  const form = useForm<z.infer<typeof settingsSchema>>({
+    resolver: zodResolver(settingsSchema),
+    defaultValues: {
+      commissionRate: "",
+      platformFee: "",
+      minBookingAmount: "",
+    },
   });
 
-  const { data: platformSettings = [] } = useQuery<PlatformSetting[]>({
+  const { data: platformSettings = [], isLoading, error } = useQuery<PlatformSetting[]>({
     queryKey: ["/api/admin/settings"],
-    onSuccess: (data) => {
-      const settingsMap = data.reduce((acc, setting) => {
+  });
+
+  useEffect(() => {
+    if (platformSettings.length > 0) {
+      const settingsMap = platformSettings.reduce((acc, setting) => {
         acc[setting.key] = setting.value;
         return acc;
       }, {} as any);
-      setSettings({
+      form.reset({
         commissionRate: settingsMap.commissionRate || "",
         platformFee: settingsMap.platformFee || "",
         minBookingAmount: settingsMap.minBookingAmount || "",
       });
-    },
-  });
+    }
+  }, [platformSettings, form]);
 
   const updateSettingsMutation = useMutation({
-    mutationFn: async (data: typeof settings) => {
+    mutationFn: async (data: z.infer<typeof settingsSchema>) => {
       const res = await fetch("/api/admin/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,63 +74,121 @@ export default function PlatformSettings() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
       toast({ title: "Success", description: "Platform settings updated!" });
     },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateSettingsMutation.mutate(settings);
+  const handleSubmit = (data: z.infer<typeof settingsSchema>) => {
+    updateSettingsMutation.mutate(data);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="space-y-4" data-testid="loading-settings">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-16 bg-muted rounded animate-pulse" data-testid={`skeleton-setting-${i}`} />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-center text-destructive" data-testid="error-settings">
+            Failed to load platform settings. Please try again.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" data-testid="heading-platform-settings">
           <Settings className="w-5 h-5" />
           Platform Settings
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Commission Rate (%)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={settings.commissionRate}
-              onChange={(e) => setSettings({ ...settings, commissionRate: e.target.value })}
-              placeholder="15.00"
-              data-testid="input-commission-rate"
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="commissionRate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Commission Rate (%)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="15.00"
+                      {...field}
+                      data-testid="input-commission-rate"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div>
-            <Label>Platform Fee ($)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={settings.platformFee}
-              onChange={(e) => setSettings({ ...settings, platformFee: e.target.value })}
-              placeholder="5.00"
-              data-testid="input-platform-fee"
+            <FormField
+              control={form.control}
+              name="platformFee"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Platform Fee ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="5.00"
+                      {...field}
+                      data-testid="input-platform-fee"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div>
-            <Label>Minimum Booking Amount ($)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={settings.minBookingAmount}
-              onChange={(e) => setSettings({ ...settings, minBookingAmount: e.target.value })}
-              placeholder="50.00"
-              data-testid="input-min-booking"
+            <FormField
+              control={form.control}
+              name="minBookingAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Minimum Booking Amount ($)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="50.00"
+                      {...field}
+                      data-testid="input-min-booking"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <Button type="submit" disabled={updateSettingsMutation.isPending} data-testid="button-save-settings">
-            {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
-          </Button>
-        </form>
+            <Button type="submit" disabled={updateSettingsMutation.isPending} data-testid="button-save-settings">
+              {updateSettingsMutation.isPending ? "Saving..." : "Save Settings"}
+            </Button>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

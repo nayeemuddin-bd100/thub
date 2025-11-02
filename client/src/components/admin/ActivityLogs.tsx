@@ -17,7 +17,7 @@ type ActivityLog = {
 export default function ActivityLogs() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: logs = [], isLoading } = useQuery<ActivityLog[]>({
+  const { data: logs = [], isLoading, error } = useQuery<ActivityLog[]>({
     queryKey: ["/api/admin/activity-logs"],
   });
 
@@ -31,7 +31,7 @@ export default function ActivityLogs() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2" data-testid="heading-activity-logs">
           <Activity className="w-5 h-5" />
           Activity Logs & Audit Trail
         </CardTitle>
@@ -50,23 +50,35 @@ export default function ActivityLogs() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-3" data-testid="loading-logs">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
+              <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" data-testid={`skeleton-log-${i}`} />
             ))}
           </div>
+        ) : error ? (
+          <p className="text-center text-destructive py-8" data-testid="error-logs">
+            Failed to load activity logs. Please try again.
+          </p>
         ) : filteredLogs.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No activity logs found</p>
+          <p className="text-center text-muted-foreground py-8" data-testid="empty-logs">
+            No activity logs found
+          </p>
         ) : (
           <div className="space-y-3 max-h-96 overflow-y-auto">
             {filteredLogs.map((log) => (
               <div key={log.id} className="border-l-4 border-primary pl-4 py-2" data-testid={`log-${log.id}`}>
                 <div className="flex justify-between items-start mb-1">
-                  <p className="font-semibold">{log.action}</p>
-                  <Badge variant="outline">{new Date(log.timestamp).toLocaleString()}</Badge>
+                  <p className="font-semibold" data-testid={`text-action-${log.id}`}>{log.action}</p>
+                  <Badge variant="outline" data-testid={`badge-timestamp-${log.id}`}>
+                    {new Date(log.timestamp).toLocaleString()}
+                  </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">{log.details}</p>
-                {log.userName && <p className="text-xs text-muted-foreground mt-1">By: {log.userName}</p>}
+                <p className="text-sm text-muted-foreground" data-testid={`text-details-${log.id}`}>{log.details}</p>
+                {log.userName && (
+                  <p className="text-xs text-muted-foreground mt-1" data-testid={`text-user-${log.id}`}>
+                    By: {log.userName}
+                  </p>
+                )}
               </div>
             ))}
           </div>

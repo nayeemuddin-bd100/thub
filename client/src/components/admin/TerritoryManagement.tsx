@@ -1,13 +1,21 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { MapPin, Plus, TrendingUp } from "lucide-react";
+import { MapPin, Plus } from "lucide-react";
+
+const territorySchema = z.object({
+  name: z.string().min(1, "Territory name is required"),
+  countryManagerId: z.string().optional(),
+});
 
 type Territory = {
   id: string;
@@ -19,12 +27,16 @@ type Territory = {
 export default function TerritoryManagement() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    countryManagerId: "",
+
+  const form = useForm<z.infer<typeof territorySchema>>({
+    resolver: zodResolver(territorySchema),
+    defaultValues: {
+      name: "",
+      countryManagerId: "",
+    },
   });
 
-  const { data: territories = [] } = useQuery<Territory[]>({
+  const { data: territories = [], isLoading, error } = useQuery<Territory[]>({
     queryKey: ["/api/admin/territories"],
   });
 
@@ -33,7 +45,7 @@ export default function TerritoryManagement() {
   });
 
   const createTerritoryMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: z.infer<typeof territorySchema>) => {
       const res = await fetch("/api/admin/territories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -46,21 +58,27 @@ export default function TerritoryManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/territories"] });
       setDialogOpen(false);
-      setFormData({ name: "", countryManagerId: "" });
+      form.reset();
       toast({ title: "Success", description: "Territory created!" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to create territory.",
+        variant: "destructive",
+      });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createTerritoryMutation.mutate(formData);
+  const handleSubmit = (data: z.infer<typeof territorySchema>) => {
+    createTerritoryMutation.mutate(data);
   };
 
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2" data-testid="heading-territory-management">
             <MapPin className="w-5 h-5" />
             Territory Management
           </CardTitle>
@@ -71,14 +89,26 @@ export default function TerritoryManagement() {
         </div>
       </CardHeader>
       <CardContent>
-        {territories.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">No territories defined yet</p>
+        {isLoading ? (
+          <div className="grid gap-4 md:grid-cols-2" data-testid="loading-territories">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-20 bg-muted rounded animate-pulse" data-testid={`skeleton-territory-${i}`} />
+            ))}
+          </div>
+        ) : error ? (
+          <p className="text-center text-destructive py-8" data-testid="error-territories">
+            Failed to load territories
+          </p>
+        ) : territories.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8" data-testid="empty-territories">
+            No territories defined yet
+          </p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {territories.map((territory) => (
               <div key={territory.id} className="border rounded-lg p-4" data-testid={`territory-${territory.id}`}>
-                <h4 className="font-semibold mb-1">{territory.name}</h4>
-                <p className="text-sm text-muted-foreground">
+                <h4 className="font-semibold mb-1" data-testid={`text-name-${territory.id}`}>{territory.name}</h4>
+                <p className="text-sm text-muted-foreground" data-testid={`text-manager-${territory.id}`}>
                   Manager: {territory.managerName || "Unassigned"}
                 </p>
               </div>
@@ -92,37 +122,46 @@ export default function TerritoryManagement() {
               <DialogTitle>Create Territory</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Territory Name *</Label>
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="North America"
-                  required
-                  data-testid="input-territory-name"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Territory Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="North America" {...field} data-testid="input-territory-name" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div>
-                <Label>Country Manager</Label>
-                <Input
-                  value={formData.countryManagerId}
-                  onChange={(e) => setFormData({ ...formData, countryManagerId: e.target.value })}
-                  placeholder="Manager User ID (optional)"
-                  data-testid="input-manager-id"
+                <FormField
+                  control={form.control}
+                  name="countryManagerId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country Manager</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Manager User ID (optional)" {...field} data-testid="input-manager-id" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createTerritoryMutation.isPending} data-testid="button-submit-territory">
-                  {createTerritoryMutation.isPending ? "Creating..." : "Create Territory"}
-                </Button>
-              </div>
-            </form>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-territory">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createTerritoryMutation.isPending} data-testid="button-submit-territory">
+                    {createTerritoryMutation.isPending ? "Creating..." : "Create Territory"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </CardContent>
