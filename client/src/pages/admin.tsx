@@ -30,6 +30,12 @@ import {
   User
 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import CancellationManagement from "@/components/admin/CancellationManagement";
+import PlatformSettings from "@/components/admin/PlatformSettings";
+import ActivityLogs from "@/components/admin/ActivityLogs";
+import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
+import EmailTemplates from "@/components/admin/EmailTemplates";
+import TerritoryManagement from "@/components/admin/TerritoryManagement";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -1709,20 +1715,42 @@ export default function AdminDashboard() {
           {/* Settings Section */}
           {activeSection === 'settings' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Settings</h2>
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-foreground mb-4">Account Settings</h3>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Email</Label>
-                    <Input value={user?.email} disabled />
-                  </div>
-                  <div>
-                    <Label>Role</Label>
-                    <Input value={user?.role} disabled />
-                  </div>
-                </div>
-              </Card>
+              <h2 className="text-3xl font-bold text-foreground mb-8">Settings & Management</h2>
+              
+              <Tabs defaultValue="platform" className="space-y-6">
+                <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+                  <TabsTrigger value="platform" data-testid="tab-platform-settings">Platform Settings</TabsTrigger>
+                  <TabsTrigger value="associations" data-testid="tab-associations">Property-Service</TabsTrigger>
+                  <TabsTrigger value="cancellations" data-testid="tab-cancellations">Cancellations</TabsTrigger>
+                  <TabsTrigger value="territories" data-testid="tab-territories">Territories</TabsTrigger>
+                  <TabsTrigger value="emails" data-testid="tab-emails">Email Templates</TabsTrigger>
+                  <TabsTrigger value="logs" data-testid="tab-logs">Activity Logs</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="platform" className="space-y-4">
+                  <PlatformSettings />
+                </TabsContent>
+
+                <TabsContent value="associations" className="space-y-4">
+                  <PropertyServiceAssociation />
+                </TabsContent>
+
+                <TabsContent value="cancellations" className="space-y-4">
+                  <CancellationManagement />
+                </TabsContent>
+
+                <TabsContent value="territories" className="space-y-4">
+                  <TerritoryManagement />
+                </TabsContent>
+
+                <TabsContent value="emails" className="space-y-4">
+                  <EmailTemplates />
+                </TabsContent>
+
+                <TabsContent value="logs" className="space-y-4">
+                  <ActivityLogs />
+                </TabsContent>
+              </Tabs>
             </div>
           )}
         </div>
