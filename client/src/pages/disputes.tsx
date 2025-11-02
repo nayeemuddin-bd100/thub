@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +15,19 @@ import { queryClient } from "@/lib/queryClient";
 import { AlertCircle, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+const disputeFormSchema = z.object({
+  itemType: z.enum(["booking", "order"]),
+  bookingId: z.string().optional(),
+  orderId: z.string().optional(),
+  description: z.string().min(20, "Description must be at least 20 characters"),
+}).refine((data) => {
+  if (data.itemType === "booking") return !!data.bookingId;
+  return !!data.orderId;
+}, {
+  message: "Please select a booking or order",
+  path: ["bookingId"],
+});
 
 type Dispute = {
   id: string;
@@ -27,29 +42,35 @@ export default function Disputes() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [formData, setFormData] = useState({
-    bookingId: "",
-    orderId: "",
-    description: "",
-    itemType: "booking",
-  });
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  const { data: disputes = [] } = useQuery<Dispute[]>({
+  const form = useForm<z.infer<typeof disputeFormSchema>>({
+    resolver: zodResolver(disputeFormSchema),
+    defaultValues: {
+      itemType: "booking",
+      bookingId: "",
+      orderId: "",
+      description: "",
+    },
+  });
+
+  const itemType = form.watch("itemType");
+
+  const { data: disputes = [], isLoading: disputesLoading, error: disputesError } = useQuery<Dispute[]>({
     queryKey: ["/api/disputes"],
   });
 
-  const { data: bookings = [] } = useQuery<any[]>({
+  const { data: bookings = [], isLoading: bookingsLoading } = useQuery<any[]>({
     queryKey: ["/api/bookings"],
   });
 
-  const { data: orders = [] } = useQuery<any[]>({
+  const { data: orders = [], isLoading: ordersLoading } = useQuery<any[]>({
     queryKey: ["/api/service-orders"],
   });
 
   const createDisputeMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: z.infer<typeof disputeFormSchema>) => {
       const res = await fetch("/api/disputes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,14 +87,20 @@ export default function Disputes() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/disputes"] });
       setDialogOpen(false);
-      setFormData({ bookingId: "", orderId: "", description: "", itemType: "booking" });
+      form.reset();
       toast({ title: "Success", description: "Dispute submitted successfully!" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Error", 
+        description: "Failed to submit dispute. Please try again.",
+        variant: "destructive",
+      });
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    createDisputeMutation.mutate(formData);
+  const handleSubmit = (data: z.infer<typeof disputeFormSchema>) => {
+    createDisputeMutation.mutate(data);
   };
 
   return (
@@ -83,7 +110,7 @@ export default function Disputes() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Disputes</h1>
+            <h1 className="text-3xl font-bold" data-testid="heading-disputes">Disputes</h1>
             <p className="text-muted-foreground mt-2">Manage and track your dispute cases</p>
           </div>
           <Button onClick={() => setDialogOpen(true)} data-testid="button-create-dispute">
@@ -92,11 +119,29 @@ export default function Disputes() {
           </Button>
         </div>
 
-        {disputes.length === 0 ? (
+        {disputesLoading ? (
+          <div className="space-y-4" data-testid="loading-disputes">
+            {[1, 2, 3].map((i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="h-24 bg-muted rounded animate-pulse" data-testid={`skeleton-dispute-${i}`} />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : disputesError ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <p className="text-destructive" data-testid="error-disputes">
+                Failed to load disputes. Please try again.
+              </p>
+            </CardContent>
+          </Card>
+        ) : disputes.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <AlertCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Disputes</h3>
+              <h3 className="text-lg font-semibold mb-2" data-testid="empty-disputes">No Disputes</h3>
               <p className="text-muted-foreground mb-4">You haven't filed any disputes yet</p>
             </CardContent>
           </Card>
@@ -106,17 +151,20 @@ export default function Disputes() {
               <Card key={dispute.id} data-testid={`card-dispute-${dispute.id}`}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">
+                    <CardTitle className="text-lg" data-testid={`text-dispute-type-${dispute.id}`}>
                       Dispute for {dispute.bookingId ? "Booking" : "Order"}
                     </CardTitle>
-                    <Badge variant={dispute.status === "pending" ? "secondary" : "default"}>
+                    <Badge 
+                      variant={dispute.status === "pending" ? "secondary" : "default"}
+                      data-testid={`badge-status-${dispute.id}`}
+                    >
                       {dispute.status}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm mb-2">{dispute.description}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm mb-2" data-testid={`text-description-${dispute.id}`}>{dispute.description}</p>
+                  <p className="text-xs text-muted-foreground" data-testid={`text-date-${dispute.id}`}>
                     Filed: {new Date(dispute.createdAt).toLocaleDateString()}
                   </p>
                 </CardContent>
@@ -131,84 +179,130 @@ export default function Disputes() {
               <DialogTitle>File a Dispute</DialogTitle>
             </DialogHeader>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Dispute Type *</Label>
-                <Select
-                  value={formData.itemType}
-                  onValueChange={(value) => setFormData({ ...formData, itemType: value, bookingId: "", orderId: "" })}
-                >
-                  <SelectTrigger data-testid="select-dispute-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="booking">Property Booking</SelectItem>
-                    <SelectItem value="order">Service Order</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.itemType === "booking" ? (
-                <div>
-                  <Label>Select Booking *</Label>
-                  <Select
-                    value={formData.bookingId}
-                    onValueChange={(value) => setFormData({ ...formData, bookingId: value })}
-                  >
-                    <SelectTrigger data-testid="select-booking">
-                      <SelectValue placeholder="Choose a booking" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bookings.map((booking) => (
-                        <SelectItem key={booking.id} value={booking.id}>
-                          {booking.bookingCode || booking.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : (
-                <div>
-                  <Label>Select Order *</Label>
-                  <Select
-                    value={formData.orderId}
-                    onValueChange={(value) => setFormData({ ...formData, orderId: value })}
-                  >
-                    <SelectTrigger data-testid="select-order">
-                      <SelectValue placeholder="Choose an order" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {orders.map((order) => (
-                        <SelectItem key={order.id} value={order.id}>
-                          {order.orderCode || order.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              <div>
-                <Label>Description *</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe your issue in detail..."
-                  rows={5}
-                  required
-                  data-testid="textarea-dispute-description"
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="itemType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dispute Type *</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("bookingId", "");
+                          form.setValue("orderId", "");
+                        }} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-dispute-type">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="booking">Property Booking</SelectItem>
+                          <SelectItem value="order">Service Order</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createDisputeMutation.isPending} data-testid="button-submit-dispute">
-                  {createDisputeMutation.isPending ? "Submitting..." : "Submit Dispute"}
-                </Button>
-              </div>
-            </form>
+                {itemType === "booking" ? (
+                  <FormField
+                    control={form.control}
+                    name="bookingId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Booking *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-booking">
+                              <SelectValue placeholder="Choose a booking" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {bookingsLoading ? (
+                              <SelectItem value="loading" disabled>Loading bookings...</SelectItem>
+                            ) : bookings.length === 0 ? (
+                              <SelectItem value="none" disabled>No bookings found</SelectItem>
+                            ) : (
+                              bookings.map((booking) => (
+                                <SelectItem key={booking.id} value={booking.id}>
+                                  {booking.bookingCode || booking.id}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="orderId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Select Order *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-order">
+                              <SelectValue placeholder="Choose an order" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {ordersLoading ? (
+                              <SelectItem value="loading" disabled>Loading orders...</SelectItem>
+                            ) : orders.length === 0 ? (
+                              <SelectItem value="none" disabled>No orders found</SelectItem>
+                            ) : (
+                              orders.map((order) => (
+                                <SelectItem key={order.id} value={order.id}>
+                                  {order.orderCode || order.id}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe your issue in detail..."
+                          rows={5}
+                          {...field}
+                          data-testid="textarea-dispute-description"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-dispute">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createDisputeMutation.isPending} data-testid="button-submit-dispute">
+                    {createDisputeMutation.isPending ? "Submitting..." : "Submit Dispute"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </DialogContent>
         </Dialog>
       </div>
