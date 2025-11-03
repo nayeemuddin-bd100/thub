@@ -19,7 +19,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20.acacia",
+  apiVersion: "2025-08-27.basil",
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -718,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow updating specific fields, not userId, categoryId, approvalStatus
-      const allowedUpdates = {
+      const allowedUpdates: Record<string, any> = {
         businessName: req.body.businessName,
         description: req.body.description,
         location: req.body.location,
@@ -806,7 +806,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Menu not found or not authorized" });
       }
       
-      const allowedUpdates = {
+      const allowedUpdates: Record<string, any> = {
         categoryName: req.body.categoryName,
         description: req.body.description,
       };
@@ -903,7 +903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Menu item not found or not authorized" });
       }
       
-      const allowedUpdates = {
+      const allowedUpdates: Record<string, any> = {
         dishName: req.body.dishName,
         description: req.body.description,
         price: req.body.price,
@@ -1046,6 +1046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const materialData = {
         serviceProviderId: provider.id,
         materialName: req.body.materialName,
+        materialType: req.body.materialType || 'other',
         description: req.body.description,
         unitPrice: req.body.unitPrice,
         isProvidedByProvider: req.body.isProvidedByProvider,
@@ -1074,7 +1075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Material not found or not authorized" });
       }
       
-      const allowedUpdates = {
+      const allowedUpdates: Record<string, any> = {
         materialName: req.body.materialName,
         description: req.body.description,
         unitPrice: req.body.unitPrice,
@@ -1155,7 +1156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return {
               ...task,
               customPrice: config?.customPrice,
-              effectivePrice: config?.customPrice || task.estimatedPrice,
+              effectivePrice: config?.customPrice || '0',
             };
           });
         
@@ -1254,7 +1255,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(400).json({ message: `Menu item ${item.menuItemId} not found for this provider` });
           }
           
-          const price = parseFloat(menuItem.price);
+          const price = parseFloat(menuItem.price || '0');
           validatedItems.push({
             itemType: 'menu_item',
             menuItemId: menuItem.id,
@@ -1282,7 +1283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return res.status(400).json({ message: `Task ${item.taskId} not found` });
           }
           
-          const price = parseFloat(config.customPrice || task.estimatedPrice);
+          const price = parseFloat(config.customPrice || '0');
           validatedItems.push({
             itemType: 'task',
             menuItemId: null,
@@ -1318,7 +1319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         specialInstructions: specialInstructions || null,
       };
       
-      const order = await storage.createServiceOrder(orderData, validatedItems);
+      const order = await storage.createServiceOrder(orderData, validatedItems as any);
       res.status(201).json(order);
     } catch (error) {
       console.error("Error creating service order:", error);
@@ -2102,7 +2103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const cancellations = await storage.getCancellations();
+      const cancellations = await storage.getAllCancellations();
       res.json(cancellations);
     } catch (error) {
       console.error("Error getting cancellations:", error);
@@ -2471,7 +2472,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (message.type === 'auth' && message.userId) {
           userId = message.userId;
-          connectedClients.set(userId, ws);
+          if (userId) {
+            connectedClients.set(userId, ws);
+          }
           
           ws.send(JSON.stringify({
             type: 'auth_success',

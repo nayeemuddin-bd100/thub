@@ -470,8 +470,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Booking operations
-  async createBooking(booking: InsertBooking, serviceBookingsData?: Omit<ServiceBooking, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Booking> {
-    const [newBooking] = await db.insert(bookings).values(booking).returning();
+  async createBooking(booking: InsertBooking & { bookingCode: string }, serviceBookingsData?: Omit<ServiceBooking, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<Booking> {
+    const [newBooking] = await db.insert(bookings).values([booking]).returning();
     
     if (serviceBookingsData && serviceBookingsData.length > 0) {
       await db.insert(serviceBookings).values(
@@ -797,8 +797,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Service Orders
-  async createServiceOrder(order: InsertServiceOrder, items: InsertServiceOrderItem[]): Promise<ServiceOrder> {
-    const [newOrder] = await db.insert(serviceOrders).values(order).returning();
+  async createServiceOrder(order: InsertServiceOrder & { orderCode: string }, items: InsertServiceOrderItem[]): Promise<ServiceOrder> {
+    const [newOrder] = await db.insert(serviceOrders).values([order]).returning();
     
     if (items.length > 0) {
       const itemsWithOrderId = items.map(item => ({
@@ -1149,6 +1149,10 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return result;
+  }
+
+  async getAllCancellations(): Promise<BookingCancellation[]> {
+    return await db.select().from(bookingCancellations).orderBy(desc(bookingCancellations.createdAt));
   }
 
   // NEW FEATURES - Trip Plans
