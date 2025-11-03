@@ -2036,7 +2036,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
-      const promoCode = await storage.createPromoCode(req.body);
+      const promoCodeData = {
+        ...req.body,
+        validFrom: new Date(req.body.validFrom),
+        validUntil: new Date(req.body.validUntil),
+      };
+      
+      const promoCode = await storage.createPromoCode(promoCodeData);
       res.status(201).json(promoCode);
     } catch (error) {
       console.error("Error creating promo code:", error);

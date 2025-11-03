@@ -21,9 +21,18 @@ const promoCodeFormSchema = z.object({
   code: z.string().min(3, "Code must be at least 3 characters").max(50).toUpperCase(),
   description: z.string().optional(),
   discountType: z.enum(["percentage", "fixed_amount"]),
-  discountValue: z.string().min(1, "Discount value is required"),
-  minimumPurchase: z.string().optional(),
-  maxUses: z.string().optional(),
+  discountValue: z.string()
+    .min(1, "Discount value is required")
+    .transform((val) => parseFloat(val))
+    .refine((val) => !isNaN(val) && val > 0, "Discount must be a positive number"),
+  minimumPurchase: z.string()
+    .optional()
+    .transform((val) => val ? parseFloat(val) : 0)
+    .refine((val) => val === undefined || (!isNaN(val) && val >= 0), "Minimum purchase must be a non-negative number"),
+  maxUses: z.string()
+    .optional()
+    .transform((val) => val ? parseInt(val) : null)
+    .refine((val) => val === null || val === undefined || (!isNaN(val) && val > 0), "Max uses must be a positive number"),
   validFrom: z.string().min(1, "Start date is required"),
   validUntil: z.string().min(1, "End date is required"),
   applicableTo: z.enum(["all", "properties", "services"]),
@@ -35,6 +44,14 @@ const promoCodeFormSchema = z.object({
 }, {
   message: "End date must be after start date",
   path: ["validUntil"],
+}).refine((data) => {
+  if (data.discountType === "percentage" && data.discountValue > 100) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Percentage discount cannot exceed 100%",
+  path: ["discountValue"],
 });
 
 type PromoCode = {
@@ -83,9 +100,9 @@ export default function PromotionalCodes() {
         code: data.code.toUpperCase(),
         description: data.description || null,
         discountType: data.discountType,
-        discountValue: data.discountValue,
-        minimumPurchase: data.minimumPurchase || "0",
-        maxUses: data.maxUses ? parseInt(data.maxUses) : null,
+        discountValue: data.discountValue.toString(),
+        minimumPurchase: data.minimumPurchase.toString(),
+        maxUses: data.maxUses,
         validFrom: new Date(data.validFrom).toISOString(),
         validUntil: new Date(data.validUntil).toISOString(),
         applicableTo: data.applicableTo,
