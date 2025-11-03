@@ -36,6 +36,7 @@ import ActivityLogs from "@/components/admin/ActivityLogs";
 import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
 import EmailTemplates from "@/components/admin/EmailTemplates";
 import TerritoryManagement from "@/components/admin/TerritoryManagement";
+import PromotionalCodes from "@/components/admin/PromotionalCodes";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -1718,9 +1719,10 @@ export default function AdminDashboard() {
               <h2 className="text-3xl font-bold text-foreground mb-8">Settings & Management</h2>
               
               <Tabs defaultValue="platform" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
+                <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
                   <TabsTrigger value="platform" data-testid="tab-platform-settings">Platform Settings</TabsTrigger>
                   <TabsTrigger value="associations" data-testid="tab-associations">Property-Service</TabsTrigger>
+                  <TabsTrigger value="promocodes" data-testid="tab-promocodes">Promo Codes</TabsTrigger>
                   <TabsTrigger value="cancellations" data-testid="tab-cancellations">Cancellations</TabsTrigger>
                   <TabsTrigger value="territories" data-testid="tab-territories">Territories</TabsTrigger>
                   <TabsTrigger value="emails" data-testid="tab-emails">Email Templates</TabsTrigger>
@@ -1733,6 +1735,10 @@ export default function AdminDashboard() {
 
                 <TabsContent value="associations" className="space-y-4">
                   <PropertyServiceAssociation />
+                </TabsContent>
+
+                <TabsContent value="promocodes" className="space-y-4">
+                  <PromotionalCodes />
                 </TabsContent>
 
                 <TabsContent value="cancellations" className="space-y-4">
