@@ -45,7 +45,7 @@ export default function MessagesPage() {
   
   // Get current user
   const { data: currentUser } = useQuery<User>({
-    queryKey: ['/api/user'],
+    queryKey: ['/api/auth/user'],
   });
 
   // WebSocket connection
