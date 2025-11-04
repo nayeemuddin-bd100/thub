@@ -42,7 +42,10 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         const favorite = favorites.find((fav: any) => fav.propertyId === property.id);
         await apiRequest('DELETE', `/api/favorites/${favorite.id}`);
       } else {
-        await apiRequest('POST', '/api/favorites', { propertyId: property.id });
+        await apiRequest('POST', '/api/favorites', { 
+          favoriteType: 'property',
+          propertyId: property.id 
+        });
       }
     },
     onSuccess: () => {

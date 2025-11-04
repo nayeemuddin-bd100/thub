@@ -49,7 +49,10 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
         const favorite = favorites.find((fav: any) => fav.serviceProviderId === provider.id);
         await apiRequest('DELETE', `/api/favorites/${favorite.id}`);
       } else {
-        await apiRequest('POST', '/api/favorites', { serviceProviderId: provider.id });
+        await apiRequest('POST', '/api/favorites', { 
+          favoriteType: 'service_provider',
+          serviceProviderId: provider.id 
+        });
       }
     },
     onSuccess: () => {
