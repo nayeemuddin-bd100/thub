@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Moon, Sun, User } from "lucide-react";
+import { Search, Moon, Sun, User, MessageSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -101,6 +101,14 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
 
+            {isAuthenticated && (
+              <Link href="/messages">
+                <Button variant="ghost" size="icon" data-testid="button-messages" className="relative">
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+
             {isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -121,6 +129,9 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" data-testid="link-dashboard">{t('header.dashboard')}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/messages" data-testid="link-messages">Messages</Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>

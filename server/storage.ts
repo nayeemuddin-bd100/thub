@@ -108,7 +108,7 @@ import {
   type RegionalAnalytics,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, asc, like, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, like, gte, lte, sql, inArray, or } from "drizzle-orm";
 
 export interface IStorage {
   // User operations

@@ -42,6 +42,7 @@ import TripPlanning from "@/pages/trip-planning";
 import ProviderEarnings from "@/pages/provider-earnings";
 import SeasonalPricing from "@/pages/seasonal-pricing";
 import Disputes from "@/pages/disputes";
+import Messages from "@/pages/messages";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -88,6 +89,7 @@ function Router() {
           <Route path="/provider-earnings" component={ProviderEarnings} />
           <Route path="/seasonal-pricing" component={SeasonalPricing} />
           <Route path="/disputes" component={Disputes} />
+          <Route path="/messages" component={Messages} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />
