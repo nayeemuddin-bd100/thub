@@ -42,6 +42,8 @@ Preferred communication style: Simple, everyday language.
 - **Granular Task Management**: Predefined maid service tasks with client selection and real-time completion tracking.
 - **Job Assignment Workflow**: Country managers assign service providers to jobs with automated acceptance/rejection.
 - **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, and task completions.
+- **Live Chat System**: Real-time messaging between users with WebSocket-powered instant delivery, conversation management, unread message tracking, and automatic message read receipts.
+- **WhatsApp Integration**: Direct WhatsApp contact for service providers with click-to-chat buttons and system notification capabilities via Twilio.
 - **Stripe Payment Integration**: Complete payment flow with secure intent creation, UI, and status updates.
 - **Server-side Price Validation**: Critical security feature to recalculate all prices from authoritative database sources, ignore client-supplied pricing, and validate items belong to the specified provider, preventing tampering and injection attacks.
 - **Secure Payment-First Flow**: Service orders and bookings require payment completion before confirmation, preventing abandoned payments from creating orphaned orders in the system.
@@ -71,15 +73,56 @@ Preferred communication style: Simple, everyday language.
 - Stripe payment intents created server-side for security
 - Payment verification completed server-side before updating both payment status AND order/booking status to confirmed
 
+## Live Chat & Messaging System
+### Real-time Chat
+- **WebSocket Connection**: Persistent WebSocket connection at `/ws` for instant message delivery
+- **Frontend Hook**: `useWebSocket` custom hook handles connection, authentication, and real-time updates
+- **Messages Page**: Full-featured chat UI at `/messages` with conversation list and chat interface
+- **Auto-reconnection**: Exponential backoff strategy for WebSocket reconnections
+- **Features**:
+  - Conversation list with unread message counts
+  - Real-time message delivery and read receipts
+  - Auto-scroll to latest messages
+  - Message history persistence
+  - Responsive mobile/desktop layouts
+
+### Backend Messaging API
+- `POST /api/messages` - Send message (requires auth)
+- `GET /api/conversations` - Get user's conversation list with unread counts (requires auth)
+- `GET /api/messages/:userId` - Get conversation history with specific user (requires auth)
+- `PUT /api/messages/read` - Mark messages as read (requires auth)
+
+### Database Schema
+- **Messages Table**: Stores all chat messages with sender/receiver, content, read status, timestamps
+- **Dynamic Conversations**: Conversations generated dynamically from messages table
+- **Unread Tracking**: Automatic counting of unread messages per conversation
+
+### WhatsApp Integration
+- **Provider Contact**: Click-to-chat buttons on service provider profiles
+- **Direct Links**: Generated WhatsApp links with pre-filled messages
+- **System Notifications**: Backend capability to send WhatsApp notifications via Twilio API
+- **Endpoints**:
+  - `GET /api/whatsapp/link/:providerId` - Get WhatsApp chat link
+  - `POST /api/whatsapp/notify` - Send system notification (requires auth)
+- **Configuration**: Requires Twilio credentials (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_WHATSAPP_NUMBER)
+
+### Navigation
+- **Header Icon**: MessageSquare icon button for quick access to Messages page
+- **User Menu**: Messages link in dropdown menu
+- **Real-time Badge**: Connection status indicator (Connected/Disconnected)
+
 # External Dependencies
 
 ## Core Infrastructure
 - **Database**: Neon PostgreSQL serverless database
 - **Authentication**: Replit OIDC provider
-- **WebSocket**: Native WebSocket implementation
+- **WebSocket**: Native WebSocket implementation for real-time chat messaging
 
 ## Payment Processing
 - **Stripe**: Payment processing integrated with React Stripe.js components.
+
+## Communication
+- **Twilio**: WhatsApp messaging service for provider contact and system notifications (requires TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_WHATSAPP_NUMBER environment variables).
 
 ## File Management
 - **Uppy**: File upload handling, including AWS S3 integration.

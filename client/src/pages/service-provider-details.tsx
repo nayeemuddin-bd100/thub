@@ -23,6 +23,7 @@ import {
   Languages,
   ImageIcon
 } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import type { ServiceProvider } from "@shared/schema";
@@ -255,16 +256,22 @@ export default function ServiceProviderDetailsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div className="flex items-center gap-2" data-testid="provider-location">
               <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <span data-testid="text-location">{provider.location}</span>
             </div>
             {provider.whatsappNumber && (
-              <div className="flex items-center gap-2" data-testid="provider-whatsapp">
-                <Phone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span data-testid="text-whatsapp">{provider.whatsappNumber}</span>
-              </div>
+              <a 
+                href={`https://wa.me/${provider.whatsappNumber.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+                data-testid="provider-whatsapp"
+              >
+                <SiWhatsapp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span data-testid="text-whatsapp" className="underline">Chat on WhatsApp</span>
+              </a>
             )}
             <div className="flex items-center gap-2" data-testid="provider-rates">
               <DollarSign className="h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -276,6 +283,19 @@ export default function ServiceProviderDetailsPage() {
               )}
             </div>
           </div>
+          
+          {provider.whatsappNumber && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <Button
+                onClick={() => window.open(`https://wa.me/${provider.whatsappNumber!.replace(/[^0-9]/g, '')}?text=Hi! I'm interested in your services on TravelHub.`, '_blank')}
+                className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
+                data-testid="button-whatsapp-contact"
+              >
+                <SiWhatsapp className="h-5 w-5 mr-2" />
+                Contact via WhatsApp
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
