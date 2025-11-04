@@ -161,6 +161,7 @@ export interface IStorage {
   sendMessage(message: Omit<Message, 'id' | 'createdAt' | 'isRead'>): Promise<Message>;
   getConversation(userId1: string, userId2: string): Promise<Message[]>;
   markMessagesAsRead(userId: string, senderId: string): Promise<void>;
+  getUserConversations(userId: string): Promise<any[]>;
   
   // Property-Service associations
   getPropertyServices(propertyId: string): Promise<ServiceProvider[]>;
@@ -619,9 +620,15 @@ export class DatabaseStorage implements IStorage {
   async getConversation(userId1: string, userId2: string): Promise<Message[]> {
     return await db.select().from(messages)
       .where(
-        and(
-          eq(messages.senderId, userId1),
-          eq(messages.receiverId, userId2)
+        or(
+          and(
+            eq(messages.senderId, userId1),
+            eq(messages.receiverId, userId2)
+          ),
+          and(
+            eq(messages.senderId, userId2),
+            eq(messages.receiverId, userId1)
+          )
         )
       )
       .orderBy(asc(messages.createdAt));
@@ -638,6 +645,71 @@ export class DatabaseStorage implements IStorage {
           eq(messages.isRead, false)
         )
       );
+  }
+
+  async getUserConversations(userId: string): Promise<any[]> {
+    // Get all unique users this user has messaged with
+    const sent = await db
+      .selectDistinct({ userId: messages.receiverId })
+      .from(messages)
+      .where(eq(messages.senderId, userId));
+
+    const received = await db
+      .selectDistinct({ userId: messages.senderId })
+      .from(messages)
+      .where(eq(messages.receiverId, userId));
+
+    const uniqueUserIds = Array.from(
+      new Set([...sent.map(m => m.userId), ...received.map(m => m.userId)])
+    );
+
+    const conversations = [];
+
+    for (const otherUserId of uniqueUserIds) {
+      const user = await this.getUser(otherUserId);
+      if (!user) continue;
+
+      // Get latest message
+      const [latestMessage] = await db
+        .select()
+        .from(messages)
+        .where(
+          or(
+            and(eq(messages.senderId, userId), eq(messages.receiverId, otherUserId)),
+            and(eq(messages.senderId, otherUserId), eq(messages.receiverId, userId))
+          )
+        )
+        .orderBy(desc(messages.createdAt))
+        .limit(1);
+
+      // Count unread messages
+      const unreadMessages = await db
+        .select()
+        .from(messages)
+        .where(
+          and(
+            eq(messages.senderId, otherUserId),
+            eq(messages.receiverId, userId),
+            eq(messages.isRead, false)
+          )
+        );
+
+      conversations.push({
+        userId: user.id,
+        userName: `${user.firstName} ${user.lastName}`,
+        userEmail: user.email,
+        lastMessage: latestMessage?.content || '',
+        lastMessageTime: latestMessage?.createdAt || new Date().toISOString(),
+        unreadCount: unreadMessages.length,
+      });
+    }
+
+    // Sort by latest message time
+    conversations.sort((a, b) => 
+      new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+    );
+
+    return conversations;
   }
 
   // Property-Service associations

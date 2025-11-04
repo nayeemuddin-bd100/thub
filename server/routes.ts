@@ -19,7 +19,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2024-11-20",
+  apiVersion: "2024-11-20" as any,
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1926,7 +1926,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/conversations/:userId', requireAuth, async (req: any, res) => {
+  // Get all conversations for current user
+  app.get('/api/conversations', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const conversations = await storage.getUserConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // Get messages with specific user
+  app.get('/api/messages/:userId', requireAuth, async (req: any, res) => {
     try {
       const currentUserId = (req.session as any).userId;
       const otherUserId = req.params.userId;
@@ -1936,6 +1949,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching conversation:", error);
       res.status(500).json({ message: "Failed to fetch conversation" });
+    }
+  });
+
+  // Mark messages as read
+  app.put('/api/messages/read', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const { senderId } = req.body;
+      
+      if (!senderId) {
+        return res.status(400).json({ message: "Sender ID is required" });
+      }
+      
+      await storage.markMessagesAsRead(userId, senderId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ message: "Failed to mark messages as read" });
     }
   });
 
