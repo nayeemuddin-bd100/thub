@@ -262,7 +262,7 @@ export default function ServiceProviderDetailsPage() {
               <span data-testid="text-location">{provider.location}</span>
             </div>
             <a 
-              href={`https://web.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`}
+              href={`https://api.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
@@ -284,7 +284,7 @@ export default function ServiceProviderDetailsPage() {
           
           <div className="mt-4 pt-4 border-t border-border">
             <Button
-              onClick={() => window.open(`https://web.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`, '_blank')}
+              onClick={() => window.open(`https://api.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`, '_blank')}
               className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
               data-testid="button-whatsapp-contact"
             >
