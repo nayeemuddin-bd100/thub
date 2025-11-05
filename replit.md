@@ -98,8 +98,9 @@ Preferred communication style: Simple, everyday language.
 - **Unread Tracking**: Automatic counting of unread messages per conversation
 
 ### WhatsApp Integration
-- **Provider Contact**: Click-to-chat buttons on service provider profiles
-- **Direct Links**: Generated WhatsApp links with pre-filled messages
+- **Floating Bubble**: Global WhatsApp chat bubble in bottom-right corner of all pages
+- **Business Contact**: Direct link to business WhatsApp number +18495815558
+- **Direct Links**: Uses `https://api.whatsapp.com/send?phone=` for universal compatibility
 - **System Notifications**: Backend capability to send WhatsApp notifications via Twilio API
 - **Endpoints**:
   - `GET /api/whatsapp/link/:providerId` - Get WhatsApp chat link
@@ -110,6 +111,8 @@ Preferred communication style: Simple, everyday language.
 - **Header Icon**: MessageSquare icon button for quick access to Messages page
 - **User Menu**: Messages link in dropdown menu
 - **Real-time Badge**: Connection status indicator (Connected/Disconnected)
+- **Provider Pages**: "Send Message" button navigates to Messages page with auto-selected conversation
+- **Query Parameters**: Supports `?user=<userId>` to auto-open specific conversations
 
 # External Dependencies
 

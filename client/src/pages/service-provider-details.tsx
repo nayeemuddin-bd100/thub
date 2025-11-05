@@ -23,7 +23,6 @@ import {
   Languages,
   ImageIcon
 } from "lucide-react";
-import { SiWhatsapp } from "react-icons/si";
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import type { ServiceProvider } from "@shared/schema";
@@ -261,16 +260,6 @@ export default function ServiceProviderDetailsPage() {
               <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <span data-testid="text-location">{provider.location}</span>
             </div>
-            <a 
-              href={`https://api.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-              data-testid="provider-whatsapp"
-            >
-              <SiWhatsapp className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span data-testid="text-whatsapp" className="underline">Chat on WhatsApp</span>
-            </a>
             <div className="flex items-center gap-2" data-testid="provider-rates">
               <DollarSign className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               {provider.hourlyRate && (
@@ -284,12 +273,12 @@ export default function ServiceProviderDetailsPage() {
           
           <div className="mt-4 pt-4 border-t border-border">
             <Button
-              onClick={() => window.open(`https://api.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`, '_blank')}
-              className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
-              data-testid="button-whatsapp-contact"
+              onClick={() => navigate(`/messages?user=${provider.userId}`)}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+              data-testid="button-message-provider"
             >
-              <SiWhatsapp className="h-5 w-5 mr-2" />
-              Contact via WhatsApp
+              <MessageCircle className="h-5 w-5 mr-2" />
+              Send Message
             </Button>
           </div>
         </CardContent>

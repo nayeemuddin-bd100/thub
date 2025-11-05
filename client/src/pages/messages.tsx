@@ -43,6 +43,17 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Check for user query parameter to auto-select conversation
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('user');
+    if (userId) {
+      setSelectedUserId(userId);
+      // Clear the query parameter from URL
+      window.history.replaceState({}, '', '/messages');
+    }
+  }, []);
+  
   // Get current user
   const { data: currentUser } = useQuery<User>({
     queryKey: ['/api/auth/user'],
