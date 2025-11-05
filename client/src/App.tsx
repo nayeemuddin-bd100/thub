@@ -78,6 +78,10 @@ function Router() {
       <Route path="/community" component={Community} />
       <Route path="/sitemap" component={Sitemap} />
       
+      {/* Payment pages - must be outside auth check to prevent 404 during redirect */}
+      <Route path="/pay-booking/:id" component={PayBooking} />
+      <Route path="/pay-service-order/:id" component={PayServiceOrder} />
+      
       {/* Protected pages - authentication required */}
       {isAuthenticated && (
         <>
@@ -94,8 +98,6 @@ function Router() {
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />
           <Route path="/my-service-orders" component={MyServiceOrders} />
-          <Route path="/pay-service-order/:id" component={PayServiceOrder} />
-          <Route path="/pay-booking/:id" component={PayBooking} />
         </>
       )}
       
