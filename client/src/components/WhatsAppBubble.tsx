@@ -20,8 +20,8 @@ export default function WhatsAppBubble() {
 
   return (
     <>
-      {/* Floating bubble */}
-      <div className="fixed bottom-6 right-6 z-50">
+      {/* Floating bubble - positioned to the left of Quick Book button */}
+      <div className="fixed bottom-6 right-24 z-50">
         {isOpen && (
           <Card className="mb-4 p-4 w-64 shadow-lg animate-in slide-in-from-bottom-2">
             <div className="flex items-start justify-between mb-3">
