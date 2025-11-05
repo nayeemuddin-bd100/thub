@@ -261,18 +261,16 @@ export default function ServiceProviderDetailsPage() {
               <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <span data-testid="text-location">{provider.location}</span>
             </div>
-            {provider.whatsappNumber && (
-              <a 
-                href={`https://wa.me/${provider.whatsappNumber.replace(/[^0-9]/g, '')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
-                data-testid="provider-whatsapp"
-              >
-                <SiWhatsapp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <span data-testid="text-whatsapp" className="underline">Chat on WhatsApp</span>
-              </a>
-            )}
+            <a 
+              href={`https://web.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 hover:text-green-600 dark:hover:text-green-400 transition-colors"
+              data-testid="provider-whatsapp"
+            >
+              <SiWhatsapp className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <span data-testid="text-whatsapp" className="underline">Chat on WhatsApp</span>
+            </a>
             <div className="flex items-center gap-2" data-testid="provider-rates">
               <DollarSign className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               {provider.hourlyRate && (
@@ -284,18 +282,16 @@ export default function ServiceProviderDetailsPage() {
             </div>
           </div>
           
-          {provider.whatsappNumber && (
-            <div className="mt-4 pt-4 border-t border-border">
-              <Button
-                onClick={() => window.open(`https://wa.me/${provider.whatsappNumber!.replace(/[^0-9]/g, '')}?text=Hi! I'm interested in your services on TravelHub.`, '_blank')}
-                className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
-                data-testid="button-whatsapp-contact"
-              >
-                <SiWhatsapp className="h-5 w-5 mr-2" />
-                Contact via WhatsApp
-              </Button>
-            </div>
-          )}
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button
+              onClick={() => window.open(`https://web.whatsapp.com/send?phone=18495815558&text=Hi! I'm interested in ${encodeURIComponent(provider.businessName)} services on TravelHub.`, '_blank')}
+              className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
+              data-testid="button-whatsapp-contact"
+            >
+              <SiWhatsapp className="h-5 w-5 mr-2" />
+              Contact via WhatsApp
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

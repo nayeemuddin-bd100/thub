@@ -82,13 +82,13 @@ export class WhatsAppService {
   }
 
   getWhatsAppLink(phoneNumber: string, message?: string): string {
-    const formattedNumber = this.formatWhatsAppNumber(phoneNumber);
-    const cleanNumber = formattedNumber.replace(/\+/g, '');
+    // Always use business WhatsApp number and open in web view
+    const businessNumber = '18495815558';
     
     if (message) {
-      return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+      return `https://web.whatsapp.com/send?phone=${businessNumber}&text=${encodeURIComponent(message)}`;
     }
-    return `https://wa.me/${cleanNumber}`;
+    return `https://web.whatsapp.com/send?phone=${businessNumber}`;
   }
 }
 
