@@ -43,10 +43,14 @@ export default function BookingCart({ property, selectedServices, onServicesChan
       const booking = await response.json();
       toast({
         title: "Booking Confirmed!",
-        description: `Your booking code is ${booking.bookingCode}`,
+        description: `Your booking code is ${booking.bookingCode}. Redirecting to payment...`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
-      window.location.href = `/dashboard?tab=bookings&booking=${booking.id}`;
+      
+      // Redirect to payment page after a short delay to show the success message
+      setTimeout(() => {
+        window.location.href = `/pay-booking/${booking.id}`;
+      }, 1500);
     },
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
