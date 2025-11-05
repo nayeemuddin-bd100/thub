@@ -141,6 +141,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user details by ID (for messaging)
+  app.get('/api/users/:userId', requireAuth, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
   // User role management routes
   app.put('/api/auth/change-role', requireAuth, async (req, res) => {
     try {

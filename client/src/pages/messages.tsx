@@ -166,6 +166,12 @@ export default function MessagesPage() {
 
   const selectedConversation = conversations.find(c => c.userId === selectedUserId);
 
+  // Fetch user details if starting a new conversation
+  const { data: selectedUser } = useQuery<User>({
+    queryKey: ['/api/users', selectedUserId],
+    enabled: !!selectedUserId && !selectedConversation,
+  });
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
@@ -257,7 +263,7 @@ export default function MessagesPage() {
 
         {/* Chat Area */}
         <Card className={`lg:col-span-2 ${!selectedUserId && 'hidden lg:block'}`}>
-          {selectedUserId && selectedConversation ? (
+          {selectedUserId && (selectedConversation || selectedUser) ? (
             <>
               <CardHeader className="border-b">
                 <div className="flex items-center gap-3">
@@ -271,14 +277,26 @@ export default function MessagesPage() {
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                   <Avatar>
-                    <AvatarFallback>{getInitials(selectedConversation.userName)}</AvatarFallback>
+                    <AvatarFallback>
+                      {selectedConversation 
+                        ? getInitials(selectedConversation.userName)
+                        : selectedUser 
+                          ? getInitials(`${selectedUser.firstName} ${selectedUser.lastName}`)
+                          : '?'}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg" data-testid="text-chat-username">
-                      {selectedConversation.userName}
+                      {selectedConversation 
+                        ? selectedConversation.userName
+                        : selectedUser 
+                          ? `${selectedUser.firstName} ${selectedUser.lastName}`
+                          : 'User'}
                     </CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      {selectedConversation.userEmail}
+                      {selectedConversation 
+                        ? selectedConversation.userEmail
+                        : selectedUser?.email || ''}
                     </p>
                   </div>
                 </div>
