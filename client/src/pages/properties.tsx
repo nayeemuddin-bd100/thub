@@ -122,14 +122,14 @@ export default function Properties() {
             ) : error ? (
               <div className="text-center py-12">
                 <p className="text-lg text-destructive" data-testid="text-properties-error">
-                  Failed to load properties. Please try again.
+                  {t('errors.try_again_later')}
                 </p>
               </div>
             ) : properties && properties.length > 0 ? (
               <>
                 <div className="mb-6">
                   <p className="text-muted-foreground" data-testid="text-properties-count">
-                    {properties.length} properties found
+                    {t('properties.properties_found', { count: properties.length })}
                   </p>
                 </div>
                 <div className="property-grid">
@@ -141,10 +141,7 @@ export default function Properties() {
             ) : (
               <div className="text-center py-12">
                 <p className="text-lg text-muted-foreground" data-testid="text-no-properties">
-                  No properties match your search criteria.
-                </p>
-                <p className="text-muted-foreground mt-2">
-                  Try adjusting your filters or search terms.
+                  {t('properties.no_properties')}
                 </p>
               </div>
             )}

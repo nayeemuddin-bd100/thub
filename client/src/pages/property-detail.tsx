@@ -13,8 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Users, Bed, Bath, MapPin, Car, Wifi, Waves, Mountain, Coffee, Tv } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function PropertyDetail() {
+  const { t } = useTranslation();
   const [, params] = useRoute('/properties/:id');
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
@@ -109,13 +111,13 @@ export default function PropertyDetail() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-foreground mb-4" data-testid="text-property-not-found">
-              Property Not Found
+              {t('property_detail.not_found', 'Property Not Found')}
             </h1>
             <p className="text-muted-foreground mb-6">
-              The property you're looking for doesn't exist or has been removed.
+              {t('property_detail.not_found_description', 'The property you\'re looking for doesn\'t exist or has been removed.')}
             </p>
             <Button onClick={() => window.history.back()} data-testid="button-go-back">
-              Go Back
+              {t('common.go_back', 'Go Back')}
             </Button>
           </div>
         </div>
@@ -145,7 +147,7 @@ export default function PropertyDetail() {
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-current" />
               <span data-testid="text-property-rating">{parseFloat(property.rating).toFixed(1)}</span>
-              <span>({property.reviewCount} reviews)</span>
+              <span>({t('property_detail.reviews_count', '{{count}} reviews', { count: property.reviewCount })})</span>
             </div>
             <div className="flex items-center space-x-1">
               <MapPin className="w-4 h-4" />
@@ -171,32 +173,32 @@ export default function PropertyDetail() {
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-foreground" data-testid="text-property-details">
-                  Property Details
+                  {t('property_detail.property_details', 'Property Details')}
                 </h2>
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Users className="w-4 h-4" />
-                    <span data-testid="text-property-guests">{property.maxGuests} guests</span>
+                    <span data-testid="text-property-guests">{t('property_detail.guests_count', '{{count}} guests', { count: property.maxGuests })}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Bed className="w-4 h-4" />
-                    <span data-testid="text-property-bedrooms">{property.bedrooms} bedrooms</span>
+                    <span data-testid="text-property-bedrooms">{t('property_detail.bedrooms_count', '{{count}} bedrooms', { count: property.bedrooms })}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Bath className="w-4 h-4" />
-                    <span data-testid="text-property-bathrooms">{property.bathrooms} bathrooms</span>
+                    <span data-testid="text-property-bathrooms">{t('property_detail.bathrooms_count', '{{count}} bathrooms', { count: property.bathrooms })}</span>
                   </div>
                 </div>
               </div>
               <p className="text-muted-foreground" data-testid="text-property-description">
-                {property.description || "Experience luxury and comfort in this stunning property with world-class amenities and integrated services for the perfect getaway."}
+                {property.description || t('property_detail.default_description', 'Experience luxury and comfort in this stunning property with world-class amenities and integrated services for the perfect getaway.')}
               </p>
             </Card>
 
             {/* Amenities */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-amenities-title">
-                Amenities
+                {t('property_detail.amenities', 'Amenities')}
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {(property.amenities || ['wifi', 'parking', 'pool', 'mountain', 'coffee', 'tv']).map((amenity: string, index: number) => {
@@ -220,7 +222,7 @@ export default function PropertyDetail() {
             {/* Available Services */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-services-title">
-                Available Services
+                {t('property_detail.available_services', 'Available Services')}
               </h2>
               {servicesLoading ? (
                 <div className="space-y-4">
@@ -252,7 +254,7 @@ export default function PropertyDetail() {
                             <Star className="w-4 h-4 text-yellow-400 fill-current" />
                             <span className="text-sm">{parseFloat(service.rating).toFixed(1)}</span>
                             <Badge variant="secondary" className="text-xs">
-                              {service.hourlyRate ? `$${service.hourlyRate}/hour` : `$${service.fixedRate}/service`}
+                              {service.hourlyRate ? `$${service.hourlyRate}/${t('property_detail.per_hour', 'hour')}` : `$${service.fixedRate}/${t('property_detail.per_service', 'service')}`}
                             </Badge>
                           </div>
                         </div>
@@ -271,7 +273,7 @@ export default function PropertyDetail() {
                 </div>
               ) : (
                 <p className="text-muted-foreground" data-testid="text-no-services">
-                  No services available for this property.
+                  {t('property_detail.no_services', 'No services available for this property.')}
                 </p>
               )}
             </Card>

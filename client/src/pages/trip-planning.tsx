@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,17 +18,17 @@ import { format } from "date-fns";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const createTripSchema = z.object({
-  name: z.string().min(3, "Trip name must be at least 3 characters"),
+const getCreateTripSchema = (t: (key: string) => string) => z.object({
+  name: z.string().min(3, t('trip_planning.trip_name_min')),
   description: z.string().optional(),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
-  destination: z.string().min(2, "Destination is required"),
+  startDate: z.string().min(1, t('trip_planning.start_date_required')),
+  endDate: z.string().min(1, t('trip_planning.end_date_required')),
+  destination: z.string().min(2, t('trip_planning.destination_min')),
 });
 
-const addItemSchema = z.object({
+const getAddItemSchema = (t: (key: string) => string) => z.object({
   itemType: z.enum(["property", "service"]),
-  itemId: z.string().min(1, "Please select an item"),
+  itemId: z.string().min(1, t('trip_planning.item_required')),
 });
 
 type TripPlan = {
@@ -60,6 +61,7 @@ type ServiceProvider = {
 };
 
 export default function TripPlanning() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [addItemDialogOpen, setAddItemDialogOpen] = useState(false);
@@ -85,6 +87,9 @@ export default function TripPlanning() {
       localStorage.setItem('theme', 'light');
     }
   };
+
+  const createTripSchema = getCreateTripSchema(t);
+  const addItemSchema = getAddItemSchema(t);
 
   const createForm = useForm({
     resolver: zodResolver(createTripSchema),
@@ -133,14 +138,14 @@ export default function TripPlanning() {
       setCreateDialogOpen(false);
       createForm.reset();
       toast({
-        title: "Trip Created",
-        description: "Your trip plan has been created successfully!",
+        title: t('trip_planning.trip_created'),
+        description: t('trip_planning.trip_created_desc'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to create trip plan. Please try again.",
+        title: t('common.error'),
+        description: t('trip_planning.create_failed'),
         variant: "destructive",
       });
     },
@@ -162,14 +167,14 @@ export default function TripPlanning() {
       setAddItemDialogOpen(false);
       addItemForm.reset();
       toast({
-        title: "Item Added",
-        description: "Item added to your trip successfully!",
+        title: t('trip_planning.item_added'),
+        description: t('trip_planning.item_added_desc'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to add item to trip. Please try again.",
+        title: t('common.error'),
+        description: t('trip_planning.add_item_failed'),
         variant: "destructive",
       });
     },
@@ -201,7 +206,7 @@ export default function TripPlanning() {
         <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">Loading your trips...</p>
+            <p className="text-muted-foreground">{t('trip_planning.loading_trips')}</p>
           </div>
         </div>
         <Footer />
@@ -216,12 +221,12 @@ export default function TripPlanning() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Trip Planning</h1>
-            <p className="text-muted-foreground mt-2">Plan your perfect getaway with properties and services</p>
+            <h1 className="text-3xl font-bold">{t('trip_planning.title')}</h1>
+            <p className="text-muted-foreground mt-2">{t('trip_planning.subtitle')}</p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-trip">
             <Plus className="h-4 w-4 mr-2" />
-            Create New Trip
+            {t('trip_planning.create_trip')}
           </Button>
         </div>
 
@@ -229,13 +234,13 @@ export default function TripPlanning() {
           <Card className="text-center py-12">
             <CardContent>
               <Calendar className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Trip Plans Yet</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('trip_planning.no_trips_yet')}</h3>
               <p className="text-muted-foreground mb-4">
-                Start planning your next adventure by creating a trip!
+                {t('trip_planning.start_planning')}
               </p>
               <Button onClick={() => setCreateDialogOpen(true)} data-testid="button-create-first-trip">
                 <Plus className="h-4 w-4 mr-2" />
-                Create Your First Trip
+                {t('trip_planning.create_first_trip')}
               </Button>
             </CardContent>
           </Card>
@@ -276,7 +281,7 @@ export default function TripPlanning() {
                         data-testid={`button-add-item-${trip.id}`}
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Property or Service
+                        {t('trip_planning.add_property_or_service')}
                       </Button>
                     </div>
                   </div>
@@ -290,9 +295,9 @@ export default function TripPlanning() {
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Create New Trip</DialogTitle>
+              <DialogTitle>{t('trip_planning.create_trip')}</DialogTitle>
               <DialogDescription>
-                Plan your next adventure by creating a trip itinerary
+                {t('trip_planning.start_planning')}
               </DialogDescription>
             </DialogHeader>
 
@@ -303,9 +308,9 @@ export default function TripPlanning() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Trip Name *</FormLabel>
+                      <FormLabel>{t('trip_planning.trip_name')} *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Summer Vacation 2025" {...field} data-testid="input-trip-name" />
+                        <Input placeholder={t('trip_planning.trip_name_placeholder')} {...field} data-testid="input-trip-name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -317,9 +322,9 @@ export default function TripPlanning() {
                   name="destination"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Destination *</FormLabel>
+                      <FormLabel>{t('trip_planning.destination')} *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Paris, France" {...field} data-testid="input-destination" />
+                        <Input placeholder={t('trip_planning.destination_placeholder')} {...field} data-testid="input-destination" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -332,7 +337,7 @@ export default function TripPlanning() {
                     name="startDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Date *</FormLabel>
+                        <FormLabel>{t('trip_planning.start_date')} *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} data-testid="input-start-date" />
                         </FormControl>
@@ -346,7 +351,7 @@ export default function TripPlanning() {
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date *</FormLabel>
+                        <FormLabel>{t('trip_planning.end_date')} *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} data-testid="input-end-date" />
                         </FormControl>
@@ -361,10 +366,10 @@ export default function TripPlanning() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description (Optional)</FormLabel>
+                      <FormLabel>{t('trip_planning.description_optional')}</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Tell us about your trip plans..."
+                          placeholder={t('trip_planning.description_placeholder')}
                           rows={3}
                           {...field}
                           data-testid="textarea-description"
@@ -386,14 +391,14 @@ export default function TripPlanning() {
                     disabled={createTripMutation.isPending}
                     data-testid="button-cancel-create"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={createTripMutation.isPending}
                     data-testid="button-submit-trip"
                   >
-                    {createTripMutation.isPending ? "Creating..." : "Create Trip"}
+                    {createTripMutation.isPending ? t('trip_planning.creating') : t('trip_planning.create_trip_button')}
                   </Button>
                 </div>
               </form>
@@ -405,9 +410,9 @@ export default function TripPlanning() {
         <Dialog open={addItemDialogOpen} onOpenChange={setAddItemDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add to Trip</DialogTitle>
+              <DialogTitle>{t('trip_planning.add_item')}</DialogTitle>
               <DialogDescription>
-                Add a property or service to your trip itinerary
+                {t('trip_planning.add_item_desc')}
               </DialogDescription>
             </DialogHeader>
 
@@ -418,7 +423,7 @@ export default function TripPlanning() {
                   name="itemType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Item Type *</FormLabel>
+                      <FormLabel>{t('trip_planning.item_type')} *</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -429,12 +434,12 @@ export default function TripPlanning() {
                       >
                         <FormControl>
                           <SelectTrigger data-testid="select-item-type">
-                            <SelectValue placeholder="Select type" />
+                            <SelectValue placeholder={t('trip_planning.select_type')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="property">Property</SelectItem>
-                          <SelectItem value="service">Service Provider</SelectItem>
+                          <SelectItem value="property">{t('trip_planning.property')}</SelectItem>
+                          <SelectItem value="service">{t('trip_planning.service_provider')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -448,12 +453,12 @@ export default function TripPlanning() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {itemType === "property" ? "Select Property *" : "Select Service Provider *"}
+                        {itemType === "property" ? t('trip_planning.select_property') + " *" : t('trip_planning.select_service') + " *"}
                       </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-item">
-                            <SelectValue placeholder={`Choose a ${itemType}`} />
+                            <SelectValue placeholder={itemType === "property" ? t('trip_planning.choose_property') : t('trip_planning.choose_service')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -469,7 +474,7 @@ export default function TripPlanning() {
                               ))
                             ) : (
                               <SelectItem value="no-properties" disabled>
-                                No properties available
+                                {t('trip_planning.no_properties_available')}
                               </SelectItem>
                             )
                           ) : (
@@ -484,7 +489,7 @@ export default function TripPlanning() {
                               ))
                             ) : (
                               <SelectItem value="no-providers" disabled>
-                                No service providers available
+                                {t('trip_planning.no_providers_available')}
                               </SelectItem>
                             )
                           )}
@@ -506,14 +511,14 @@ export default function TripPlanning() {
                     disabled={addItemMutation.isPending}
                     data-testid="button-cancel-add"
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button
                     type="submit"
                     disabled={addItemMutation.isPending}
                     data-testid="button-submit-item"
                   >
-                    {addItemMutation.isPending ? "Adding..." : "Add to Trip"}
+                    {addItemMutation.isPending ? t('trip_planning.adding') : t('trip_planning.add_to_trip')}
                   </Button>
                 </div>
               </form>

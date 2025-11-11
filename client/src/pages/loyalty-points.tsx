@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ interface LoyaltyTransaction {
 }
 
 export default function LoyaltyPointsPage() {
+  const { t } = useTranslation();
   const { data: loyaltyPoints, isLoading: pointsLoading } = useQuery<LoyaltyPoints>({
     queryKey: ['/api/loyalty-points'],
   });
@@ -50,10 +52,10 @@ export default function LoyaltyPointsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Loyalty & Rewards
+            {t('loyalty.title')}
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Earn points on every booking and redeem them for discounts
+            {t('loyalty.subtitle')}
           </p>
         </div>
 
@@ -69,7 +71,7 @@ export default function LoyaltyPointsPage() {
             <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white" data-testid="card-available-points">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium opacity-90">
-                  Available Points
+                  {t('loyalty.available_points')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -85,7 +87,7 @@ export default function LoyaltyPointsPage() {
             <Card data-testid="card-lifetime-earned">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Lifetime Earned
+                  {t('loyalty.lifetime_earned')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -101,7 +103,7 @@ export default function LoyaltyPointsPage() {
             <Card data-testid="card-lifetime-redeemed">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                  Lifetime Redeemed
+                  {t('loyalty.lifetime_redeemed')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -118,7 +120,7 @@ export default function LoyaltyPointsPage() {
               <Card className="border-orange-200 bg-orange-50 dark:bg-orange-900/20" data-testid="card-expiring-soon">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                    Expiring Soon
+                    {t('loyalty.expiring_soon')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -130,7 +132,7 @@ export default function LoyaltyPointsPage() {
                   </div>
                   {loyaltyPoints.expirationDate && (
                     <p className="text-xs text-orange-600 dark:text-orange-400 mt-1" data-testid="text-expiration-date">
-                      Expires {format(new Date(loyaltyPoints.expirationDate), 'MMM d, yyyy')}
+                      {t('loyalty.expires', { date: format(new Date(loyaltyPoints.expirationDate), 'MMM d, yyyy') })}
                     </p>
                   )}
                 </CardContent>
@@ -139,16 +141,16 @@ export default function LoyaltyPointsPage() {
               <Card data-testid="card-tier">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                    Current Tier
+                    {t('loyalty.current_tier')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Badge variant="secondary" className="text-lg px-3 py-1" data-testid="badge-tier">
-                    {loyaltyPoints.tier || 'Standard'}
+                    {loyaltyPoints.tier || t('loyalty.standard')}
                   </Badge>
                   {loyaltyPoints.nextTierPoints && (
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-2" data-testid="text-next-tier">
-                      {loyaltyPoints.nextTierPoints} points to next tier
+                      {t('loyalty.points_to_next_tier', { points: loyaltyPoints.nextTierPoints })}
                     </p>
                   )}
                 </CardContent>
@@ -160,10 +162,10 @@ export default function LoyaltyPointsPage() {
             <CardContent className="text-center py-12">
               <Award className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                No Loyalty Points Yet
+                {t('loyalty.no_points_yet')}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Start booking to earn your first loyalty points!
+                {t('loyalty.start_booking')}
               </p>
             </CardContent>
           </Card>
@@ -172,25 +174,25 @@ export default function LoyaltyPointsPage() {
         {/* Transaction History */}
         <Card>
           <CardHeader>
-            <CardTitle>Points History</CardTitle>
+            <CardTitle>{t('loyalty.points_history')}</CardTitle>
             <CardDescription>
-              Track all your loyalty points transactions
+              {t('loyalty.track_transactions')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="all" className="w-full">
               <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="all" data-testid="tab-all">
-                  All ({history.length})
+                  {t('loyalty.all')} ({history.length})
                 </TabsTrigger>
                 <TabsTrigger value="earned" data-testid="tab-earned">
-                  Earned ({earnedTransactions.length})
+                  {t('loyalty.earned')} ({earnedTransactions.length})
                 </TabsTrigger>
                 <TabsTrigger value="redeemed" data-testid="tab-redeemed">
-                  Redeemed ({redeemedTransactions.length})
+                  {t('loyalty.redeemed')} ({redeemedTransactions.length})
                 </TabsTrigger>
                 <TabsTrigger value="expired" data-testid="tab-expired">
-                  Expired ({expiredTransactions.length})
+                  {t('loyalty.expired')} ({expiredTransactions.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -213,7 +215,7 @@ export default function LoyaltyPointsPage() {
         {/* How to Earn Points */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>How to Earn Points</CardTitle>
+            <CardTitle>{t('loyalty.how_to_earn')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -223,10 +225,10 @@ export default function LoyaltyPointsPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                    Property Bookings
+                    {t('loyalty.property_bookings')}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Earn 10 points for every $1 spent on property bookings
+                    {t('loyalty.property_bookings_desc')}
                   </p>
                 </div>
               </div>
@@ -236,10 +238,10 @@ export default function LoyaltyPointsPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                    Service Orders
+                    {t('loyalty.service_orders')}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Earn 10 points for every $1 spent on services
+                    {t('loyalty.service_orders_desc')}
                   </p>
                 </div>
               </div>
@@ -249,10 +251,10 @@ export default function LoyaltyPointsPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                    Bonus Points
+                    {t('loyalty.bonus_points')}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Get bonus points on special promotions and milestones
+                    {t('loyalty.bonus_points_desc')}
                   </p>
                 </div>
               </div>
@@ -262,10 +264,10 @@ export default function LoyaltyPointsPage() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                    Point Expiration
+                    {t('loyalty.point_expiration')}
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Points expire after 12 months if not used
+                    {t('loyalty.point_expiration_desc')}
                   </p>
                 </div>
               </div>
@@ -278,6 +280,8 @@ export default function LoyaltyPointsPage() {
 }
 
 function TransactionList({ transactions, isLoading }: { transactions: LoyaltyTransaction[], isLoading: boolean }) {
+  const { t } = useTranslation();
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -292,7 +296,7 @@ function TransactionList({ transactions, isLoading }: { transactions: LoyaltyTra
     return (
       <div className="text-center py-12">
         <Award className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-        <p className="text-gray-600 dark:text-gray-400">No transactions yet</p>
+        <p className="text-gray-600 dark:text-gray-400">{t('loyalty.no_transactions')}</p>
       </div>
     );
   }
@@ -330,7 +334,7 @@ function TransactionList({ transactions, isLoading }: { transactions: LoyaltyTra
               </p>
               {transaction.expirationDate && (
                 <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                  Expires {format(new Date(transaction.expirationDate), 'MMM d, yyyy')}
+                  {t('loyalty.expires', { date: format(new Date(transaction.expirationDate), 'MMM d, yyyy') })}
                 </p>
               )}
             </div>
@@ -353,7 +357,7 @@ function TransactionList({ transactions, isLoading }: { transactions: LoyaltyTra
                 ? 'secondary'
                 : 'outline'
             } data-testid={`badge-type-${transaction.id}`}>
-              {transaction.type}
+              {t(`loyalty.${transaction.type}`)}
             </Badge>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { MessageSquare, Send, ArrowLeft } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -38,6 +39,7 @@ interface Conversation {
 }
 
 export default function MessagesPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
@@ -82,7 +84,7 @@ export default function MessagesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Failed to send message');
+      if (!response.ok) throw new Error(t('messages.message_failed'));
       return response.json();
     },
     onSuccess: () => {
@@ -92,8 +94,8 @@ export default function MessagesPage() {
     },
     onError: (error: any) => {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to send message',
+        title: t('common.error'),
+        description: error.message || t('messages.message_failed'),
         variant: 'destructive',
       });
     },
@@ -132,7 +134,7 @@ export default function MessagesPage() {
       // Show notification if not in current conversation
       if (msg.senderId !== selectedUserId) {
         toast({
-          title: 'New Message',
+          title: t('messages.new_message'),
           description: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
         });
       }
@@ -182,7 +184,7 @@ export default function MessagesPage() {
         <Card>
           <CardContent className="p-8 text-center">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">Please log in to view messages</p>
+            <p className="text-muted-foreground">{t('messages.login_to_message')}</p>
           </CardContent>
         </Card>
       </div>
@@ -192,11 +194,11 @@ export default function MessagesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-messages">Messages</h1>
+        <h1 className="text-3xl font-bold mb-2" data-testid="heading-messages">{t('messages.title')}</h1>
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className="text-sm text-muted-foreground" data-testid="status-connection">
-            {isConnected ? 'Connected' : 'Disconnected'}
+            {isConnected ? t('messages.connected') : t('messages.disconnected')}
           </span>
         </div>
       </div>
@@ -205,20 +207,20 @@ export default function MessagesPage() {
         {/* Conversations List */}
         <Card className={`${selectedUserId ? 'hidden lg:block' : ''}`}>
           <CardHeader>
-            <CardTitle>Conversations</CardTitle>
+            <CardTitle>{t('messages.conversations')}</CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">
               {loadingConversations ? (
                 <div className="p-4 text-center text-muted-foreground">
-                  Loading conversations...
+                  {t('messages.loading_conversations')}
                 </div>
               ) : conversations.length === 0 ? (
                 <div className="p-8 text-center">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-muted-foreground">No conversations yet</p>
+                  <p className="text-muted-foreground">{t('messages.no_conversations')}</p>
                   <p className="text-sm text-muted-foreground mt-2">
-                    Start messaging property owners or service providers
+                    {t('messages.start_messaging')}
                   </p>
                 </div>
               ) : (
@@ -305,11 +307,11 @@ export default function MessagesPage() {
                 <ScrollArea className="h-[450px] p-4">
                   {loadingMessages ? (
                     <div className="text-center text-muted-foreground">
-                      Loading messages...
+                      {t('messages.loading_messages')}
                     </div>
                   ) : messages.length === 0 ? (
                     <div className="text-center text-muted-foreground py-8">
-                      No messages yet. Start the conversation!
+                      {t('messages.no_messages')}
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -349,7 +351,7 @@ export default function MessagesPage() {
                     <Input
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
-                      placeholder="Type a message..."
+                      placeholder={t('messages.type_message')}
                       disabled={sendMessageMutation.isPending}
                       data-testid="input-message"
                     />
@@ -368,7 +370,7 @@ export default function MessagesPage() {
             <CardContent className="flex items-center justify-center h-[600px]">
               <div className="text-center">
                 <MessageSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">Select a conversation to start messaging</p>
+                <p className="text-muted-foreground">{t('messages.select_conversation')}</p>
               </div>
             </CardContent>
           )}

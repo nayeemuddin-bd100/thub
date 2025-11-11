@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import RoleSwitcher from "@/components/RoleSwitcher";
@@ -23,6 +24,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 export default function Dashboard() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -57,15 +59,15 @@ export default function Dashboard() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You need to be logged in to access the dashboard. Redirecting...",
+        title: t('errors.unauthorized'),
+        description: t('dashboard.login_required_message'),
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/api/login";
       }, 500);
     }
-  }, [isAuthenticated, authLoading, toast]);
+  }, [isAuthenticated, authLoading, toast, t]);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
@@ -137,7 +139,7 @@ export default function Dashboard() {
   
   // Cancellation form schema
   const cancellationFormSchema = z.object({
-    reason: z.string().min(10, "Cancellation reason must be at least 10 characters"),
+    reason: z.string().min(10, t('dashboard.cancellation_reason_min_length')),
   });
 
   const cancellationForm = useForm<z.infer<typeof cancellationFormSchema>>({
@@ -149,12 +151,12 @@ export default function Dashboard() {
 
   // Provider application form schema
   const providerFormSchema = z.object({
-    categoryId: z.string().min(1, "Service category is required"),
-    businessName: z.string().min(2, "Business name must be at least 2 characters"),
-    description: z.string().min(10, "Description must be at least 10 characters"),
+    categoryId: z.string().min(1, t('dashboard.provider_category_required')),
+    businessName: z.string().min(2, t('dashboard.provider_business_name_min')),
+    description: z.string().min(10, t('dashboard.provider_description_min')),
     hourlyRate: z.string().optional(),
     fixedRate: z.string().optional(),
-    location: z.string().min(2, "Location is required"),
+    location: z.string().min(2, t('dashboard.provider_location_required')),
     radius: z.string().optional(),
     whatsappNumber: z.string().optional(),
     certifications: z.string().optional(),
@@ -188,14 +190,14 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: "User role updated successfully",
+        title: t('common.success'),
+        description: t('dashboard.user_role_updated'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update user role",
+        title: t('common.error'),
+        description: error.message || t('dashboard.failed_update_role'),
         variant: "destructive",
       });
     },
@@ -231,14 +233,14 @@ export default function Dashboard() {
       setProviderDialogOpen(false);
       providerForm.reset();
       toast({
-        title: "Application Submitted!",
-        description: "Your application has been submitted for review. An admin will review it shortly and you'll be notified once it's been approved.",
+        title: t('dashboard.application_submitted'),
+        description: t('dashboard.application_review_message'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit application",
+        title: t('common.error'),
+        description: error.message || t('dashboard.failed_submit_application'),
         variant: "destructive",
       });
     },
@@ -262,14 +264,14 @@ export default function Dashboard() {
       setSelectedBookingForCancel(null);
       cancellationForm.reset();
       toast({
-        title: "Cancellation Requested",
-        description: "Your cancellation request has been submitted and is pending admin approval.",
+        title: t('dashboard.cancellation_requested'),
+        description: t('dashboard.cancellation_pending_message'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to request cancellation",
+        title: t('common.error'),
+        description: error.message || t('dashboard.failed_request_cancellation'),
         variant: "destructive",
       });
     },
@@ -287,15 +289,15 @@ export default function Dashboard() {
   useEffect(() => {
     if (bookingsError && isUnauthorizedError(bookingsError as Error)) {
       toast({
-        title: "Unauthorized",
-        description: "You are logged out. Logging in again...",
+        title: t('errors.unauthorized'),
+        description: t('dashboard.logged_out_message'),
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/api/login";
       }, 500);
     }
-  }, [bookingsError, toast]);
+  }, [bookingsError, toast, t]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -346,10 +348,10 @@ export default function Dashboard() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-dashboard-title">
-            Welcome, {user?.firstName || 'Traveler'}!
+            {t('dashboard.welcome', { name: user?.firstName || t('dashboard.traveler') })}
           </h1>
           <p className="text-lg text-muted-foreground" data-testid="text-dashboard-subtitle">
-            Manage your bookings, properties, and services
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
@@ -359,42 +361,42 @@ export default function Dashboard() {
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" data-testid="tab-overview">
                 <DollarSign className="w-4 h-4 mr-2" />
-                Overview
+                {t('dashboard.overview')}
               </TabsTrigger>
               <TabsTrigger value="users" data-testid="tab-users">
                 <Users className="w-4 h-4 mr-2" />
-                Users
+                {t('dashboard.users')}
               </TabsTrigger>
               <TabsTrigger value="properties" data-testid="tab-properties">
                 <Building className="w-4 h-4 mr-2" />
-                Properties
+                {t('dashboard.properties')}
               </TabsTrigger>
               <TabsTrigger value="services" data-testid="tab-services">
                 <UserCheck className="w-4 h-4 mr-2" />
-                Services
+                {t('dashboard.services')}
               </TabsTrigger>
               <TabsTrigger value="profile" data-testid="tab-profile">
                 <Users className="w-4 h-4 mr-2" />
-                Profile
+                {t('dashboard.profile')}
               </TabsTrigger>
             </TabsList>
           ) : (
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="bookings" data-testid="tab-bookings">
                 <Calendar className="w-4 h-4 mr-2" />
-                My Bookings
+                {t('dashboard.my_bookings')}
               </TabsTrigger>
               <TabsTrigger value="properties" data-testid="tab-properties">
                 <Building className="w-4 h-4 mr-2" />
-                My Properties
+                {t('dashboard.my_properties')}
               </TabsTrigger>
               <TabsTrigger value="services" data-testid="tab-services">
                 <UserCheck className="w-4 h-4 mr-2" />
-                My Services
+                {t('dashboard.my_services')}
               </TabsTrigger>
               <TabsTrigger value="profile" data-testid="tab-profile">
                 <Users className="w-4 h-4 mr-2" />
-                Profile
+                {t('dashboard.profile')}
               </TabsTrigger>
             </TabsList>
           )}
@@ -403,7 +405,7 @@ export default function Dashboard() {
           {user?.role === 'admin' && (
             <TabsContent value="overview" className="space-y-6">
               <h2 className="text-2xl font-semibold text-foreground" data-testid="text-overview-title">
-                Platform Overview
+                {t('dashboard.platform_overview')}
               </h2>
               
               {statsLoading ? (
@@ -417,7 +419,7 @@ export default function Dashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Users</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.total_users')}</p>
                         <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-users">
                           {adminStats?.totalUsers || 0}
                         </p>
@@ -429,7 +431,7 @@ export default function Dashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Properties</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.properties')}</p>
                         <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-properties">
                           {adminStats?.totalProperties || 0}
                         </p>
@@ -441,7 +443,7 @@ export default function Dashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Service Providers</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.service_providers')}</p>
                         <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-providers">
                           {adminStats?.totalServiceProviders || 0}
                         </p>
@@ -453,7 +455,7 @@ export default function Dashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Bookings</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.total_bookings')}</p>
                         <p className="text-2xl font-bold text-foreground mt-2" data-testid="stat-total-bookings">
                           {adminStats?.totalBookings || 0}
                         </p>
@@ -466,7 +468,7 @@ export default function Dashboard() {
               
               <div className="mt-8">
                 <p className="text-muted-foreground text-center">
-                  Welcome to the admin dashboard! Use the tabs above to manage users, properties, and services.
+                  {t('dashboard.admin_welcome_message')}
                 </p>
               </div>
             </TabsContent>
@@ -477,7 +479,7 @@ export default function Dashboard() {
             <TabsContent value="users" className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold text-foreground" data-testid="text-users-title">
-                  User Management
+                  {t('admin.user_management')}
                 </h2>
               </div>
               
@@ -487,7 +489,7 @@ export default function Dashboard() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder={t('dashboard.search_by_name_email')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -496,14 +498,14 @@ export default function Dashboard() {
                 </div>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
                   <SelectTrigger className="w-[200px]" data-testid="select-role-filter">
-                    <SelectValue placeholder="Filter by role" />
+                    <SelectValue placeholder={t('dashboard.filter_by_role')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="property_owner">Property Owner</SelectItem>
-                    <SelectItem value="service_provider">Service Provider</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
+                    <SelectItem value="all">{t('dashboard.all_roles')}</SelectItem>
+                    <SelectItem value="admin">{t('dashboard.admin')}</SelectItem>
+                    <SelectItem value="property_owner">{t('dashboard.property_owner')}</SelectItem>
+                    <SelectItem value="service_provider">{t('dashboard.service_provider_role')}</SelectItem>
+                    <SelectItem value="client">{t('dashboard.client')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -540,11 +542,11 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <p className="font-semibold text-foreground">
-                              {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : 'No name'}
+                              {u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : t('dashboard.no_name')}
                             </p>
                             <p className="text-sm text-muted-foreground">{u.email}</p>
                             <p className="text-xs text-muted-foreground">
-                              Joined {new Date(u.createdAt).toLocaleDateString()}
+                              {t('dashboard.joined')} {new Date(u.createdAt).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
@@ -558,10 +560,10 @@ export default function Dashboard() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="client">Client</SelectItem>
-                              <SelectItem value="property_owner">Property Owner</SelectItem>
-                              <SelectItem value="service_provider">Service Provider</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="client">{t('dashboard.client')}</SelectItem>
+                              <SelectItem value="property_owner">{t('dashboard.property_owner')}</SelectItem>
+                              <SelectItem value="service_provider">{t('dashboard.service_provider_role')}</SelectItem>
+                              <SelectItem value="admin">{t('dashboard.admin')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -573,10 +575,10 @@ export default function Dashboard() {
                 <div className="text-center py-12">
                   <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    No Users Found
+                    {t('dashboard.no_users_found')}
                   </h3>
                   <p className="text-muted-foreground">
-                    {searchQuery || roleFilter !== 'all' ? 'No users match your filters.' : 'No users registered yet.'}
+                    {searchQuery || roleFilter !== 'all' ? t('dashboard.no_users_match_filters') : t('dashboard.no_users_registered')}
                   </p>
                 </div>
               )}
@@ -587,10 +589,10 @@ export default function Dashboard() {
           <TabsContent value="bookings" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-foreground" data-testid="text-bookings-title">
-                My Bookings
+                {t('dashboard.my_bookings')}
               </h2>
               <Button data-testid="button-new-booking" onClick={() => window.location.href = '/properties'}>
-                Book New Stay
+                {t('dashboard.book_new_stay')}
               </Button>
             </div>
 
@@ -605,23 +607,23 @@ export default function Dashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Gift className="w-5 h-5" />
-                      <h3 className="text-lg font-semibold">Loyalty Rewards</h3>
+                      <h3 className="text-lg font-semibold">{t('dashboard.loyalty_rewards')}</h3>
                     </div>
                     <p className="text-blue-100 text-sm mb-3">
-                      Earn points on every booking and redeem for discounts
+                      {t('dashboard.loyalty_rewards_description')}
                     </p>
                     <div className="flex items-baseline gap-4">
                       <div>
                         <p className="text-3xl font-bold" data-testid="text-dashboard-points">
                           {loyaltyPoints.availablePoints.toLocaleString()}
                         </p>
-                        <p className="text-blue-100 text-sm">Available Points</p>
+                        <p className="text-blue-100 text-sm">{t('dashboard.available_points')}</p>
                       </div>
                       <div>
                         <p className="text-xl font-semibold" data-testid="text-dashboard-lifetime">
                           {loyaltyPoints.lifetimeEarned.toLocaleString()}
                         </p>
-                        <p className="text-blue-100 text-sm">Lifetime Earned</p>
+                        <p className="text-blue-100 text-sm">{t('dashboard.lifetime_earned')}</p>
                       </div>
                     </div>
                   </div>
@@ -637,7 +639,7 @@ export default function Dashboard() {
                   }}
                   data-testid="button-view-loyalty-details"
                 >
-                  View Details →
+                  {t('dashboard.view_details')} →
                 </Button>
               </Card>
             )}
@@ -653,17 +655,17 @@ export default function Dashboard() {
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Map className="w-5 h-5" />
-                      <h3 className="text-lg font-semibold">Trip Planning</h3>
+                      <h3 className="text-lg font-semibold">{t('dashboard.trip_planning')}</h3>
                     </div>
                     <p className="text-green-100 text-sm mb-3">
-                      Organize your travel itineraries with properties and services
+                      {t('dashboard.trip_planning_description')}
                     </p>
                     <div className="flex items-baseline gap-4">
                       <div>
                         <p className="text-3xl font-bold" data-testid="text-dashboard-trip-count">
                           {tripPlans.length}
                         </p>
-                        <p className="text-green-100 text-sm">Active Trips</p>
+                        <p className="text-green-100 text-sm">{t('dashboard.active_trips')}</p>
                       </div>
                     </div>
                   </div>
@@ -679,7 +681,7 @@ export default function Dashboard() {
                   }}
                   data-testid="button-view-trips"
                 >
-                  View Trips →
+                  {t('dashboard.view_trips')} →
                 </Button>
               </Card>
             )}
@@ -698,7 +700,7 @@ export default function Dashboard() {
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-2">
                           <h3 className="text-lg font-semibold text-foreground" data-testid={`text-booking-code-${booking.id}`}>
-                            Booking {booking.bookingCode}
+                            {t('dashboard.booking_label')} {booking.bookingCode}
                           </h3>
                           <Badge variant={getStatusColor(booking.status)} data-testid={`badge-booking-status-${booking.id}`}>
                             {booking.status}
@@ -715,7 +717,7 @@ export default function Dashboard() {
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span data-testid={`text-booking-guests-${booking.id}`}>
-                              {booking.guests} guests
+                              {booking.guests} {t('dashboard.guests_label')}
                             </span>
                           </div>
                           <div className="flex items-center space-x-2">
@@ -734,7 +736,7 @@ export default function Dashboard() {
                             onClick={() => window.location.href = `/pay-booking/${booking.id}`}
                             data-testid={`button-pay-booking-${booking.id}`}
                           >
-                            Pay Now
+                            {t('dashboard.pay_now')}
                           </Button>
                         )}
                         <Button 
@@ -743,7 +745,7 @@ export default function Dashboard() {
                           onClick={() => window.location.href = `/properties/${booking.propertyId}`}
                           data-testid={`button-view-booking-${booking.id}`}
                         >
-                          View Details
+                          {t('dashboard.view_details_button')}
                         </Button>
                         {(booking.status === 'confirmed' || booking.status === 'pending_payment') && (
                           <Button 
@@ -755,7 +757,7 @@ export default function Dashboard() {
                             }}
                             data-testid={`button-cancel-booking-${booking.id}`}
                           >
-                            Cancel
+                            {t('common.cancel')}
                           </Button>
                         )}
                       </div>
@@ -767,13 +769,13 @@ export default function Dashboard() {
               <div className="text-center py-12">
                 <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2" data-testid="text-no-bookings-title">
-                  No Bookings Yet
+                  {t('dashboard.no_bookings_yet')}
                 </h3>
                 <p className="text-muted-foreground mb-6" data-testid="text-no-bookings-description">
-                  Start your journey by booking your first stay
+                  {t('dashboard.start_journey_message')}
                 </p>
                 <Button data-testid="button-browse-properties" onClick={() => window.location.href = '/properties'}>
-                  Browse Properties
+                  {t('dashboard.browse_properties')}
                 </Button>
               </div>
             )}
@@ -783,21 +785,21 @@ export default function Dashboard() {
           <TabsContent value="properties" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-foreground" data-testid="text-properties-title">
-                My Properties
+                {t('dashboard.my_properties')}
               </h2>
               {user?.role === 'property_owner' || user?.role === 'admin' ? (
                 <Button data-testid="button-add-property">
-                  Add Property
+                  {t('dashboard.add_property')}
                 </Button>
               ) : (
                 <Button 
                   data-testid="button-become-host"
                   onClick={() => toast({
-                    title: "Role Change Required",
-                    description: "Contact admin to become a property owner.",
+                    title: t('dashboard.role_change_required'),
+                    description: t('dashboard.contact_admin_become_owner'),
                   })}
                 >
-                  Become a Host
+                  {t('dashboard.become_a_host')}
                 </Button>
               )}
             </div>
@@ -806,26 +808,26 @@ export default function Dashboard() {
               <div className="text-center py-12">
                 <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2" data-testid="text-no-properties-title">
-                  No Properties Listed
+                  {t('dashboard.no_properties_listed')}
                 </h3>
                 <p className="text-muted-foreground mb-6" data-testid="text-no-properties-description">
-                  Start earning by listing your first property
+                  {t('dashboard.start_earning_property')}
                 </p>
                 <Button data-testid="button-list-first-property">
-                  List Your First Property
+                  {t('dashboard.list_first_property')}
                 </Button>
               </div>
             ) : (
               <Card className="p-8 text-center">
                 <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2" data-testid="text-not-property-owner">
-                  Property Owner Access Required
+                  {t('dashboard.property_owner_access_required')}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  To list properties, you need to have a property owner role. Contact our support team to upgrade your account.
+                  {t('dashboard.property_owner_upgrade_message')}
                 </p>
                 <Button variant="outline" data-testid="button-contact-support">
-                  Contact Support
+                  {t('dashboard.contact_support')}
                 </Button>
               </Card>
             )}
@@ -835,18 +837,18 @@ export default function Dashboard() {
           <TabsContent value="services" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-semibold text-foreground" data-testid="text-services-title">
-                My Services
+                {t('dashboard.my_services')}
               </h2>
               {user?.role === 'service_provider' || user?.role === 'admin' ? (
                 <Button data-testid="button-add-service">
-                  Add Service
+                  {t('dashboard.add_service')}
                 </Button>
               ) : (
                 <Button 
                   data-testid="button-become-provider"
                   onClick={() => setProviderDialogOpen(true)}
                 >
-                  Become a Provider
+                  {t('footer.become_provider')}
                 </Button>
               )}
             </div>
@@ -855,26 +857,26 @@ export default function Dashboard() {
               <div className="text-center py-12">
                 <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2" data-testid="text-no-services-title">
-                  No Services Listed
+                  {t('dashboard.no_services_listed')}
                 </h3>
                 <p className="text-muted-foreground mb-6" data-testid="text-no-services-description">
-                  Start earning by offering your first service
+                  {t('dashboard.start_earning_service')}
                 </p>
                 <Button data-testid="button-list-first-service">
-                  List Your First Service
+                  {t('dashboard.list_first_service')}
                 </Button>
               </div>
             ) : (
               <Card className="p-8 text-center">
                 <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-foreground mb-2" data-testid="text-not-service-provider">
-                  Service Provider Access Required
+                  {t('dashboard.service_provider_access_required')}
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  To offer services, you need to have a service provider role. Contact our support team to upgrade your account.
+                  {t('dashboard.service_provider_upgrade_message')}
                 </p>
                 <Button variant="outline" data-testid="button-contact-support-services">
-                  Contact Support
+                  {t('dashboard.contact_support')}
                 </Button>
               </Card>
             )}
@@ -883,7 +885,7 @@ export default function Dashboard() {
           {/* Profile */}
           <TabsContent value="profile" className="space-y-6">
             <h2 className="text-2xl font-semibold text-foreground" data-testid="text-profile-title">
-              Profile Settings
+              {t('dashboard.profile_settings')}
             </h2>
             
             <Card className="p-6">
@@ -916,27 +918,27 @@ export default function Dashboard() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground">First Name</label>
+                  <label className="text-sm font-medium text-foreground">{t('auth.first_name')}</label>
                   <p className="text-muted-foreground" data-testid="text-profile-firstname">
-                    {user?.firstName || 'Not provided'}
+                    {user?.firstName || t('dashboard.not_provided')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Last Name</label>
+                  <label className="text-sm font-medium text-foreground">{t('auth.last_name')}</label>
                   <p className="text-muted-foreground" data-testid="text-profile-lastname">
-                    {user?.lastName || 'Not provided'}
+                    {user?.lastName || t('dashboard.not_provided')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Email</label>
+                  <label className="text-sm font-medium text-foreground">{t('auth.email')}</label>
                   <p className="text-muted-foreground" data-testid="text-profile-email-detail">
-                    {user?.email || 'Not provided'}
+                    {user?.email || t('dashboard.not_provided')}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Member Since</label>
+                  <label className="text-sm font-medium text-foreground">{t('dashboard.member_since')}</label>
                   <p className="text-muted-foreground" data-testid="text-profile-member-since">
-                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Unknown'}
+                    {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : t('dashboard.unknown')}
                   </p>
                 </div>
               </div>
@@ -952,9 +954,9 @@ export default function Dashboard() {
       <Dialog open={providerDialogOpen} onOpenChange={setProviderDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Become a Service Provider</DialogTitle>
+            <DialogTitle>{t('footer.become_provider')}</DialogTitle>
             <DialogDescription>
-              Fill out the form below to apply as a service provider. All fields marked with * are required.
+              {t('dashboard.provider_application_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -965,11 +967,11 @@ export default function Dashboard() {
                 name="categoryId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service Category *</FormLabel>
+                    <FormLabel>{t('dashboard.service_category_required')}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-category">
-                          <SelectValue placeholder="Select a service category" />
+                          <SelectValue placeholder={t('dashboard.select_service_category')} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -990,10 +992,10 @@ export default function Dashboard() {
                 name="businessName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Business Name *</FormLabel>
+                    <FormLabel>{t('dashboard.business_name_required')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Your business or professional name" 
+                        placeholder={t('dashboard.business_name_placeholder')} 
                         {...field}
                         data-testid="input-business-name"
                       />
@@ -1008,10 +1010,10 @@ export default function Dashboard() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description *</FormLabel>
+                    <FormLabel>{t('dashboard.description_required')}</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Describe your services, experience, and what makes you unique..."
+                        placeholder={t('dashboard.description_placeholder')}
                         className="min-h-[100px]"
                         {...field}
                         data-testid="textarea-description"
@@ -1028,7 +1030,7 @@ export default function Dashboard() {
                   name="hourlyRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Hourly Rate ($)</FormLabel>
+                      <FormLabel>{t('dashboard.hourly_rate_usd')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="number"
@@ -1048,7 +1050,7 @@ export default function Dashboard() {
                   name="fixedRate"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Fixed Rate ($)</FormLabel>
+                      <FormLabel>{t('dashboard.fixed_rate_usd')}</FormLabel>
                       <FormControl>
                         <Input 
                           type="number"
@@ -1069,10 +1071,10 @@ export default function Dashboard() {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location *</FormLabel>
+                    <FormLabel>{t('dashboard.location_required')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="City, State or Region"
+                        placeholder={t('dashboard.location_placeholder')}
                         {...field}
                         data-testid="input-location"
                       />
@@ -1087,7 +1089,7 @@ export default function Dashboard() {
                 name="radius"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Service Radius (km)</FormLabel>
+                    <FormLabel>{t('dashboard.service_radius_km')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="number"
@@ -1106,7 +1108,7 @@ export default function Dashboard() {
                 name="whatsappNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>WhatsApp Number</FormLabel>
+                    <FormLabel>{t('dashboard.whatsapp_number')}</FormLabel>
                     <FormControl>
                       <Input 
                         type="tel"
@@ -1125,10 +1127,10 @@ export default function Dashboard() {
                 name="certifications"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Certifications (comma-separated)</FormLabel>
+                    <FormLabel>{t('dashboard.certifications_comma')}</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="e.g., Licensed Professional, CPR Certified, Food Handler"
+                        placeholder={t('dashboard.certifications_placeholder')}
                         {...field}
                         data-testid="input-certifications"
                       />
@@ -1146,14 +1148,14 @@ export default function Dashboard() {
                   disabled={becomeProviderMutation.isPending}
                   data-testid="button-cancel-provider"
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={becomeProviderMutation.isPending}
                   data-testid="button-submit-provider"
                 >
-                  {becomeProviderMutation.isPending ? 'Submitting...' : 'Submit Application'}
+                  {becomeProviderMutation.isPending ? t('dashboard.submitting') : t('dashboard.submit_application')}
                 </Button>
               </div>
             </form>
@@ -1165,9 +1167,9 @@ export default function Dashboard() {
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Cancel Booking</DialogTitle>
+            <DialogTitle>{t('dashboard.cancel_booking')}</DialogTitle>
             <DialogDescription>
-              Please provide a reason for cancelling your booking. This request will be reviewed by an admin.
+              {t('dashboard.cancel_booking_description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -1178,10 +1180,10 @@ export default function Dashboard() {
                 name="reason"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Cancellation Reason *</FormLabel>
+                    <FormLabel>{t('dashboard.cancellation_reason_required')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Please explain why you need to cancel this booking..."
+                        placeholder={t('dashboard.cancellation_reason_placeholder')}
                         rows={5}
                         {...field}
                         data-testid="textarea-cancel-reason"
@@ -1204,7 +1206,7 @@ export default function Dashboard() {
                   disabled={cancelBookingMutation.isPending}
                   data-testid="button-cancel-request"
                 >
-                  Back
+                  {t('common.back')}
                 </Button>
                 <Button
                   type="submit"
@@ -1212,7 +1214,7 @@ export default function Dashboard() {
                   disabled={cancelBookingMutation.isPending}
                   data-testid="button-submit-cancellation"
                 >
-                  {cancelBookingMutation.isPending ? 'Submitting...' : 'Submit Cancellation'}
+                  {cancelBookingMutation.isPending ? t('dashboard.submitting') : t('dashboard.submit_cancellation')}
                 </Button>
               </div>
             </form>

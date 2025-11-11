@@ -30,8 +30,10 @@ import type {
   ServiceTask 
 } from "@shared/schema";
 import ServicePackages from "@/components/ServicePackages";
+import { useTranslation } from "react-i18next";
 
 export default function ProviderConfig() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
@@ -60,12 +62,12 @@ export default function ProviderConfig() {
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-7xl mx-auto">
           <Card className="p-8 text-center">
-            <h2 className="text-2xl font-semibold mb-4">Provider Profile Not Found</h2>
+            <h2 className="text-2xl font-semibold mb-4">{t('errors.not_found')}</h2>
             <p className="text-muted-foreground mb-6">
-              You need to be approved as a service provider to access this page.
+              {t('dashboard.service_provider_access_required')}
             </p>
             <Button onClick={() => window.location.href = "/dashboard"}>
-              Return to Dashboard
+              {t('header.dashboard')}
             </Button>
           </Card>
         </div>
@@ -83,10 +85,10 @@ export default function ProviderConfig() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Service Configuration
+            {t('provider_dashboard.settings')}
           </h1>
           <p className="text-muted-foreground">
-            Manage your service offerings, pricing, and availability
+            {t('dashboard.subtitle')}
           </p>
         </div>
 
@@ -94,31 +96,31 @@ export default function ProviderConfig() {
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">
               <ClipboardList className="w-4 h-4 mr-2" />
-              Overview
+              {t('dashboard.overview')}
             </TabsTrigger>
             {isChef && (
               <TabsTrigger value="menus">
                 <ChefHat className="w-4 h-4 mr-2" />
-                Menus
+                {t('service_provider.menu_items')}
               </TabsTrigger>
             )}
             {isMaid && (
               <TabsTrigger value="tasks">
                 <ClipboardList className="w-4 h-4 mr-2" />
-                Tasks
+                {t('service_provider.tasks')}
               </TabsTrigger>
             )}
             <TabsTrigger value="pricing">
               <DollarSign className="w-4 h-4 mr-2" />
-              Pricing
+              {t('provider_dashboard.pricing_settings')}
             </TabsTrigger>
             <TabsTrigger value="packages">
               <Plus className="w-4 h-4 mr-2" />
-              Packages
+              {t('service_provider.custom_packages')}
             </TabsTrigger>
             <TabsTrigger value="availability">
               <Calendar className="w-4 h-4 mr-2" />
-              Availability
+              {t('provider_dashboard.availability_settings')}
             </TabsTrigger>
           </TabsList>
 
@@ -156,6 +158,7 @@ export default function ProviderConfig() {
 }
 
 function OverviewTab({ provider }: { provider: ServiceProvider & { category: { name: string } } }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -171,33 +174,33 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
       return await response.json();
     },
     onSuccess: () => {
-      toast({ title: "Success", description: "Profile updated successfully" });
+      toast({ title: t("common.success"), description: t("dashboard.user_role_updated") });
       queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
       setIsEditing(false);
     },
     onError: () => {
-      toast({ title: "Error", description: "Failed to update profile", variant: "destructive" });
+      toast({ title: t("common.error"), description: t("errors.generic_error"), variant: "destructive" });
     },
   });
 
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">Business Profile</h2>
+        <h2 className="text-2xl font-semibold">{t('dashboard.profile')}</h2>
         {!isEditing ? (
           <Button onClick={() => setIsEditing(true)}>
             <Edit className="w-4 h-4 mr-2" />
-            Edit
+            {t('common.edit')}
           </Button>
         ) : (
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsEditing(false)}>
               <X className="w-4 h-4 mr-2" />
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={() => updateMutation.mutate(formData)}>
               <Save className="w-4 h-4 mr-2" />
-              Save
+              {t('common.save')}
             </Button>
           </div>
         )}
@@ -205,7 +208,7 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="businessName">Business Name</Label>
+          <Label htmlFor="businessName">{t('dashboard.business_name_required')}</Label>
           <Input
             id="businessName"
             value={formData.businessName}
@@ -215,7 +218,7 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
         </div>
 
         <div>
-          <Label htmlFor="category">Service Category</Label>
+          <Label htmlFor="category">{t('dashboard.service_category_required')}</Label>
           <Input
             id="category"
             value={provider.category.name}
@@ -224,7 +227,7 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
         </div>
 
         <div className="md:col-span-2">
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">{t('dashboard.description_required')}</Label>
           <Textarea
             id="description"
             value={formData.description}
@@ -235,18 +238,18 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
         </div>
 
         <div>
-          <Label htmlFor="location">Location</Label>
+          <Label htmlFor="location">{t('properties.location')}</Label>
           <Input
             id="location"
             value={formData.location}
             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             disabled={!isEditing}
-            placeholder="City, State/Country"
+            placeholder={t('dashboard.location_placeholder')}
           />
         </div>
 
         <div>
-          <Label htmlFor="whatsapp">WhatsApp Number</Label>
+          <Label htmlFor="whatsapp">{t('dashboard.whatsapp_number')}</Label>
           <Input
             id="whatsapp"
             value={formData.whatsappNumber}
@@ -259,23 +262,23 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
         <div className="md:col-span-2 pt-4 border-t">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-sm text-muted-foreground">Rating</p>
+              <p className="text-sm text-muted-foreground">{t('properties.rating')}</p>
               <p className="text-2xl font-bold">{parseFloat(provider.rating || "0").toFixed(1)} ⭐</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Reviews</p>
+              <p className="text-sm text-muted-foreground">{t('properties.reviews')}</p>
               <p className="text-2xl font-bold">{provider.reviewCount || 0}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="text-sm text-muted-foreground">{t('orders.order_status')}</p>
               <Badge variant={provider.approvalStatus === "approved" ? "default" : "secondary"}>
                 {provider.approvalStatus}
               </Badge>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Verified</p>
+              <p className="text-sm text-muted-foreground">{t('services.verified')}</p>
               <Badge variant={provider.isVerified ? "default" : "secondary"}>
-                {provider.isVerified ? "Yes" : "No"}
+                {provider.isVerified ? t('common.yes') : t('common.no')}
               </Badge>
             </div>
           </div>
@@ -286,6 +289,7 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
 }
 
 function MenuManagement({ providerId }: { providerId: string }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [newMenuName, setNewMenuName] = useState("");
@@ -304,7 +308,7 @@ function MenuManagement({ providerId }: { providerId: string }) {
       return await response.json();
     },
     onSuccess: () => {
-      toast({ title: "Success", description: "Menu category created" });
+      toast({ title: t("common.success"), description: t("common.create") });
       queryClient.invalidateQueries({ queryKey: ["/api/provider/menus", providerId] });
       setShowAddMenu(false);
       setNewMenuName("");
@@ -317,12 +321,12 @@ function MenuManagement({ providerId }: { providerId: string }) {
       <Card className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-semibold">Menu Management</h2>
-            <p className="text-muted-foreground">Create menus and add dishes for your chef services</p>
+            <h2 className="text-2xl font-semibold">{t('service_provider.menu_items')}</h2>
+            <p className="text-muted-foreground">{t('services.services_offered')}</p>
           </div>
           <Button onClick={() => setShowAddMenu(!showAddMenu)}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Menu Category
+            {t('common.create')}
           </Button>
         </div>
 
@@ -330,21 +334,21 @@ function MenuManagement({ providerId }: { providerId: string }) {
           <Card className="p-4 mb-6 bg-muted">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="menuName">Menu Category Name</Label>
+                <Label htmlFor="menuName">{t('dashboard.service_category_required')}</Label>
                 <Input
                   id="menuName"
                   value={newMenuName}
                   onChange={(e) => setNewMenuName(e.target.value)}
-                  placeholder="e.g., Breakfast Menu, Dinner Menu"
+                  placeholder={t('dashboard.service_category_required')}
                 />
               </div>
               <div>
-                <Label htmlFor="menuDesc">Description</Label>
+                <Label htmlFor="menuDesc">{t('dashboard.description_required')}</Label>
                 <Textarea
                   id="menuDesc"
                   value={newMenuDesc}
                   onChange={(e) => setNewMenuDesc(e.target.value)}
-                  placeholder="Brief description of this menu category"
+                  placeholder={t('dashboard.description_placeholder')}
                   rows={2}
                 />
               </div>
@@ -356,10 +360,10 @@ function MenuManagement({ providerId }: { providerId: string }) {
                   })}
                   disabled={!newMenuName}
                 >
-                  Create Category
+                  {t('common.create')}
                 </Button>
                 <Button variant="outline" onClick={() => setShowAddMenu(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
               </div>
             </div>
@@ -382,7 +386,7 @@ function MenuManagement({ providerId }: { providerId: string }) {
           <div className="text-center py-12">
             <ChefHat className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              No menus created yet. Add your first menu category to get started.
+              {t('common.no_results')}
             </p>
           </div>
         )}
@@ -398,6 +402,7 @@ function MenuCategoryCard({
   menu: ProviderMenu & { items: MenuItem[] };
   providerId: string;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { toast } = useToast();
 
@@ -410,11 +415,11 @@ function MenuCategoryCard({
             <p className="text-sm text-muted-foreground">{menu.description}</p>
           )}
           <p className="text-sm text-muted-foreground mt-1">
-            {menu.items?.length || 0} dishes
+            {menu.items?.length || 0} {t('service_provider.menu_items')}
           </p>
         </div>
         <Button variant="outline" onClick={() => setExpanded(!expanded)}>
-          {expanded ? "Hide" : "Show"} Dishes
+          {expanded ? t('property_detail.show_less') : t('property_detail.show_more')}
         </Button>
       </div>
 
@@ -434,12 +439,12 @@ function MenuCategoryCard({
             ))
           ) : (
             <p className="text-center text-muted-foreground py-4">
-              No dishes added yet. Click "Add Dish" to get started.
+              {t('common.no_results')}
             </p>
           )}
           <Button className="w-full mt-2">
             <Plus className="w-4 h-4 mr-2" />
-            Add Dish
+            {t('common.create')}
           </Button>
         </div>
       )}
@@ -448,6 +453,7 @@ function MenuCategoryCard({
 }
 
 function TaskManagement({ providerId, categoryId }: { providerId: string; categoryId: string }) {
+  const { t } = useTranslation();
   const { data: tasks, isLoading } = useQuery<ServiceTask[]>({
     queryKey: ["/api/service-tasks", categoryId],
   });
@@ -458,9 +464,9 @@ function TaskManagement({ providerId, categoryId }: { providerId: string; catego
 
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Task Configuration</h2>
+      <h2 className="text-2xl font-semibold mb-4">{t('service_provider.tasks')}</h2>
       <p className="text-muted-foreground mb-6">
-        Enable/disable tasks and set custom pricing for your services
+        {t('provider_dashboard.pricing_settings')}
       </p>
 
       {isLoading ? (
@@ -486,7 +492,7 @@ function TaskManagement({ providerId, categoryId }: { providerId: string; catego
       ) : (
         <div className="text-center py-12">
           <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">No tasks available for configuration</p>
+          <p className="text-muted-foreground">{t('common.no_results')}</p>
         </div>
       )}
     </Card>
@@ -502,6 +508,7 @@ function TaskConfigRow({
   config?: ProviderTaskConfig;
   providerId: string;
 }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [enabled, setEnabled] = useState(config?.isEnabled ?? true);
   const [price, setPrice] = useState(config?.customPrice || "");
@@ -516,7 +523,7 @@ function TaskConfigRow({
       return await response.json();
     },
     onSuccess: () => {
-      toast({ title: "Success", description: "Task configuration updated" });
+      toast({ title: t("common.success"), description: t("provider_dashboard.update_status") });
       queryClient.invalidateQueries({ queryKey: ["/api/provider/tasks", providerId] });
     },
   });
@@ -544,7 +551,7 @@ function TaskConfigRow({
         <Input
           type="number"
           step="0.01"
-          placeholder="Price"
+          placeholder={t('services.price_range')}
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           onBlur={() => {
@@ -554,13 +561,14 @@ function TaskConfigRow({
           }}
           className="w-24"
         />
-        <span className="text-sm text-muted-foreground">USD</span>
+        <span className="text-sm text-muted-foreground">{t('payment.payment_amount')}</span>
       </div>
     </div>
   );
 }
 
 function PricingManagement({ provider }: { provider: ServiceProvider }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [hourlyRate, setHourlyRate] = useState(provider.hourlyRate || "");
   const [fixedRate, setFixedRate] = useState(provider.fixedRate || "");
@@ -571,21 +579,21 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
       return await response.json();
     },
     onSuccess: () => {
-      toast({ title: "Success", description: "Pricing updated successfully" });
+      toast({ title: t("common.success"), description: t("provider_dashboard.update_status") });
       queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
     },
   });
 
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Pricing Structure</h2>
+      <h2 className="text-2xl font-semibold mb-4">{t('provider_dashboard.pricing_settings')}</h2>
       <p className="text-muted-foreground mb-6">
-        Set your base rates for services
+        {t('services.price_range')}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Label htmlFor="hourlyRate">Hourly Rate</Label>
+          <Label htmlFor="hourlyRate">{t('dashboard.hourly_rate_usd')}</Label>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-muted-foreground">$</span>
             <Input
@@ -596,12 +604,12 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
               onChange={(e) => setHourlyRate(e.target.value)}
               placeholder="0.00"
             />
-            <span className="text-muted-foreground">/hour</span>
+            <span className="text-muted-foreground">{t('book_service.hours')}</span>
           </div>
         </div>
 
         <div>
-          <Label htmlFor="fixedRate">Fixed Rate</Label>
+          <Label htmlFor="fixedRate">{t('dashboard.fixed_rate_usd')}</Label>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-muted-foreground">$</span>
             <Input
@@ -612,7 +620,7 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
               onChange={(e) => setFixedRate(e.target.value)}
               placeholder="0.00"
             />
-            <span className="text-muted-foreground">/service</span>
+            <span className="text-muted-foreground">{t('services.services_offered')}</span>
           </div>
         </div>
 
@@ -621,7 +629,7 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
             onClick={() => updateMutation.mutate({ hourlyRate, fixedRate })}
             disabled={!hourlyRate && !fixedRate}
           >
-            Save Pricing
+            {t('common.save')}
           </Button>
         </div>
       </div>
@@ -630,20 +638,21 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
 }
 
 function AvailabilityManagement({ provider }: { provider: ServiceProvider }) {
+  const { t } = useTranslation();
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">Availability Calendar</h2>
+      <h2 className="text-2xl font-semibold mb-4">{t('provider_dashboard.calendar')}</h2>
       <p className="text-muted-foreground mb-6">
-        Manage your working hours and availability
+        {t('provider_dashboard.availability_settings')}
       </p>
 
       <div className="text-center py-12">
         <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
         <p className="text-muted-foreground mb-4">
-          Availability calendar coming soon
+          {t('common.loading')}
         </p>
         <p className="text-sm text-muted-foreground">
-          You'll be able to set your working hours, block dates, and manage your schedule here.
+          {t('provider_dashboard.availability_settings')}
         </p>
       </div>
     </Card>

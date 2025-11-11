@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Home, DollarSign, Users, Shield } from "lucide-react";
 
 export default function Host() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -43,20 +45,20 @@ export default function Host() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-host-title">
-            Become a Property Owner
+            {t('host.title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8" data-testid="text-host-subtitle">
-            List your property on TravelHub and reach millions of travelers worldwide
+            {t('host.subtitle')}
           </p>
           {isAuthenticated ? (
             <Link href="/dashboard?tab=properties">
               <Button size="lg" data-testid="button-get-started">
-                Get Started
+                {t('host.get_started')}
               </Button>
             </Link>
           ) : (
             <Button size="lg" onClick={() => window.location.href = "/api/login"} data-testid="button-get-started">
-              Get Started
+              {t('host.get_started')}
             </Button>
           )}
         </div>
@@ -66,9 +68,9 @@ export default function Host() {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Home className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Easy Setup</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('host.easy_setup')}</h3>
             <p className="text-sm text-muted-foreground">
-              List your property in minutes with our simple onboarding process
+              {t('host.easy_setup_desc')}
             </p>
           </Card>
 
@@ -76,9 +78,9 @@ export default function Host() {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <DollarSign className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Earn More</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('host.earn_more')}</h3>
             <p className="text-sm text-muted-foreground">
-              Competitive rates and no hidden fees means more money in your pocket
+              {t('host.earn_more_desc')}
             </p>
           </Card>
 
@@ -86,9 +88,9 @@ export default function Host() {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Users className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Global Reach</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('host.global_reach')}</h3>
             <p className="text-sm text-muted-foreground">
-              Connect with travelers from around the world looking for their perfect stay
+              {t('host.global_reach_desc')}
             </p>
           </Card>
 
@@ -96,23 +98,23 @@ export default function Host() {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Shield className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Protected</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('host.protected')}</h3>
             <p className="text-sm text-muted-foreground">
-              Host protection insurance and 24/7 support keep you covered
+              {t('host.protected_desc')}
             </p>
           </Card>
         </div>
 
         <Card className="p-8">
-          <h2 className="text-2xl font-semibold text-foreground mb-6">How It Works</h2>
+          <h2 className="text-2xl font-semibold text-foreground mb-6">{t('host.how_it_works')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold mb-4">
                 1
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Create Your Listing</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t('host.create_listing')}</h3>
               <p className="text-sm text-muted-foreground">
-                Add photos, set your price, and describe what makes your property special
+                {t('host.create_listing_desc')}
               </p>
             </div>
 
@@ -120,9 +122,9 @@ export default function Host() {
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold mb-4">
                 2
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Welcome Guests</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t('host.welcome_guests')}</h3>
               <p className="text-sm text-muted-foreground">
-                Accept bookings, communicate with guests, and provide an amazing experience
+                {t('host.welcome_guests_desc')}
               </p>
             </div>
 
@@ -130,9 +132,9 @@ export default function Host() {
               <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold mb-4">
                 3
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Get Paid</h3>
+              <h3 className="font-semibold text-foreground mb-2">{t('host.get_paid')}</h3>
               <p className="text-sm text-muted-foreground">
-                Receive secure payments directly to your account after guest check-in
+                {t('host.get_paid_desc')}
               </p>
             </div>
           </div>

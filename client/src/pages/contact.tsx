@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin, Clock } from "lucide-react";
 
 export default function Contact() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -45,7 +47,7 @@ export default function Contact() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-contact-title">
-            Contact Us
+            {t('info_pages.contact_title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-contact-subtitle">
             Have a question? We're here to help. Reach out to our team and we'll get back to you as soon as possible.
@@ -57,7 +59,7 @@ export default function Contact() {
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
               <Mail className="w-6 h-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-foreground mb-2">Email</h3>
+            <h3 className="font-semibold text-foreground mb-2">{t('auth.email')}</h3>
             <p className="text-sm text-muted-foreground">support@travelhub.com</p>
           </Card>
 
@@ -115,7 +117,7 @@ export default function Contact() {
             </div>
 
             <Button className="w-full" data-testid="button-send-message">
-              Send Message
+              {t('service_provider.send_message')}
             </Button>
           </form>
         </Card>

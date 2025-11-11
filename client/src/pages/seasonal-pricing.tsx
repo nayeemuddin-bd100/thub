@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,16 +17,16 @@ import { Calendar, Plus, TrendingUp, TrendingDown } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const seasonalPriceSchema = z.object({
-  propertyId: z.string().min(1, "Property is required"),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().min(1, "End date is required"),
+const getSeasonalPriceSchema = (t: (key: string) => string) => z.object({
+  propertyId: z.string().min(1, t('seasonal_pricing.property_required')),
+  startDate: z.string().min(1, t('seasonal_pricing.start_date_required')),
+  endDate: z.string().min(1, t('seasonal_pricing.end_date_required')),
   priceAdjustment: z.string()
-    .min(1, "Price adjustment is required")
-    .refine((val) => !isNaN(parseFloat(val)), "Must be a valid number"),
+    .min(1, t('seasonal_pricing.adjustment_required'))
+    .refine((val) => !isNaN(parseFloat(val)), t('seasonal_pricing.must_be_number')),
   seasonType: z.enum(["peak", "off-peak"]),
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
-  message: "End date must be after start date",
+  message: t('seasonal_pricing.end_after_start'),
   path: ["endDate"],
 });
 
@@ -45,11 +46,14 @@ type Property = {
 };
 
 export default function SeasonalPricing() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+  const seasonalPriceSchema = getSeasonalPriceSchema(t);
 
   const form = useForm<z.infer<typeof seasonalPriceSchema>>({
     resolver: zodResolver(seasonalPriceSchema),
@@ -85,12 +89,12 @@ export default function SeasonalPricing() {
       queryClient.invalidateQueries({ queryKey: ["/api/seasonal-pricing"] });
       setDialogOpen(false);
       form.reset();
-      toast({ title: "Success", description: "Seasonal pricing created!" });
+      toast({ title: t('common.success'), description: t('seasonal_pricing.created_success') });
     },
     onError: () => {
       toast({ 
-        title: "Error", 
-        description: "Failed to create seasonal pricing. Please try again.",
+        title: t('common.error'), 
+        description: t('seasonal_pricing.create_failed'),
         variant: "destructive",
       });
     },
@@ -107,14 +111,14 @@ export default function SeasonalPricing() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold" data-testid="heading-seasonal-pricing">Seasonal Pricing</h1>
+            <h1 className="text-3xl font-bold" data-testid="heading-seasonal-pricing">{t('seasonal_pricing.title')}</h1>
             <p className="text-muted-foreground mt-2">
-              Manage peak and off-peak season pricing for your properties
+              {t('seasonal_pricing.subtitle')}
             </p>
           </div>
           <Button onClick={() => setDialogOpen(true)} data-testid="button-create-seasonal-price">
             <Plus className="w-4 h-4 mr-2" />
-            Add Seasonal Pricing
+            {t('seasonal_pricing.add_pricing')}
           </Button>
         </div>
 
@@ -132,7 +136,7 @@ export default function SeasonalPricing() {
           <Card className="text-center py-12">
             <CardContent>
               <p className="text-destructive" data-testid="error-seasonal-prices">
-                Failed to load seasonal pricing. Please try again.
+                {t('seasonal_pricing.failed_load')}
               </p>
             </CardContent>
           </Card>
@@ -140,12 +144,12 @@ export default function SeasonalPricing() {
           <Card className="text-center py-12">
             <CardContent>
               <Calendar className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2" data-testid="empty-seasonal-prices">No Seasonal Pricing Yet</h3>
+              <h3 className="text-lg font-semibold mb-2" data-testid="empty-seasonal-prices">{t('seasonal_pricing.no_pricing_yet')}</h3>
               <p className="text-muted-foreground mb-4">
-                Set up peak and off-peak season pricing to maximize your revenue
+                {t('seasonal_pricing.no_pricing_desc')}
               </p>
               <Button onClick={() => setDialogOpen(true)} data-testid="button-add-first-seasonal">
-                Add Your First Seasonal Price
+                {t('seasonal_pricing.add_first')}
               </Button>
             </CardContent>
           </Card>
@@ -156,7 +160,7 @@ export default function SeasonalPricing() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">
-                      {properties.find((p) => p.id === price.propertyId)?.title || "Property"}
+                      {properties.find((p) => p.id === price.propertyId)?.title || t('seasonal_pricing.property')}
                     </CardTitle>
                     <Badge 
                       variant={price.seasonType === "peak" ? "default" : "secondary"}
@@ -167,7 +171,7 @@ export default function SeasonalPricing() {
                       ) : (
                         <TrendingDown className="w-3 h-3 mr-1" />
                       )}
-                      {price.seasonType}
+                      {t(`seasonal_pricing.${price.seasonType.replace('-', '_')}`)}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -179,7 +183,7 @@ export default function SeasonalPricing() {
                       {new Date(price.endDate).toLocaleDateString()}
                     </div>
                     <p className="text-lg font-semibold" data-testid={`text-price-adjustment-${price.id}`}>
-                      {parseFloat(price.priceAdjustment) > 0 ? "+" : ""}${price.priceAdjustment} per night
+                      {parseFloat(price.priceAdjustment) > 0 ? "+" : ""}${price.priceAdjustment} {t('seasonal_pricing.per_night')}
                     </p>
                   </div>
                 </CardContent>
@@ -191,7 +195,7 @@ export default function SeasonalPricing() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Add Seasonal Pricing</DialogTitle>
+              <DialogTitle>{t('seasonal_pricing.add_pricing')}</DialogTitle>
             </DialogHeader>
 
             <Form {...form}>
@@ -201,18 +205,18 @@ export default function SeasonalPricing() {
                   name="propertyId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Property *</FormLabel>
+                      <FormLabel>{t('seasonal_pricing.property')} *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-property">
-                            <SelectValue placeholder="Select property" />
+                            <SelectValue placeholder={t('seasonal_pricing.select_property')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {propertiesLoading ? (
-                            <SelectItem value="loading" disabled>Loading properties...</SelectItem>
+                            <SelectItem value="loading" disabled>{t('seasonal_pricing.loading_properties')}</SelectItem>
                           ) : properties.length === 0 ? (
-                            <SelectItem value="none" disabled>No properties found</SelectItem>
+                            <SelectItem value="none" disabled>{t('seasonal_pricing.no_properties_found')}</SelectItem>
                           ) : (
                             properties.map((property) => (
                               <SelectItem key={property.id} value={property.id}>
@@ -232,7 +236,7 @@ export default function SeasonalPricing() {
                   name="seasonType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Season Type *</FormLabel>
+                      <FormLabel>{t('seasonal_pricing.season_type')} *</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="select-season-type">
@@ -240,8 +244,8 @@ export default function SeasonalPricing() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="peak">Peak Season</SelectItem>
-                          <SelectItem value="off-peak">Off-Peak Season</SelectItem>
+                          <SelectItem value="peak">{t('seasonal_pricing.peak_season')}</SelectItem>
+                          <SelectItem value="off-peak">{t('seasonal_pricing.off_peak_season')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -255,7 +259,7 @@ export default function SeasonalPricing() {
                     name="startDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Date *</FormLabel>
+                        <FormLabel>{t('seasonal_pricing.start_date')} *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} data-testid="input-start-date" />
                         </FormControl>
@@ -269,7 +273,7 @@ export default function SeasonalPricing() {
                     name="endDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>End Date *</FormLabel>
+                        <FormLabel>{t('seasonal_pricing.end_date')} *</FormLabel>
                         <FormControl>
                           <Input type="date" {...field} data-testid="input-end-date" />
                         </FormControl>
@@ -284,12 +288,12 @@ export default function SeasonalPricing() {
                   name="priceAdjustment"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price Adjustment ($) *</FormLabel>
+                      <FormLabel>{t('seasonal_pricing.price_adjustment')} *</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
-                          placeholder="50.00 (positive for increase, negative for decrease)"
+                          placeholder={t('seasonal_pricing.placeholder_adjustment')}
                           {...field}
                           data-testid="input-price-adjustment"
                         />
@@ -301,10 +305,10 @@ export default function SeasonalPricing() {
 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-seasonal">
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={createSeasonalPriceMutation.isPending} data-testid="button-submit-seasonal">
-                    {createSeasonalPriceMutation.isPending ? "Creating..." : "Create"}
+                    {createSeasonalPriceMutation.isPending ? t('seasonal_pricing.creating') : t('common.create')}
                   </Button>
                 </div>
               </form>

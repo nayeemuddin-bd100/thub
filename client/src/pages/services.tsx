@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import ServiceProviderCard from "@/components/ServiceProviderCard";
 import Footer from "@/components/Footer";
@@ -13,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import { Search, MapPin } from "lucide-react";
 
 export default function Services() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -108,10 +110,10 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-services-title">
-            Service Providers
+            {t('services.title')}
           </h1>
           <p className="text-lg text-muted-foreground" data-testid="text-services-subtitle">
-            Find trusted professionals to enhance your travel experience
+            {t('services.subtitle')}
           </p>
         </div>
 
@@ -122,7 +124,7 @@ export default function Services() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 data-testid="input-search-services"
-                placeholder="Search services..."
+                placeholder={t('common.search')}
                 value={filters.search}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
                 className="pl-10"
@@ -131,10 +133,10 @@ export default function Services() {
             
             <Select value={filters.categoryId || "all"} onValueChange={(value) => handleFilterChange('categoryId', value === "all" ? "" : value)}>
               <SelectTrigger data-testid="select-category">
-                <SelectValue placeholder="All categories" />
+                <SelectValue placeholder={t('services.all_categories')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">{t('services.all_categories')}</SelectItem>
                 {categories?.map((category: any) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -147,7 +149,7 @@ export default function Services() {
               <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 data-testid="input-location-services"
-                placeholder="Location"
+                placeholder={t('services.location_placeholder')}
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
                 className="pl-10"
@@ -162,7 +164,7 @@ export default function Services() {
                 window.history.replaceState({}, '', '/services');
               }}
             >
-              Clear Filters
+              {t('common.clear')} {t('common.filter')}
             </Button>
           </div>
         </Card>
@@ -177,14 +179,14 @@ export default function Services() {
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-lg text-destructive" data-testid="text-services-error">
-              Failed to load service providers. Please try again.
+              {t('common.error')}. {t('common.try_again')}.
             </p>
           </div>
         ) : filteredProviders.length > 0 ? (
           <>
             <div className="mb-6">
               <p className="text-muted-foreground" data-testid="text-services-count">
-                {filteredProviders.length} service providers found
+                {t('services.providers_found', { count: filteredProviders.length })}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -196,10 +198,10 @@ export default function Services() {
         ) : (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground" data-testid="text-no-services">
-              No service providers match your search criteria.
+              {t('services.no_providers')}
             </p>
             <p className="text-muted-foreground mt-2">
-              Try adjusting your filters or search terms.
+              {t('common.try_again')}.
             </p>
           </div>
         )}
@@ -208,7 +210,7 @@ export default function Services() {
         {isAuthenticated && (
           <Card className="mt-16 p-8 text-center bg-primary/5 border-primary/20">
             <h2 className="text-2xl font-bold text-foreground mb-4" data-testid="text-provider-cta-title">
-              Become a Service Provider
+              {t('footer.become_provider')}
             </h2>
             <p className="text-muted-foreground mb-6" data-testid="text-provider-cta-description">
               Share your expertise and earn income by providing services to travelers

@@ -38,7 +38,8 @@
     "no_results": "Aucun résultat trouvé",
     "try_again": "Réessayer",
     "refresh": "Actualiser",
-    "home": "Accueil"
+    "home": "Accueil",
+    "discount": "Réduction"
   },
   "auth": {
     "login_title": "Se connecter à TravelHub",

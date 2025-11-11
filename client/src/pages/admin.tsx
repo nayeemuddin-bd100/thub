@@ -37,8 +37,10 @@ import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssoci
 import EmailTemplates from "@/components/admin/EmailTemplates";
 import TerritoryManagement from "@/components/admin/TerritoryManagement";
 import PromotionalCodes from "@/components/admin/PromotionalCodes";
+import { useTranslation } from "react-i18next";
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { toast } = useToast();
   const [activeSection, setActiveSection] = useState('overview');
@@ -100,14 +102,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/bookings'] });
       toast({
-        title: "Success",
-        description: "Booking status updated successfully",
+        title: t('common.success'),
+        description: t('admin.booking_status_updated'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update booking status",
+        title: t('common.error'),
+        description: t('errors.booking_status_update_failed'),
         variant: "destructive",
       });
     },
@@ -122,14 +124,14 @@ export default function AdminDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-orders'] });
       toast({
-        title: "Success",
-        description: "Service order status updated successfully",
+        title: t('common.success'),
+        description: t('admin.order_status_updated'),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update service order status",
+        title: t('common.error'),
+        description: t('errors.order_status_update_failed'),
         variant: "destructive",
       });
     },
@@ -190,8 +192,8 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/properties'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: editingProperty ? "Property updated successfully" : "Property created successfully",
+        title: t('common.success'),
+        description: editingProperty ? t('admin.property_updated') : t('admin.property_created'),
       });
       setPropertyDialogOpen(false);
       setEditingProperty(null);
@@ -199,8 +201,8 @@ export default function AdminDashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save property",
+        title: t('common.error'),
+        description: error.message || t('errors.save_property_failed'),
         variant: "destructive",
       });
     },
@@ -217,14 +219,14 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/properties'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: "Property deleted successfully",
+        title: t('common.success'),
+        description: t('admin.property_deleted'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete property",
+        title: t('common.error'),
+        description: error.message || t('errors.delete_property_failed'),
         variant: "destructive",
       });
     },
@@ -242,14 +244,14 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: "User role updated successfully",
+        title: t('common.success'),
+        description: t('admin.role_updated'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to update user role",
+        title: t('common.error'),
+        description: error.message || t('errors.role_update_failed'),
         variant: "destructive",
       });
     },
@@ -300,8 +302,8 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: editingProvider ? "Service provider updated successfully" : "Service provider created successfully",
+        title: t('common.success'),
+        description: editingProvider ? t('admin.provider_updated') : t('admin.provider_created'),
       });
       setServiceProviderDialogOpen(false);
       setEditingProvider(null);
@@ -309,8 +311,8 @@ export default function AdminDashboard() {
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save service provider",
+        title: t('common.error'),
+        description: error.message || t('errors.save_provider_failed'),
         variant: "destructive",
       });
     },
@@ -325,14 +327,14 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/service-providers'] });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/stats'] });
       toast({
-        title: "Success",
-        description: "Service provider deleted successfully",
+        title: t('common.success'),
+        description: t('admin.provider_deleted'),
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete service provider",
+        title: t('common.error'),
+        description: error.message || t('errors.delete_provider_failed'),
         variant: "destructive",
       });
     },
@@ -389,7 +391,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-primary">Admin Panel</h1>
+          <h1 className="text-2xl font-bold text-primary">{t('admin.title')}</h1>
           <p className="text-sm text-muted-foreground mt-1">TravelHub</p>
         </div>
 
@@ -404,7 +406,7 @@ export default function AdminDashboard() {
             data-testid="nav-overview"
           >
             <LayoutDashboard className="w-5 h-5" />
-            <span>Overview</span>
+            <span>{t('admin.overview')}</span>
           </button>
 
           <button
@@ -417,7 +419,7 @@ export default function AdminDashboard() {
             data-testid="nav-users"
           >
             <Users className="w-5 h-5" />
-            <span>Users</span>
+            <span>{t('admin.users')}</span>
           </button>
 
           <button
@@ -430,7 +432,7 @@ export default function AdminDashboard() {
             data-testid="nav-properties"
           >
             <Building className="w-5 h-5" />
-            <span>Properties</span>
+            <span>{t('dashboard.properties')}</span>
           </button>
 
           <button
@@ -443,7 +445,7 @@ export default function AdminDashboard() {
             data-testid="nav-providers"
           >
             <Briefcase className="w-5 h-5" />
-            <span>Service Providers</span>
+            <span>{t('dashboard.service_providers')}</span>
           </button>
 
           <button
@@ -456,7 +458,7 @@ export default function AdminDashboard() {
             data-testid="nav-services"
           >
             <Settings className="w-5 h-5" />
-            <span>Services</span>
+            <span>{t('dashboard.services')}</span>
           </button>
 
           <button
@@ -469,7 +471,7 @@ export default function AdminDashboard() {
             data-testid="nav-bookings"
           >
             <Calendar className="w-5 h-5" />
-            <span>Bookings</span>
+            <span>{t('dashboard.bookings')}</span>
           </button>
 
           <button
@@ -482,7 +484,7 @@ export default function AdminDashboard() {
             data-testid="nav-service-orders"
           >
             <Briefcase className="w-5 h-5" />
-            <span>Service Orders</span>
+            <span>{t('admin.service_orders')}</span>
           </button>
 
           <button
@@ -495,7 +497,7 @@ export default function AdminDashboard() {
             data-testid="nav-settings"
           >
             <Settings className="w-5 h-5" />
-            <span>Settings</span>
+            <span>{t('dashboard.settings')}</span>
           </button>
         </nav>
 
@@ -520,7 +522,7 @@ export default function AdminDashboard() {
             data-testid="button-logout"
           >
             <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            {t('common.logout')}
           </Button>
         </div>
       </div>
@@ -531,7 +533,7 @@ export default function AdminDashboard() {
           {/* Overview Section */}
           {activeSection === 'overview' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Dashboard Overview</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-8">{t('admin.overview')}</h2>
               
               {statsLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -544,7 +546,7 @@ export default function AdminDashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Users</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.total_users')}</p>
                         <p className="text-3xl font-bold text-foreground mt-2" data-testid="stat-users">
                           {stats?.totalUsers || 0}
                         </p>
@@ -556,7 +558,7 @@ export default function AdminDashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Properties</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.properties')}</p>
                         <p className="text-3xl font-bold text-foreground mt-2" data-testid="stat-properties">
                           {stats?.totalProperties || 0}
                         </p>
@@ -568,7 +570,7 @@ export default function AdminDashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Service Providers</p>
+                        <p className="text-sm text-muted-foreground">{t('dashboard.service_providers')}</p>
                         <p className="text-3xl font-bold text-foreground mt-2" data-testid="stat-providers">
                           {stats?.totalServiceProviders || 0}
                         </p>
@@ -580,7 +582,7 @@ export default function AdminDashboard() {
                   <Card className="p-6">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm text-muted-foreground">Total Bookings</p>
+                        <p className="text-sm text-muted-foreground">{t('admin.total_bookings')}</p>
                         <p className="text-3xl font-bold text-foreground mt-2" data-testid="stat-bookings">
                           {stats?.totalBookings || 0}
                         </p>
@@ -597,7 +599,7 @@ export default function AdminDashboard() {
           {activeSection === 'users' && (
             <div>
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-foreground">User Management</h2>
+                <h2 className="text-3xl font-bold text-foreground">{t('admin.user_management')}</h2>
               </div>
 
               {/* Search and Filter */}
@@ -606,7 +608,7 @@ export default function AdminDashboard() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                   <Input
                     type="text"
-                    placeholder="Search by name or email..."
+                    placeholder={t('admin.search_users')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -615,15 +617,15 @@ export default function AdminDashboard() {
                 </div>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
                   <SelectTrigger className="w-[200px]" data-testid="select-role-filter">
-                    <SelectValue placeholder="Filter by role" />
+                    <SelectValue placeholder={t('admin.filter_by_role')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Roles</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="property_owner">Property Owner</SelectItem>
-                    <SelectItem value="service_provider">Service Provider</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                    <SelectItem value="country_manager">Country Manager</SelectItem>
+                    <SelectItem value="all">{t('admin.all_roles')}</SelectItem>
+                    <SelectItem value="admin">{t('admin.admin_role')}</SelectItem>
+                    <SelectItem value="property_owner">{t('admin.property_owner_role')}</SelectItem>
+                    <SelectItem value="service_provider">{t('admin.service_provider_role')}</SelectItem>
+                    <SelectItem value="client">{t('admin.client_role')}</SelectItem>
+                    <SelectItem value="country_manager">{t('admin.country_manager_role')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -673,11 +675,11 @@ export default function AdminDashboard() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="client">Client</SelectItem>
-                              <SelectItem value="property_owner">Property Owner</SelectItem>
-                              <SelectItem value="service_provider">Service Provider</SelectItem>
-                              <SelectItem value="country_manager">Country Manager</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="client">{t('admin.client_role')}</SelectItem>
+                              <SelectItem value="property_owner">{t('admin.property_owner_role')}</SelectItem>
+                              <SelectItem value="service_provider">{t('admin.service_provider_role')}</SelectItem>
+                              <SelectItem value="country_manager">{t('admin.country_manager_role')}</SelectItem>
+                              <SelectItem value="admin">{t('admin.admin_role')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -692,55 +694,55 @@ export default function AdminDashboard() {
           {activeSection === 'properties' && (
             <div>
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-3xl font-bold text-foreground">Property Management</h2>
+                <h2 className="text-3xl font-bold text-foreground">{t('admin.property_management')}</h2>
                 <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
                   <DialogTrigger asChild>
                     <Button onClick={handleNewProperty} data-testid="button-add-property">
                       <Plus className="w-4 h-4 mr-2" />
-                      Add Property
+                      {t('admin.add_property')}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingProperty ? 'Edit Property' : 'Add New Property'}
+                        {editingProperty ? t('admin.edit_property') : t('admin.add_new_property')}
                       </DialogTitle>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="title">Title *</Label>
+                        <Label htmlFor="title">{t('property_form.property_name')} *</Label>
                         <Input
                           id="title"
                           value={propertyForm.title}
                           onChange={(e) => setPropertyForm({ ...propertyForm, title: e.target.value })}
-                          placeholder="Beautiful Beach House"
+                          placeholder={t('property_form.property_name_placeholder')}
                           data-testid="input-property-title"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t('property_form.description')}</Label>
                         <Textarea
                           id="description"
                           value={propertyForm.description}
                           onChange={(e) => setPropertyForm({ ...propertyForm, description: e.target.value })}
-                          placeholder="Describe your property..."
+                          placeholder={t('property_form.description_placeholder')}
                           rows={3}
                           data-testid="input-property-description"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="location">Location *</Label>
+                          <Label htmlFor="location">{t('property_form.location')} *</Label>
                           <Input
                             id="location"
                             value={propertyForm.location}
                             onChange={(e) => setPropertyForm({ ...propertyForm, location: e.target.value })}
-                            placeholder="Miami, FL"
+                            placeholder={t('property_form.location_placeholder')}
                             data-testid="input-property-location"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="pricePerNight">Price per Night ($) *</Label>
+                          <Label htmlFor="pricePerNight">{t('property_form.price_per_night')} *</Label>
                           <Input
                             id="pricePerNight"
                             type="number"
@@ -753,7 +755,7 @@ export default function AdminDashboard() {
                       </div>
                       <div className="grid grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="maxGuests">Max Guests *</Label>
+                          <Label htmlFor="maxGuests">{t('property_form.max_guests')} *</Label>
                           <Input
                             id="maxGuests"
                             type="number"
@@ -764,7 +766,7 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="bedrooms">Bedrooms *</Label>
+                          <Label htmlFor="bedrooms">{t('property_form.bedrooms')} *</Label>
                           <Input
                             id="bedrooms"
                             type="number"
@@ -775,7 +777,7 @@ export default function AdminDashboard() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="bathrooms">Bathrooms *</Label>
+                          <Label htmlFor="bathrooms">{t('property_form.bathrooms')} *</Label>
                           <Input
                             id="bathrooms"
                             type="number"
@@ -787,22 +789,22 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="amenities">Amenities (comma-separated)</Label>
+                        <Label htmlFor="amenities">{t('property_form.amenities')}</Label>
                         <Input
                           id="amenities"
                           value={propertyForm.amenities}
                           onChange={(e) => setPropertyForm({ ...propertyForm, amenities: e.target.value })}
-                          placeholder="WiFi, Pool, Air Conditioning"
+                          placeholder={t('property_form.amenities_placeholder')}
                           data-testid="input-property-amenities"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="images">Image URLs (comma-separated)</Label>
+                        <Label htmlFor="images">{t('property_form.images')}</Label>
                         <Textarea
                           id="images"
                           value={propertyForm.images}
                           onChange={(e) => setPropertyForm({ ...propertyForm, images: e.target.value })}
-                          placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                          placeholder={t('property_form.images_placeholder')}
                           rows={2}
                           data-testid="input-property-images"
                         />
@@ -817,14 +819,14 @@ export default function AdminDashboard() {
                           }}
                           data-testid="button-cancel-property"
                         >
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                         <Button
                           onClick={() => savePropertyMutation.mutate(propertyForm)}
                           disabled={savePropertyMutation.isPending || !propertyForm.title || !propertyForm.location || !propertyForm.pricePerNight}
                           data-testid="button-save-property"
                         >
-                          {savePropertyMutation.isPending ? 'Saving...' : (editingProperty ? 'Update' : 'Create')}
+                          {savePropertyMutation.isPending ? t('common.saving') : (editingProperty ? t('common.update') : t('common.create'))}
                         </Button>
                       </div>
                     </div>
@@ -864,13 +866,13 @@ export default function AdminDashboard() {
                             data-testid={`button-edit-${property.id}`}
                           >
                             <Edit className="w-4 h-4 mr-1" />
-                            Edit
+                            {t('common.edit')}
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => {
-                              if (confirm('Are you sure you want to delete this property?')) {
+                              if (confirm(t('admin.confirm_delete_property'))) {
                                 deletePropertyMutation.mutate(property.id);
                               }
                             }}
@@ -878,7 +880,7 @@ export default function AdminDashboard() {
                             data-testid={`button-delete-${property.id}`}
                           >
                             <Trash2 className="w-4 h-4 mr-1" />
-                            Delete
+                            {t('common.delete')}
                           </Button>
                         </div>
                       </div>
@@ -888,11 +890,11 @@ export default function AdminDashboard() {
               ) : (
                 <Card className="p-12 text-center">
                   <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No Properties Yet</h3>
-                  <p className="text-muted-foreground mb-4">Get started by adding your first property</p>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">{t('admin.no_properties')}</h3>
+                  <p className="text-muted-foreground mb-4">{t('admin.add_first_property')}</p>
                   <Button onClick={handleNewProperty} data-testid="button-add-first-property">
                     <Plus className="w-4 h-4 mr-2" />
-                    Add Property
+                    {t('admin.add_property')}
                   </Button>
                 </Card>
               )}
@@ -903,21 +905,21 @@ export default function AdminDashboard() {
           {activeSection === 'providers' && (
             <div>
               <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold text-foreground">Service Provider Management</h2>
+                <h2 className="text-3xl font-bold text-foreground">{t('admin.provider_management')}</h2>
               </div>
 
               <Tabs defaultValue="all" className="space-y-6">
                 <TabsList>
-                  <TabsTrigger value="all">All Providers</TabsTrigger>
+                  <TabsTrigger value="all">{t('admin.all_providers')}</TabsTrigger>
                   <TabsTrigger value="pending">
-                    Pending Applications
+                    {t('admin.pending_applications')}
                     {serviceProviders?.filter((p: any) => p.approvalStatus === 'pending').length > 0 && (
                       <Badge variant="destructive" className="ml-2">
                         {serviceProviders.filter((p: any) => p.approvalStatus === 'pending').length}
                       </Badge>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="rejected">Rejected</TabsTrigger>
+                  <TabsTrigger value="rejected">{t('dashboard.rejected')}</TabsTrigger>
                 </TabsList>
 
                 {/* All Providers Tab */}
@@ -1229,12 +1231,12 @@ export default function AdminDashboard() {
           {/* Services Section - Categories & Tasks */}
           {activeSection === 'services' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Services Management</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-8">{t('admin.services_management')}</h2>
               
               <Tabs defaultValue="categories" className="space-y-6">
                 <TabsList>
-                  <TabsTrigger value="categories">Service Categories</TabsTrigger>
-                  <TabsTrigger value="tasks">Service Tasks</TabsTrigger>
+                  <TabsTrigger value="categories">{t('admin.service_categories')}</TabsTrigger>
+                  <TabsTrigger value="tasks">{t('admin.service_tasks')}</TabsTrigger>
                 </TabsList>
 
                 {/* Service Categories Tab */}
@@ -1292,7 +1294,7 @@ export default function AdminDashboard() {
                         <SelectValue placeholder="Filter by category" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="all">{t('admin.all_categories')}</SelectItem>
                         {serviceCategories?.map((category: any) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
@@ -1316,7 +1318,7 @@ export default function AdminDashboard() {
           {/* Bookings Section */}
           {activeSection === 'bookings' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Booking Management</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-8">{t('admin.booking_management')}</h2>
               
               {bookingsLoading ? (
                 <div className="space-y-4">
@@ -1346,10 +1348,10 @@ export default function AdminDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="pending">{t('dashboard.pending')}</SelectItem>
+                                <SelectItem value="confirmed">{t('dashboard.confirmed')}</SelectItem>
+                                <SelectItem value="completed">{t('dashboard.completed')}</SelectItem>
+                                <SelectItem value="cancelled">{t('dashboard.cancelled')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1605,7 +1607,7 @@ export default function AdminDashboard() {
           {/* Service Orders Section */}
           {activeSection === 'service-orders' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Service Order Management</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-8">{t('admin.order_management')}</h2>
               
               {serviceOrdersLoading ? (
                 <div className="space-y-4">
@@ -1635,11 +1637,11 @@ export default function AdminDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="confirmed">Confirmed</SelectItem>
-                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                <SelectItem value="pending">{t('dashboard.pending')}</SelectItem>
+                                <SelectItem value="confirmed">{t('dashboard.confirmed')}</SelectItem>
+                                <SelectItem value="in_progress">{t('dashboard.in_progress')}</SelectItem>
+                                <SelectItem value="completed">{t('dashboard.completed')}</SelectItem>
+                                <SelectItem value="cancelled">{t('dashboard.cancelled')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1716,17 +1718,17 @@ export default function AdminDashboard() {
           {/* Settings Section */}
           {activeSection === 'settings' && (
             <div>
-              <h2 className="text-3xl font-bold text-foreground mb-8">Settings & Management</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-8">{t('admin.settings_management')}</h2>
               
               <Tabs defaultValue="platform" className="space-y-6">
                 <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
-                  <TabsTrigger value="platform" data-testid="tab-platform-settings">Platform Settings</TabsTrigger>
-                  <TabsTrigger value="associations" data-testid="tab-associations">Property-Service</TabsTrigger>
-                  <TabsTrigger value="promocodes" data-testid="tab-promocodes">Promo Codes</TabsTrigger>
-                  <TabsTrigger value="cancellations" data-testid="tab-cancellations">Cancellations</TabsTrigger>
-                  <TabsTrigger value="territories" data-testid="tab-territories">Territories</TabsTrigger>
-                  <TabsTrigger value="emails" data-testid="tab-emails">Email Templates</TabsTrigger>
-                  <TabsTrigger value="logs" data-testid="tab-logs">Activity Logs</TabsTrigger>
+                  <TabsTrigger value="platform" data-testid="tab-platform-settings">{t('admin.platform_settings')}</TabsTrigger>
+                  <TabsTrigger value="associations" data-testid="tab-associations">{t('admin.property_service_assoc')}</TabsTrigger>
+                  <TabsTrigger value="promocodes" data-testid="tab-promocodes">{t('admin.promo_codes')}</TabsTrigger>
+                  <TabsTrigger value="cancellations" data-testid="tab-cancellations">{t('admin.cancellations')}</TabsTrigger>
+                  <TabsTrigger value="territories" data-testid="tab-territories">{t('admin.territories')}</TabsTrigger>
+                  <TabsTrigger value="emails" data-testid="tab-emails">{t('admin.email_templates')}</TabsTrigger>
+                  <TabsTrigger value="logs" data-testid="tab-logs">{t('admin.activity_logs')}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="platform" className="space-y-4">

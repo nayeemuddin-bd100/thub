@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,23 +17,23 @@ import { AlertCircle, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const disputeFormSchema = z.object({
+const getDisputeFormSchema = (t: (key: string) => string) => z.object({
   itemType: z.enum(["booking", "order"]),
   bookingId: z.string().optional(),
   orderId: z.string().optional(),
-  description: z.string().min(20, "Description must be at least 20 characters"),
+  description: z.string().min(20, t('disputes.description_min')),
 }).superRefine((data, ctx) => {
   if (data.itemType === "booking" && !data.bookingId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Please select a booking",
+      message: t('disputes.select_booking_required'),
       path: ["bookingId"],
     });
   }
   if (data.itemType === "order" && !data.orderId) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Please select an order",
+      message: t('disputes.select_order_required'),
       path: ["orderId"],
     });
   }
@@ -48,11 +49,14 @@ type Dispute = {
 };
 
 export default function Disputes() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+  const disputeFormSchema = getDisputeFormSchema(t);
 
   const form = useForm<z.infer<typeof disputeFormSchema>>({
     resolver: zodResolver(disputeFormSchema),
@@ -97,12 +101,12 @@ export default function Disputes() {
       queryClient.invalidateQueries({ queryKey: ["/api/disputes"] });
       setDialogOpen(false);
       form.reset();
-      toast({ title: "Success", description: "Dispute submitted successfully!" });
+      toast({ title: t('common.success'), description: t('disputes.submitted_success') });
     },
     onError: () => {
       toast({ 
-        title: "Error", 
-        description: "Failed to submit dispute. Please try again.",
+        title: t('common.error'), 
+        description: t('disputes.submit_failed'),
         variant: "destructive",
       });
     },
@@ -119,12 +123,12 @@ export default function Disputes() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold" data-testid="heading-disputes">Disputes</h1>
-            <p className="text-muted-foreground mt-2">Manage and track your dispute cases</p>
+            <h1 className="text-3xl font-bold" data-testid="heading-disputes">{t('disputes.title')}</h1>
+            <p className="text-muted-foreground mt-2">{t('disputes.subtitle')}</p>
           </div>
           <Button onClick={() => setDialogOpen(true)} data-testid="button-create-dispute">
             <Plus className="w-4 h-4 mr-2" />
-            File a Dispute
+            {t('disputes.file_dispute')}
           </Button>
         </div>
 
@@ -142,7 +146,7 @@ export default function Disputes() {
           <Card className="text-center py-12">
             <CardContent>
               <p className="text-destructive" data-testid="error-disputes">
-                Failed to load disputes. Please try again.
+                {t('disputes.failed_load')}
               </p>
             </CardContent>
           </Card>
@@ -150,8 +154,8 @@ export default function Disputes() {
           <Card className="text-center py-12">
             <CardContent>
               <AlertCircle className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2" data-testid="empty-disputes">No Disputes</h3>
-              <p className="text-muted-foreground mb-4">You haven't filed any disputes yet</p>
+              <h3 className="text-lg font-semibold mb-2" data-testid="empty-disputes">{t('disputes.no_disputes')}</h3>
+              <p className="text-muted-foreground mb-4">{t('disputes.no_disputes_desc')}</p>
             </CardContent>
           </Card>
         ) : (
@@ -161,7 +165,7 @@ export default function Disputes() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg" data-testid={`text-dispute-type-${dispute.id}`}>
-                      Dispute for {dispute.bookingId ? "Booking" : "Order"}
+                      {dispute.bookingId ? t('disputes.dispute_for_booking') : t('disputes.dispute_for_order')}
                     </CardTitle>
                     <Badge 
                       variant={dispute.status === "pending" ? "secondary" : "default"}
@@ -174,7 +178,7 @@ export default function Disputes() {
                 <CardContent>
                   <p className="text-sm mb-2" data-testid={`text-description-${dispute.id}`}>{dispute.description}</p>
                   <p className="text-xs text-muted-foreground" data-testid={`text-date-${dispute.id}`}>
-                    Filed: {new Date(dispute.createdAt).toLocaleDateString()}
+                    {t('disputes.filed')}: {new Date(dispute.createdAt).toLocaleDateString()}
                   </p>
                 </CardContent>
               </Card>
@@ -185,7 +189,7 @@ export default function Disputes() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>File a Dispute</DialogTitle>
+              <DialogTitle>{t('disputes.file_dispute')}</DialogTitle>
             </DialogHeader>
 
             <Form {...form}>
@@ -195,7 +199,7 @@ export default function Disputes() {
                   name="itemType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Dispute Type *</FormLabel>
+                      <FormLabel>{t('disputes.dispute_type')} *</FormLabel>
                       <Select 
                         onValueChange={(value) => {
                           field.onChange(value);
@@ -210,8 +214,8 @@ export default function Disputes() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="booking">Property Booking</SelectItem>
-                          <SelectItem value="order">Service Order</SelectItem>
+                          <SelectItem value="booking">{t('disputes.property_booking')}</SelectItem>
+                          <SelectItem value="order">{t('disputes.service_order')}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -225,18 +229,18 @@ export default function Disputes() {
                     name="bookingId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Select Booking *</FormLabel>
+                        <FormLabel>{t('disputes.select_booking')} *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-booking">
-                              <SelectValue placeholder="Choose a booking" />
+                              <SelectValue placeholder={t('disputes.choose_booking')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {bookingsLoading ? (
-                              <SelectItem value="loading" disabled>Loading bookings...</SelectItem>
+                              <SelectItem value="loading" disabled>{t('disputes.loading_bookings')}</SelectItem>
                             ) : bookings.length === 0 ? (
-                              <SelectItem value="none" disabled>No bookings found</SelectItem>
+                              <SelectItem value="none" disabled>{t('disputes.no_bookings')}</SelectItem>
                             ) : (
                               bookings.map((booking) => (
                                 <SelectItem key={booking.id} value={booking.id}>
@@ -256,18 +260,18 @@ export default function Disputes() {
                     name="orderId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Select Order *</FormLabel>
+                        <FormLabel>{t('disputes.select_order')} *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-order">
-                              <SelectValue placeholder="Choose an order" />
+                              <SelectValue placeholder={t('disputes.choose_order')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             {ordersLoading ? (
-                              <SelectItem value="loading" disabled>Loading orders...</SelectItem>
+                              <SelectItem value="loading" disabled>{t('disputes.loading_orders')}</SelectItem>
                             ) : orders.length === 0 ? (
-                              <SelectItem value="none" disabled>No orders found</SelectItem>
+                              <SelectItem value="none" disabled>{t('disputes.no_orders')}</SelectItem>
                             ) : (
                               orders.map((order) => (
                                 <SelectItem key={order.id} value={order.id}>
@@ -288,10 +292,10 @@ export default function Disputes() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description *</FormLabel>
+                      <FormLabel>{t('disputes.description')} *</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Describe your issue in detail..."
+                          placeholder={t('disputes.description_placeholder')}
                           rows={5}
                           {...field}
                           data-testid="textarea-dispute-description"
@@ -304,10 +308,10 @@ export default function Disputes() {
 
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel-dispute">
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button type="submit" disabled={createDisputeMutation.isPending} data-testid="button-submit-dispute">
-                    {createDisputeMutation.isPending ? "Submitting..." : "Submit Dispute"}
+                    {createDisputeMutation.isPending ? t('disputes.submitting') : t('disputes.submit_dispute')}
                   </Button>
                 </div>
               </form>

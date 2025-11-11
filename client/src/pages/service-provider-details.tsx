@@ -27,6 +27,7 @@ import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import type { ServiceProvider } from "@shared/schema";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useTranslation } from 'react-i18next';
 
 interface MenuItemData {
   id: string;
@@ -54,6 +55,7 @@ interface TaskData {
 }
 
 export default function ServiceProviderDetailsPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const providerId = params.id;
   const [, navigate] = useLocation();
@@ -210,7 +212,7 @@ export default function ServiceProviderDetailsPage() {
   if (providerLoading) {
     return (
       <div className="container mx-auto p-6" data-testid="loading-provider">
-        <p className="text-center text-gray-500 dark:text-gray-400">Loading provider details...</p>
+        <p className="text-center text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -218,7 +220,7 @@ export default function ServiceProviderDetailsPage() {
   if (!provider) {
     return (
       <div className="container mx-auto p-6" data-testid="provider-not-found">
-        <p className="text-center text-red-600 dark:text-red-400">Provider not found</p>
+        <p className="text-center text-red-600 dark:text-red-400">{t('service_provider.not_found', 'Provider not found')}</p>
       </div>
     );
   }
@@ -235,7 +237,7 @@ export default function ServiceProviderDetailsPage() {
         data-testid="button-back-home"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Home
+        {t('common.back')} {t('common.home', 'to Home')}
       </Button>
 
       <Card className="mb-6" data-testid="card-provider-info">
@@ -249,7 +251,7 @@ export default function ServiceProviderDetailsPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold" data-testid="text-rating">{provider.rating ? Number(provider.rating).toFixed(1) : 'N/A'}</span>
               <span className="text-sm text-gray-500 dark:text-gray-400" data-testid="text-review-count">
-                ({provider.reviewCount} reviews)
+                ({t('service_provider.reviews_count', { count: provider.reviewCount })})
               </span>
             </div>
           </div>
@@ -278,7 +280,7 @@ export default function ServiceProviderDetailsPage() {
               data-testid="button-message-provider"
             >
               <MessageCircle className="h-5 w-5 mr-2" />
-              Send Message
+              {t('service_provider.send_message')}
             </Button>
           </div>
         </CardContent>
@@ -289,9 +291,9 @@ export default function ServiceProviderDetailsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5" />
-              Photo Gallery
+              {t('service_provider.photo_gallery')}
             </CardTitle>
-            <CardDescription>View our work and business environment</CardDescription>
+            <CardDescription>{t('service_provider.view_work', 'View our work and business environment')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -317,7 +319,7 @@ export default function ServiceProviderDetailsPage() {
       {(provider.yearsExperience || (Array.isArray(provider.languages) && provider.languages.length > 0) || (Array.isArray(provider.certifications) && provider.certifications.length > 0) || (Array.isArray(provider.awards) && provider.awards.length > 0)) && (
         <Card className="mb-6" data-testid="card-provider-extended-info">
           <CardHeader>
-            <CardTitle>About the Provider</CardTitle>
+            <CardTitle>{t('service_provider.about_provider')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -325,9 +327,9 @@ export default function ServiceProviderDetailsPage() {
                 <div className="flex items-start gap-3" data-testid="provider-experience">
                   <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1" />
                   <div>
-                    <p className="font-semibold">Experience</p>
+                    <p className="font-semibold">{t('service_provider.experience', 'Experience')}</p>
                     <p className="text-gray-600 dark:text-gray-300" data-testid="text-years-experience">
-                      {provider.yearsExperience} years in the industry
+                      {t('service_provider.years_experience_value', '{{years}} years in the industry', { years: provider.yearsExperience })}
                     </p>
                   </div>
                 </div>
@@ -337,7 +339,7 @@ export default function ServiceProviderDetailsPage() {
                 <div className="flex items-start gap-3" data-testid="provider-languages">
                   <Languages className="h-5 w-5 text-green-600 dark:text-green-400 mt-1" />
                   <div>
-                    <p className="font-semibold">Languages</p>
+                    <p className="font-semibold">{t('service_provider.languages')}</p>
                     <p className="text-gray-600 dark:text-gray-300" data-testid="text-languages">
                       {(provider.languages as string[]).join(', ')}
                     </p>
@@ -349,7 +351,7 @@ export default function ServiceProviderDetailsPage() {
                 <div className="flex items-start gap-3" data-testid="provider-certifications">
                   <Award className="h-5 w-5 text-purple-600 dark:text-purple-400 mt-1" />
                   <div>
-                    <p className="font-semibold">Certifications</p>
+                    <p className="font-semibold">{t('services.certifications')}</p>
                     <div className="space-y-1" data-testid="list-certifications">
                       {(provider.certifications as any[]).map((cert: any, index: number) => (
                         <p key={index} className="text-gray-600 dark:text-gray-300">
@@ -365,7 +367,7 @@ export default function ServiceProviderDetailsPage() {
                 <div className="flex items-start gap-3" data-testid="provider-awards">
                   <Award className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-1" />
                   <div>
-                    <p className="font-semibold">Awards & Recognition</p>
+                    <p className="font-semibold">{t('service_provider.awards')}</p>
                     <div className="space-y-1" data-testid="list-awards">
                       {(provider.awards as any[]).map((award: any, index: number) => (
                         <p key={index} className="text-gray-600 dark:text-gray-300">
@@ -385,10 +387,10 @@ export default function ServiceProviderDetailsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Availability Calendar
+            {t('services.availability_calendar')}
           </CardTitle>
           <CardDescription>
-            View available dates for booking this provider
+            {t('service_provider.view_available_dates', 'View available dates for booking this provider')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -420,22 +422,22 @@ export default function ServiceProviderDetailsPage() {
             </div>
             <div className="md:w-64 space-y-4">
               <div className="space-y-2">
-                <h3 className="font-semibold">Legend</h3>
+                <h3 className="font-semibold">{t('service_provider.legend', 'Legend')}</h3>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-green-500 rounded" />
-                    <span className="text-sm">Available</span>
+                    <span className="text-sm">{t('service_provider.available', 'Available')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-red-500 opacity-60 rounded" />
-                    <span className="text-sm">Unavailable</span>
+                    <span className="text-sm">{t('service_provider.unavailable', 'Unavailable')}</span>
                   </div>
                 </div>
               </div>
               
               {selectedDate && availability && (
                 <div className="border-t pt-4">
-                  <h3 className="font-semibold mb-2">Selected Date</h3>
+                  <h3 className="font-semibold mb-2">{t('service_provider.selected_date', 'Selected Date')}</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300" data-testid="text-selected-date">
                     {format(parseISO(selectedDate), 'MMMM d, yyyy')}
                   </p>
@@ -444,7 +446,7 @@ export default function ServiceProviderDetailsPage() {
                     return dayAvailability ? (
                       <div className="mt-2">
                         <Badge variant={dayAvailability.isAvailable ? "default" : "destructive"} data-testid="badge-availability-status">
-                          {dayAvailability.isAvailable ? 'Available' : 'Unavailable'}
+                          {dayAvailability.isAvailable ? t('service_provider.available', 'Available') : t('service_provider.unavailable', 'Unavailable')}
                         </Badge>
                         {dayAvailability.isAvailable && dayAvailability.startTime && dayAvailability.endTime && (
                           <p className="text-sm mt-2 text-gray-600 dark:text-gray-300" data-testid="text-time-slots">
@@ -453,7 +455,7 @@ export default function ServiceProviderDetailsPage() {
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-500 mt-2">No information available</p>
+                      <p className="text-sm text-gray-500 mt-2">{t('service_provider.no_info_available', 'No information available')}</p>
                     );
                   })()}
                 </div>
@@ -468,10 +470,10 @@ export default function ServiceProviderDetailsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Materials & Ingredients
+              {t('service_provider.materials_ingredients', 'Materials & Ingredients')}
             </CardTitle>
             <CardDescription>
-              Select which items you'll provide to reduce costs
+              {t('service_provider.select_items_provide', 'Select which items you\'ll provide to reduce costs')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -511,7 +513,7 @@ export default function ServiceProviderDetailsPage() {
                     </p>
                     {clientProvidedMaterials.has(material.id) && (
                       <Badge variant="secondary" className="text-xs mt-1">
-                        You provide
+                        {t('service_provider.you_provide', 'You provide')}
                       </Badge>
                     )}
                   </div>
@@ -521,7 +523,7 @@ export default function ServiceProviderDetailsPage() {
             {clientProvidedMaterials.size > 0 && (
               <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <p className="text-sm text-green-800 dark:text-green-200 font-medium">
-                  You're providing {clientProvidedMaterials.size} item{clientProvidedMaterials.size !== 1 ? 's' : ''} - this will reduce your total cost!
+                  {t('service_provider.providing_items', 'You\'re providing {{count}} item - this will reduce your total cost!', { count: clientProvidedMaterials.size })}
                 </p>
               </div>
             )}
@@ -534,10 +536,10 @@ export default function ServiceProviderDetailsPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5" />
-              Client Reviews
+              {t('service_provider.client_reviews', 'Client Reviews')}
             </CardTitle>
             <CardDescription>
-              See what others are saying about this provider
+              {t('service_provider.see_what_others_say', 'See what others are saying about this provider')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -578,7 +580,7 @@ export default function ServiceProviderDetailsPage() {
             </div>
             {reviews.length > 5 && (
               <Button variant="outline" className="w-full mt-4" data-testid="button-view-all-reviews">
-                View all {reviews.length} reviews
+                {t('service_provider.view_all_reviews', 'View all {{count}} reviews', { count: reviews.length })}
               </Button>
             )}
           </CardContent>
@@ -590,11 +592,11 @@ export default function ServiceProviderDetailsPage() {
           <TabsList>
             <TabsTrigger value="menu" data-testid="tab-menu">
               <ChefHat className="h-4 w-4 mr-2" />
-              Menu
+              {t('service_provider.menu', 'Menu')}
             </TabsTrigger>
             <TabsTrigger value="tasks" data-testid="tab-tasks">
               <ClipboardList className="h-4 w-4 mr-2" />
-              Services
+              {t('services.title', 'Services')}
             </TabsTrigger>
           </TabsList>
         )}
@@ -602,7 +604,7 @@ export default function ServiceProviderDetailsPage() {
         {menus && menus.length > 0 && (
           <TabsContent value="menu" className="space-y-4">
             {menusLoading ? (
-              <p className="text-center text-gray-500 dark:text-gray-400" data-testid="loading-menus">Loading menu...</p>
+              <p className="text-center text-gray-500 dark:text-gray-400" data-testid="loading-menus">{t('common.loading')}</p>
             ) : (
               menus.map((menu) => (
                 <Card key={menu.id} data-testid={`card-menu-${menu.id}`}>
@@ -635,7 +637,7 @@ export default function ServiceProviderDetailsPage() {
                                 </p>
                                 {item.ingredients && Array.isArray(item.ingredients) && item.ingredients.length > 0 && (
                                   <p className="text-xs text-gray-500 dark:text-gray-500 mt-2" data-testid={`text-item-ingredients-${item.id}`}>
-                                    Ingredients: {item.ingredients.join(', ')}
+                                    {t('service_provider.ingredients', 'Ingredients')}: {item.ingredients.join(', ')}
                                   </p>
                                 )}
                                 {item.dietaryTags && Array.isArray(item.dietaryTags) && item.dietaryTags.length > 0 && (
@@ -665,12 +667,12 @@ export default function ServiceProviderDetailsPage() {
 
         <TabsContent value="tasks" className="space-y-4">
           {tasksLoading ? (
-            <p className="text-center text-gray-500 dark:text-gray-400" data-testid="loading-tasks">Loading services...</p>
+            <p className="text-center text-gray-500 dark:text-gray-400" data-testid="loading-tasks">{t('common.loading')}</p>
           ) : tasks && tasks.length > 0 ? (
             <Card data-testid="card-available-tasks">
               <CardHeader>
-                <CardTitle>Available Services</CardTitle>
-                <CardDescription>Select the services you need</CardDescription>
+                <CardTitle>{t('service_provider.available_services', 'Available Services')}</CardTitle>
+                <CardDescription>{t('service_provider.select_services_needed', 'Select the services you need')}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -708,7 +710,7 @@ export default function ServiceProviderDetailsPage() {
                         </p>
                         {task.customPrice && (
                           <p className="text-xs text-green-600 dark:text-green-400" data-testid={`text-custom-price-${task.id}`}>
-                            Provider pricing
+                            {t('service_provider.provider_pricing', 'Provider pricing')}
                           </p>
                         )}
                       </div>
@@ -721,7 +723,7 @@ export default function ServiceProviderDetailsPage() {
             <Card data-testid="no-tasks-available">
               <CardContent className="py-8">
                 <p className="text-center text-gray-500 dark:text-gray-400">
-                  No services configured yet
+                  {t('service_provider.no_services_configured', 'No services configured yet')}
                 </p>
               </CardContent>
             </Card>
@@ -735,7 +737,7 @@ export default function ServiceProviderDetailsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400" data-testid="text-items-selected">
-                  {totalSelected} item{totalSelected !== 1 ? 's' : ''} selected
+                  {t('service_provider.items_selected', '{{count}} item selected', { count: totalSelected })}
                 </p>
                 <p className="text-2xl font-bold" data-testid="text-total-price">
                   ${totalPrice.toFixed(2)}
@@ -747,7 +749,7 @@ export default function ServiceProviderDetailsPage() {
                 data-testid="button-proceed-booking"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
-                Proceed to Booking
+                {t('service_provider.proceed_to_booking', 'Proceed to Booking')}
               </Button>
             </div>
           </CardContent>

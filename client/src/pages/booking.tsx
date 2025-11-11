@@ -13,8 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Calendar, Users, Clock, MapPin, Star, CreditCard } from "lucide-react";
+import { useTranslation } from 'react-i18next';
 
 export default function Booking() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -56,15 +58,15 @@ export default function Booking() {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       toast({
-        title: "Unauthorized",
-        description: "You need to be logged in to make a booking. Redirecting...",
+        title: t('common.unauthorized', 'Unauthorized'),
+        description: t('booking.login_required', 'You need to be logged in to make a booking. Redirecting...'),
         variant: "destructive",
       });
       setTimeout(() => {
         window.location.href = "/api/login";
       }, 500);
     }
-  }, [isAuthenticated, authLoading, toast]);
+  }, [isAuthenticated, authLoading, toast, t]);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
@@ -98,8 +100,8 @@ export default function Booking() {
     },
     onSuccess: (booking) => {
       toast({
-        title: "Booking Confirmed!",
-        description: `Your booking code is ${booking.bookingCode}. Redirecting to payment...`,
+        title: t('booking.confirmed'),
+        description: t('booking.booking_code', { code: booking.bookingCode }) + ' ' + t('booking.redirecting_payment'),
       });
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
       
@@ -111,8 +113,8 @@ export default function Booking() {
     onError: (error) => {
       if (isUnauthorizedError(error as Error)) {
         toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
+          title: t('common.unauthorized', 'Unauthorized'),
+          description: t('booking.logged_out', 'You are logged out. Logging in again...'),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -121,8 +123,8 @@ export default function Booking() {
         return;
       }
       toast({
-        title: "Booking Failed",
-        description: "Failed to create booking. Please try again.",
+        title: t('booking.failed', 'Booking Failed'),
+        description: t('booking.failed_description', 'Failed to create booking. Please try again.'),
         variant: "destructive",
       });
     },
@@ -139,14 +141,14 @@ export default function Booking() {
       const result = await response.json();
       setValidatedPromo(result);
       toast({
-        title: result.valid ? "Promo code applied!" : "Invalid code",
+        title: result.valid ? t('booking.promo_applied', 'Promo code applied!') : t('booking.invalid_code', 'Invalid code'),
         description: result.message,
         variant: result.valid ? "default" : "destructive",
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to validate promo code",
+        title: t('common.error', 'Error'),
+        description: t('booking.promo_validation_failed', 'Failed to validate promo code'),
         variant: "destructive",
       });
     }
@@ -182,8 +184,8 @@ export default function Booking() {
   const handleBooking = () => {
     if (!bookingData.propertyId || !bookingData.checkIn || !bookingData.checkOut) {
       toast({
-        title: "Missing Information",
-        description: "Please select a property and dates.",
+        title: t('booking.missing_info', 'Missing Information'),
+        description: t('booking.select_property_dates', 'Please select a property and dates.'),
         variant: "destructive",
       });
       return;
@@ -241,10 +243,10 @@ export default function Booking() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2" data-testid="text-booking-title">
-            Complete Your Booking
+            {t('booking.complete_booking', 'Complete Your Booking')}
           </h1>
           <p className="text-lg text-muted-foreground" data-testid="text-booking-subtitle">
-            Review your selection and confirm your reservation
+            {t('booking.review_selection', 'Review your selection and confirm your reservation')}
           </p>
         </div>
 
@@ -254,7 +256,7 @@ export default function Booking() {
             {/* Property Selection */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-property-selection">
-                Select Property
+                {t('booking.select_property', 'Select Property')}
               </h2>
               {property ? (
                 <div className="flex items-center space-x-4 p-4 border border-border rounded-lg">
@@ -280,13 +282,13 @@ export default function Booking() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-foreground" data-testid="text-selected-property-price">
-                      ${parseFloat(property.pricePerNight).toLocaleString()}/night
+                      ${parseFloat(property.pricePerNight).toLocaleString()}/{t('booking.per_night', 'night')}
                     </p>
                   </div>
                 </div>
               ) : (
                 <div>
-                  <p className="text-muted-foreground mb-4">No property selected. Choose from our featured properties:</p>
+                  <p className="text-muted-foreground mb-4">{t('booking.no_property_selected', 'No property selected. Choose from our featured properties:')}</p>
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {properties?.slice(0, 5).map((prop: any) => (
                       <div 
@@ -305,7 +307,7 @@ export default function Booking() {
                           <p className="text-sm text-muted-foreground">{prop.location}</p>
                         </div>
                         <div className="text-sm font-semibold text-foreground">
-                          ${parseFloat(prop.pricePerNight).toLocaleString()}/night
+                          ${parseFloat(prop.pricePerNight).toLocaleString()}/{t('booking.per_night', 'night')}
                         </div>
                       </div>
                     ))}
@@ -317,11 +319,11 @@ export default function Booking() {
             {/* Booking Details */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-booking-details">
-                Booking Details
+                {t('booking.booking_details', 'Booking Details')}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="check-in">Check-in Date</Label>
+                  <Label htmlFor="check-in">{t('booking.checkin_date', 'Check-in Date')}</Label>
                   <Input
                     id="check-in"
                     data-testid="input-checkin"
@@ -332,7 +334,7 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="check-out">Check-out Date</Label>
+                  <Label htmlFor="check-out">{t('booking.checkout_date', 'Check-out Date')}</Label>
                   <Input
                     id="check-out"
                     data-testid="input-checkout"
@@ -343,7 +345,7 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="guests">Number of Guests</Label>
+                  <Label htmlFor="guests">{t('booking.number_of_guests', 'Number of Guests')}</Label>
                   <Input
                     id="guests"
                     data-testid="input-guests"
@@ -360,7 +362,7 @@ export default function Booking() {
             {/* Selected Services */}
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-selected-services">
-                Selected Services
+                {t('booking.selected_services', 'Selected Services')}
               </h2>
               {bookingData.services.length > 0 ? (
                 <div className="space-y-3">
@@ -372,7 +374,7 @@ export default function Booking() {
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-foreground">
-                          ${service.hourlyRate ? `${service.hourlyRate}/hour` : service.fixedRate}
+                          ${service.hourlyRate ? `${service.hourlyRate}/${t('booking.per_hour', 'hour')}` : service.fixedRate}
                         </p>
                         <Button 
                           variant="ghost" 
@@ -383,7 +385,7 @@ export default function Booking() {
                           }))}
                           data-testid={`button-remove-service-${index}`}
                         >
-                          Remove
+                          {t('common.remove', 'Remove')}
                         </Button>
                       </div>
                     </div>
@@ -391,7 +393,7 @@ export default function Booking() {
                 </div>
               ) : (
                 <p className="text-muted-foreground" data-testid="text-no-services-selected">
-                  No services selected. You can add services from the property page.
+                  {t('booking.no_services_selected', 'No services selected. You can add services from the property page.')}
                 </p>
               )}
             </Card>
@@ -401,14 +403,14 @@ export default function Booking() {
           <div className="lg:col-span-1">
             <Card className="p-6 sticky top-8">
               <h2 className="text-xl font-semibold text-foreground mb-4" data-testid="text-booking-summary">
-                Booking Summary
+                {t('booking.booking_summary', 'Booking Summary')}
               </h2>
               
               {property && bookingData.checkIn && bookingData.checkOut ? (
                 <div className="space-y-4">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground" data-testid="text-property-nights">
-                      Property ({nights} nights)
+                      {t('booking.property_nights', 'Property ({{nights}} nights)', { nights })}
                     </span>
                     <span className="text-foreground" data-testid="text-property-total">
                       ${propertyTotal.toLocaleString()}
@@ -418,7 +420,7 @@ export default function Booking() {
                   {servicesTotal > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground" data-testid="text-services-total-label">
-                        Services
+                        {t('services.title', 'Services')}
                       </span>
                       <span className="text-foreground" data-testid="text-services-total-value">
                         ${servicesTotal.toLocaleString()}
@@ -429,7 +431,7 @@ export default function Booking() {
                   {bundleDiscount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground" data-testid="text-bundle-discount-label">
-                        Bundle Discount ({bookingData.services.length >= 3 ? '10%' : '5%'})
+                        {t('booking.bundle_discount', 'Bundle Discount')} ({bookingData.services.length >= 3 ? '10%' : '5%'})
                       </span>
                       <span className="text-accent" data-testid="text-bundle-discount-value">
                         -${bundleDiscount.toLocaleString()}
@@ -439,11 +441,11 @@ export default function Booking() {
                   
                   {/* Promo Code */}
                   <div className="space-y-2">
-                    <Label htmlFor="promo-code">Promo Code</Label>
+                    <Label htmlFor="promo-code">{t('booking.promo_code', 'Promo Code')}</Label>
                     <div className="flex gap-2">
                       <Input
                         id="promo-code"
-                        placeholder="Enter code"
+                        placeholder={t('booking.enter_code', 'Enter code')}
                         value={promoCode}
                         onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                         data-testid="input-promo-code"
@@ -453,7 +455,7 @@ export default function Booking() {
                         variant="outline"
                         data-testid="button-apply-promo"
                       >
-                        Apply
+                        {t('common.apply', 'Apply')}
                       </Button>
                     </div>
                     {validatedPromo && !validatedPromo.valid && (
@@ -464,7 +466,7 @@ export default function Booking() {
                   {promoDiscount > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground" data-testid="text-promo-discount-label">
-                        Promo Discount ({validatedPromo?.discount}%)
+                        {t('booking.promo_discount', 'Promo Discount')} ({validatedPromo?.discount}%)
                       </span>
                       <span className="text-accent" data-testid="text-promo-discount-value">
                         -${promoDiscount.toLocaleString()}
@@ -476,7 +478,7 @@ export default function Booking() {
                   
                   <div className="flex justify-between">
                     <span className="font-semibold text-foreground" data-testid="text-total-label">
-                      Total
+                      {t('booking.total')}
                     </span>
                     <span className="font-bold text-foreground text-lg" data-testid="text-total-amount">
                       ${totalAmount.toLocaleString()}
@@ -490,13 +492,13 @@ export default function Booking() {
                     disabled={createBookingMutation.isPending || !property}
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
-                    {createBookingMutation.isPending ? 'Processing...' : 'Confirm Booking'}
+                    {createBookingMutation.isPending ? t('booking.processing', 'Processing...') : t('booking.confirm_booking', 'Confirm Booking')}
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground" data-testid="text-incomplete-booking">
-                    Please select a property and dates to see pricing
+                    {t('booking.select_property_pricing', 'Please select a property and dates to see pricing')}
                   </p>
                 </div>
               )}

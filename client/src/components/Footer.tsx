@@ -1,6 +1,10 @@
 import { Link } from "wouter";
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
+  const currentYear = new Date().getFullYear();
+  
   return (
     <footer className="bg-card border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -18,7 +22,7 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-muted-foreground text-sm mb-4" data-testid="text-footer-description">
-              Your complete travel ecosystem. Book accommodations and services all in one platform.
+              {t('home.discover_world')}
             </p>
             <div className="flex space-x-3">
               <a 
@@ -63,27 +67,27 @@ export default function Footer() {
           {/* Company */}
           <div>
             <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-company-title">
-              Company
+              {t('footer.company')}
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link href="/about" className="hover:text-foreground transition-colors" data-testid="link-about">
-                  About us
+                  {t('footer.about')}
                 </Link>
               </li>
               <li>
                 <Link href="/careers" className="hover:text-foreground transition-colors" data-testid="link-careers">
-                  Careers
+                  {t('footer.careers')}
                 </Link>
               </li>
               <li>
                 <Link href="/press" className="hover:text-foreground transition-colors" data-testid="link-press">
-                  Press
+                  {t('footer.press')}
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="hover:text-foreground transition-colors" data-testid="link-blog">
-                  Blog
+                  {t('footer.blog')}
                 </Link>
               </li>
             </ul>
@@ -92,27 +96,27 @@ export default function Footer() {
           {/* Support */}
           <div>
             <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-support-title">
-              Support
+              {t('footer.support')}
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link href="/help" className="hover:text-foreground transition-colors" data-testid="link-help">
-                  Help Center
+                  {t('footer.help')}
                 </Link>
               </li>
               <li>
                 <Link href="/safety" className="hover:text-foreground transition-colors" data-testid="link-safety">
-                  Safety information
+                  {t('footer.safety')}
                 </Link>
               </li>
               <li>
                 <Link href="/cancellation" className="hover:text-foreground transition-colors" data-testid="link-cancellation">
-                  Cancellation options
+                  {t('footer.cancellation')}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-contact">
-                  Contact us
+                  {t('footer.contact')}
                 </Link>
               </li>
             </ul>
@@ -121,27 +125,27 @@ export default function Footer() {
           {/* Hosting */}
           <div>
             <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-hosting-title">
-              Hosting
+              {t('footer.hosting')}
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link href="/host" className="hover:text-foreground transition-colors" data-testid="link-host">
-                  List your property
+                  {t('footer.become_host')}
                 </Link>
               </li>
               <li>
                 <Link href="/provider" className="hover:text-foreground transition-colors" data-testid="link-provider">
-                  Become a service provider
+                  {t('footer.become_provider')}
                 </Link>
               </li>
               <li>
                 <Link href="/resources" className="hover:text-foreground transition-colors" data-testid="link-resources">
-                  Resource center
+                  {t('footer.resources')}
                 </Link>
               </li>
               <li>
                 <Link href="/community" className="hover:text-foreground transition-colors" data-testid="link-community">
-                  Community forum
+                  {t('footer.community')}
                 </Link>
               </li>
             </ul>
@@ -150,17 +154,17 @@ export default function Footer() {
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground" data-testid="text-footer-copyright">
-            © 2024 TravelHub. All rights reserved.
+            {t('footer.copyright', { year: currentYear })}
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-privacy">
-              Privacy Policy
+              {t('footer.privacy')}
             </Link>
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-terms">
-              Terms of Service
+              {t('footer.terms')}
             </Link>
             <Link href="/sitemap" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-sitemap">
-              Sitemap
+              {t('footer.sitemap')}
             </Link>
           </div>
         </div>

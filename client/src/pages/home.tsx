@@ -16,7 +16,7 @@ export default function Home() {
   const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
   
-  const userName = user && typeof user === 'object' && 'firstName' in user ? user.firstName : 'Traveler';
+  const userName = user && typeof user === 'object' && 'firstName' in user ? user.firstName : null;
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -49,7 +49,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h1 className="text-3xl font-bold text-foreground mb-2">
-                {t('home.welcome_back', { name: userName })}
+                {userName ? t('home.welcome_back', { name: userName }) : t('home.welcome_guest')}
               </h1>
               <p className="text-lg text-muted-foreground">
                 {t('home.next_adventure')}

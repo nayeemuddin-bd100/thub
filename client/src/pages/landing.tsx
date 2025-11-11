@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import ServiceCategories from "@/components/ServiceCategories";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
 export default function Landing() {
+  const { t } = useTranslation();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
@@ -59,7 +61,7 @@ export default function Landing() {
           onClick={() => window.location.href = '/api/login'}
         >
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Quick Book</span>
+          <span className="hidden sm:inline">{t('home.quick_book')}</span>
         </Button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRoute, useLocation } from "wouter";
@@ -15,6 +16,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const PaymentForm = ({ bookingId }: { bookingId: string }) => {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -38,7 +40,7 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
 
       if (error) {
         toast({
-          title: "Payment Failed",
+          title: t('payment.payment_failed'),
           description: error.message,
           variant: "destructive",
         });
@@ -50,8 +52,8 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
         });
 
         toast({
-          title: "Payment Successful",
-          description: "Thank you for your payment! Your booking has been confirmed.",
+          title: t('payment.payment_success'),
+          description: t('booking.booking_confirmed'),
         });
 
         // Redirect to bookings page
@@ -61,8 +63,8 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
       }
     } catch (err) {
       toast({
-        title: "Error",
-        description: "Failed to process payment",
+        title: t('common.error'),
+        description: t('errors.payment_error'),
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -77,7 +79,7 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
             <div className="flex items-center justify-center h-40">
               <div className="text-center">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-sm text-muted-foreground">Loading payment form...</p>
+                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
               </div>
             </div>
           ) : (
@@ -92,7 +94,7 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
           <Link href="/dashboard?tab=bookings">
             <Button type="button" variant="outline" className="flex-1" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Bookings
+              {t('dashboard.bookings')}
             </Button>
           </Link>
           <Button 
@@ -102,7 +104,7 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
             data-testid="button-pay"
           >
             <CreditCard className="h-4 w-4 mr-2" />
-            {isProcessing ? 'Processing...' : 'Pay Now'}
+            {isProcessing ? t('payment.processing') : t('payment.pay_now')}
           </Button>
         </div>
       </div>
@@ -111,6 +113,7 @@ const PaymentForm = ({ bookingId }: { bookingId: string }) => {
 };
 
 export default function PayBooking() {
+  const { t } = useTranslation();
   const [, params] = useRoute('/pay-booking/:id');
   const bookingId = params?.id;
   const [clientSecret, setClientSecret] = useState("");
@@ -122,8 +125,8 @@ export default function PayBooking() {
   useEffect(() => {
     if (!bookingId) {
       toast({
-        title: "Error",
-        description: "Invalid booking ID",
+        title: t('common.error'),
+        description: t('errors.not_found'),
         variant: "destructive",
       });
       setLocation('/dashboard?tab=bookings');
@@ -139,7 +142,7 @@ export default function PayBooking() {
         });
 
         if (!bookingRes.ok) {
-          throw new Error('Failed to fetch booking');
+          throw new Error(t('errors.booking_error'));
         }
 
         const booking = await bookingRes.json();
@@ -150,21 +153,21 @@ export default function PayBooking() {
         
         if (!paymentRes.ok) {
           const errorData = await paymentRes.json();
-          throw new Error(errorData.message || 'Failed to create payment intent');
+          throw new Error(errorData.message || t('errors.payment_error'));
         }
         
         const paymentData = await paymentRes.json();
         
         if (!paymentData.clientSecret) {
-          throw new Error('Payment initialization failed - no client secret received');
+          throw new Error(t('errors.payment_error'));
         }
         
         setClientSecret(paymentData.clientSecret);
       } catch (error: any) {
         console.error('Payment initialization error:', error);
         toast({
-          title: "Payment Initialization Failed",
-          description: error.message || "Failed to initialize payment. Please try again or contact support.",
+          title: t('errors.payment_error'),
+          description: error.message || t('errors.try_again_later'),
           variant: "destructive",
         });
         // Don't redirect immediately - show error on payment page
@@ -186,7 +189,7 @@ export default function PayBooking() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading payment...</p>
+              <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
           </div>
         </div>
@@ -200,26 +203,26 @@ export default function PayBooking() {
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle className="text-destructive">Payment Not Available</CardTitle>
-              <CardDescription>We couldn't initialize the payment for this booking</CardDescription>
+              <CardTitle className="text-destructive">{t('errors.payment_error')}</CardTitle>
+              <CardDescription>{t('errors.try_again_later')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Possible reasons:</strong>
+                    <strong>{t('errors.something_went_wrong')}</strong>
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
-                    <li>This booking may not be confirmed yet</li>
-                    <li>Payment has already been processed</li>
-                    <li>There was a technical error connecting to the payment processor</li>
+                    <li>{t('booking.booking_failed')}</li>
+                    <li>{t('errors.network_error')}</li>
+                    <li>{t('errors.server_error')}</li>
                   </ul>
                 </div>
                 <div className="text-center">
                   <Link href="/dashboard?tab=bookings">
                     <Button data-testid="button-back-to-bookings">
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to My Bookings
+                      {t('dashboard.bookings')}
                     </Button>
                   </Link>
                 </div>
@@ -235,34 +238,34 @@ export default function PayBooking() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" data-testid="heading-payment">Complete Payment</h1>
-          <p className="text-muted-foreground">Booking #{bookingDetails?.bookingCode}</p>
+          <h1 className="text-3xl font-bold mb-2" data-testid="heading-payment">{t('payment.title')}</h1>
+          <p className="text-muted-foreground">{t('booking.booking_code', { code: bookingDetails?.bookingCode })}</p>
         </div>
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Booking Summary</CardTitle>
-            <CardDescription>Review your booking details before payment</CardDescription>
+            <CardTitle>{t('booking.booking_summary')}</CardTitle>
+            <CardDescription>{t('booking.payment_details')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Property Total:</span>
+                <span className="text-muted-foreground">{t('payment.booking_total')}:</span>
                 <span data-testid="text-property-total">${parseFloat(bookingDetails?.propertyTotal || '0').toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Services Total:</span>
+                <span className="text-muted-foreground">{t('services.title')}:</span>
                 <span data-testid="text-services-total">${parseFloat(bookingDetails?.servicesTotal || '0').toFixed(2)}</span>
               </div>
               {parseFloat(bookingDetails?.discountAmount || '0') > 0 && (
                 <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
-                  <span>Discount:</span>
+                  <span>{t('common.discount')}:</span>
                   <span data-testid="text-discount">-${parseFloat(bookingDetails?.discountAmount || '0').toFixed(2)}</span>
                 </div>
               )}
               <div className="h-px bg-border" />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
+                <span>{t('booking.total')}:</span>
                 <span data-testid="text-total">${parseFloat(bookingDetails?.totalAmount || '0').toLocaleString()}</span>
               </div>
             </div>
@@ -273,16 +276,16 @@ export default function PayBooking() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Payment Details
+              {t('payment.payment_details')}
             </CardTitle>
-            <CardDescription>Enter your payment information securely via Stripe</CardDescription>
+            <CardDescription>{t('payment.pay_securely')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!clientSecret ? (
               <div className="flex items-center justify-center h-40">
                 <div className="text-center">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-sm text-muted-foreground">Initializing secure payment...</p>
+                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
                 </div>
               </div>
             ) : (
@@ -295,8 +298,7 @@ export default function PayBooking() {
 
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
-            <strong>🔒 Secure Payment:</strong> All transactions are encrypted and processed securely by Stripe. 
-            We never store your payment information.
+            <strong>🔒 {t('payment.secure_payment')}:</strong> {t('payment.payment_notice')}
           </p>
         </div>
       </div>

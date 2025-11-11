@@ -1,16 +1,17 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { SiWhatsapp } from "react-icons/si";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 export default function WhatsAppBubble() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const businessNumber = "18495815558";
-  const businessName = "TravelHub";
 
   const handleWhatsAppClick = () => {
-    const message = `Hi! I need help with TravelHub.`;
+    const message = `Hi! I need help with ${t('whatsapp.business_name')}.`;
     window.open(
       `https://api.whatsapp.com/send?phone=${businessNumber}&text=${encodeURIComponent(message)}`,
       '_blank'
@@ -30,8 +31,8 @@ export default function WhatsAppBubble() {
                   <SiWhatsapp className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm">{businessName}</h3>
-                  <p className="text-xs text-muted-foreground">Typically replies instantly</p>
+                  <h3 className="font-semibold text-sm">{t('whatsapp.business_name')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('whatsapp.typically_replies')}</p>
                 </div>
               </div>
               <Button
@@ -45,7 +46,7 @@ export default function WhatsAppBubble() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Chat with us on WhatsApp for quick support!
+              {t('whatsapp.chat_with_us')}
             </p>
             <Button
               onClick={handleWhatsAppClick}
@@ -53,7 +54,7 @@ export default function WhatsAppBubble() {
               data-testid="button-start-whatsapp-chat"
             >
               <SiWhatsapp className="w-4 h-4 mr-2" />
-              Start Chat
+              {t('whatsapp.start_chat')}
             </Button>
           </Card>
         )}

@@ -8,6 +8,7 @@ import { Calendar, Clock, User, Phone, Mail, MapPin, DollarSign, Package, CheckC
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 interface ServiceOrderItem {
   id: string;
@@ -41,6 +42,7 @@ interface ServiceOrder {
 }
 
 export default function ProviderOrders() {
+  const { t } = useTranslation();
   const { toast } = useToast();
 
   const { data: orders, isLoading } = useQuery<ServiceOrder[]>({
@@ -54,14 +56,14 @@ export default function ProviderOrders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/service-orders/provider'] });
       toast({
-        title: "Order updated",
-        description: "Order status has been updated successfully",
+        title: t("orders.order_status"),
+        description: t("provider_dashboard.update_status"),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to update order status",
+        title: t("common.error"),
+        description: t("errors.generic_error"),
         variant: "destructive",
       });
     },
@@ -85,11 +87,11 @@ export default function ProviderOrders() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: 'Pending', variant: 'secondary' as const, icon: Clock3 },
-      confirmed: { label: 'Confirmed', variant: 'default' as const, icon: CheckCircle },
-      in_progress: { label: 'In Progress', variant: 'default' as const, icon: Clock },
-      completed: { label: 'Completed', variant: 'default' as const, icon: CheckCircle },
-      cancelled: { label: 'Cancelled', variant: 'destructive' as const, icon: XCircle },
+      pending: { label: t('dashboard.pending'), variant: 'secondary' as const, icon: Clock3 },
+      confirmed: { label: t('orders.order_confirmed'), variant: 'default' as const, icon: CheckCircle },
+      in_progress: { label: t('orders.order_processing'), variant: 'default' as const, icon: Clock },
+      completed: { label: t('orders.order_completed'), variant: 'default' as const, icon: CheckCircle },
+      cancelled: { label: t('orders.order_cancelled'), variant: 'destructive' as const, icon: XCircle },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -105,9 +107,9 @@ export default function ProviderOrders() {
 
   const getPaymentBadge = (status: string) => {
     const config = {
-      pending: { label: 'Payment Pending', variant: 'secondary' as const },
-      paid: { label: 'Paid', variant: 'default' as const },
-      refunded: { label: 'Refunded', variant: 'destructive' as const },
+      pending: { label: t('orders.unpaid'), variant: 'secondary' as const },
+      paid: { label: t('orders.paid'), variant: 'default' as const },
+      refunded: { label: t('orders.refunded'), variant: 'destructive' as const },
     };
     
     const { label, variant } = config[status as keyof typeof config] || config.pending;
@@ -126,7 +128,7 @@ export default function ProviderOrders() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading orders...</p>
+            <p className="text-muted-foreground">{t('common.loading')}</p>
           </div>
         </div>
       </div>
@@ -141,26 +143,26 @@ export default function ProviderOrders() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-orders">Service Orders</h1>
-        <p className="text-muted-foreground">Manage your incoming service orders and deliveries</p>
+        <h1 className="text-3xl font-bold mb-2" data-testid="heading-orders">{t('provider_dashboard.my_orders')}</h1>
+        <p className="text-muted-foreground">{t('orders.order_history')}</p>
       </div>
 
       <Tabs defaultValue="pending" className="w-full">
         <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="pending" data-testid="tab-pending">
-            Pending ({pendingOrders.length})
+            {t('dashboard.pending')} ({pendingOrders.length})
           </TabsTrigger>
           <TabsTrigger value="confirmed" data-testid="tab-confirmed">
-            Confirmed ({confirmedOrders.length})
+            {t('orders.order_confirmed')} ({confirmedOrders.length})
           </TabsTrigger>
           <TabsTrigger value="in_progress" data-testid="tab-in-progress">
-            In Progress ({inProgressOrders.length})
+            {t('orders.order_processing')} ({inProgressOrders.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Completed ({completedOrders.length})
+            {t('dashboard.completed')} ({completedOrders.length})
           </TabsTrigger>
           <TabsTrigger value="all" data-testid="tab-all">
-            All ({orders?.length || 0})
+            {t('common.all')} ({orders?.length || 0})
           </TabsTrigger>
         </TabsList>
 
@@ -172,7 +174,7 @@ export default function ProviderOrders() {
                   <CardContent className="py-12">
                     <div className="text-center text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p data-testid={`text-no-orders-${tab}`}>No {tab === 'all' ? '' : tab} orders</p>
+                      <p data-testid={`text-no-orders-${tab}`}>{t('orders.no_orders')}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -214,7 +216,7 @@ export default function ProviderOrders() {
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                          <h3 className="font-semibold mb-3">Client Information</h3>
+                          <h3 className="font-semibold mb-3">{t('provider_dashboard.customer_info')}</h3>
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
@@ -236,7 +238,7 @@ export default function ProviderOrders() {
                         </div>
 
                         <div>
-                          <h3 className="font-semibold mb-3">Order Items</h3>
+                          <h3 className="font-semibold mb-3">{t('book_service.order_summary')}</h3>
                           <div className="space-y-2">
                             {order.items.map(item => (
                               <div key={item.id} className="flex justify-between text-sm" data-testid={`item-${item.id}`}>
@@ -252,7 +254,7 @@ export default function ProviderOrders() {
 
                       {order.specialInstructions && (
                         <div className="mb-6">
-                          <h3 className="font-semibold mb-2">Special Instructions</h3>
+                          <h3 className="font-semibold mb-2">{t('book_service.additional_notes')}</h3>
                           <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md" data-testid={`text-instructions-${order.id}`}>
                             {order.specialInstructions}
                           </p>
@@ -271,7 +273,7 @@ export default function ProviderOrders() {
                               data-testid={`button-reject-${order.id}`}
                             >
                               <XCircle className="h-4 w-4 mr-2" />
-                              Reject
+                              {t('provider_dashboard.reject_order')}
                             </Button>
                             <Button
                               onClick={() => handleAcceptOrder(order.id)}
@@ -279,7 +281,7 @@ export default function ProviderOrders() {
                               data-testid={`button-accept-${order.id}`}
                             >
                               <CheckCircle className="h-4 w-4 mr-2" />
-                              Accept Order
+                              {t('provider_dashboard.accept_order')}
                             </Button>
                           </>
                         )}
@@ -291,7 +293,7 @@ export default function ProviderOrders() {
                             data-testid={`button-start-${order.id}`}
                           >
                             <Clock className="h-4 w-4 mr-2" />
-                            Start Service
+                            {t('book_service.service_time')}
                           </Button>
                         )}
 
@@ -302,7 +304,7 @@ export default function ProviderOrders() {
                             data-testid={`button-complete-${order.id}`}
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
-                            Mark as Complete
+                            {t('provider_dashboard.mark_completed')}
                           </Button>
                         )}
                       </div>

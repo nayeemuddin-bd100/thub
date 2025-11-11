@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 
 export default function Cancellation() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -39,12 +41,12 @@ export default function Cancellation() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-foreground mb-6" data-testid="text-cancellation-title">
-          Cancellation
+          {t('cancellation.title')}
         </h1>
         
         <Card className="p-8">
           <p className="text-muted-foreground">
-            This page is coming soon. Check back later for updates.
+            {t('cancellation.coming_soon')}
           </p>
         </Card>
       </main>

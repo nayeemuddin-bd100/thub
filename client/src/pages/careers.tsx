@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Briefcase, Users, Heart, Zap } from "lucide-react";
 
 export default function Careers() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -70,7 +72,7 @@ export default function Careers() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-careers-title">
-            Join Our Team
+            {t('info_pages.careers_title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-careers-subtitle">
             Help us build the future of travel. We're always looking for talented people who share our passion.

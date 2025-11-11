@@ -7,8 +7,10 @@ import { Heart, Home, Briefcase } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import PropertyCard from "@/components/PropertyCard";
 import ServiceProviderCard from "@/components/ServiceProviderCard";
+import { useTranslation } from "react-i18next";
 
 export default function FavoritesPage() {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
 
@@ -57,7 +59,7 @@ export default function FavoritesPage() {
         <div className="flex items-center space-x-3 mb-8">
           <Heart className="w-8 h-8 text-red-500 fill-current" />
           <h1 className="text-4xl font-bold text-foreground" data-testid="text-favorites-title">
-            My Favorites
+            {t('favorites.title')}
           </h1>
         </div>
 
@@ -65,10 +67,10 @@ export default function FavoritesPage() {
           <Card className="p-12 text-center">
             <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              No favorites yet
+              {t('favorites.no_favorites')}
             </h3>
             <p className="text-muted-foreground mb-6">
-              Start adding your favorite properties and service providers
+              {t('favorites.start_exploring')}
             </p>
             <div className="flex justify-center space-x-4">
               <Link href="/properties">
@@ -76,7 +78,7 @@ export default function FavoritesPage() {
                   className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                   data-testid="button-browse-properties"
                 >
-                  Browse Properties
+                  {t('home.browse_properties')}
                 </button>
               </Link>
               <Link href="/services">
@@ -84,7 +86,7 @@ export default function FavoritesPage() {
                   className="px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90"
                   data-testid="button-browse-services"
                 >
-                  Browse Services
+                  {t('home.browse_services')}
                 </button>
               </Link>
             </div>
@@ -93,15 +95,15 @@ export default function FavoritesPage() {
           <Tabs defaultValue="all" className="w-full">
             <TabsList className="mb-8" data-testid="tabs-favorites">
               <TabsTrigger value="all" data-testid="tab-all">
-                All ({totalFavorites})
+                {t('common.all')} ({totalFavorites})
               </TabsTrigger>
               <TabsTrigger value="properties" data-testid="tab-properties">
                 <Home className="w-4 h-4 mr-2" />
-                Properties ({favoriteProperties.length})
+                {t('dashboard.properties')} ({favoriteProperties.length})
               </TabsTrigger>
               <TabsTrigger value="providers" data-testid="tab-providers">
                 <Briefcase className="w-4 h-4 mr-2" />
-                Providers ({favoriteProviders.length})
+                {t('dashboard.service_providers')} ({favoriteProviders.length})
               </TabsTrigger>
             </TabsList>
 
@@ -109,7 +111,7 @@ export default function FavoritesPage() {
               {favoriteProperties.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">
-                    Properties
+                    {t('dashboard.properties')}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {favoriteProperties.map((property: any) => (
@@ -122,7 +124,7 @@ export default function FavoritesPage() {
               {favoriteProviders.length > 0 && (
                 <div>
                   <h2 className="text-2xl font-semibold text-foreground mb-4">
-                    Service Providers
+                    {t('dashboard.service_providers')}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {favoriteProviders.map((provider: any) => (
@@ -138,17 +140,17 @@ export default function FavoritesPage() {
                 <Card className="p-12 text-center">
                   <Home className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    No favorite properties
+                    {t('favorites.no_favorites')}
                   </h3>
                   <p className="text-muted-foreground mb-6">
-                    Browse properties and add your favorites
+                    {t('favorites.start_exploring')}
                   </p>
                   <Link href="/properties">
                     <button 
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                       data-testid="button-browse-properties-empty"
                     >
-                      Browse Properties
+                      {t('home.browse_properties')}
                     </button>
                   </Link>
                 </Card>
@@ -166,17 +168,17 @@ export default function FavoritesPage() {
                 <Card className="p-12 text-center">
                   <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                    No favorite providers
+                    {t('favorites.no_favorites')}
                   </h3>
                   <p className="text-muted-foreground mb-6">
-                    Browse service providers and add your favorites
+                    {t('favorites.start_exploring')}
                   </p>
                   <Link href="/services">
                     <button 
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                       data-testid="button-browse-services-empty"
                     >
-                      Browse Services
+                      {t('home.browse_services')}
                     </button>
                   </Link>
                 </Card>

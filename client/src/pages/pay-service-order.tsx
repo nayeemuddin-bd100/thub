@@ -1,6 +1,7 @@
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useRoute, useLocation } from "wouter";
@@ -15,6 +16,7 @@ if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const PaymentForm = ({ orderId }: { orderId: string }) => {
+  const { t } = useTranslation();
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -38,7 +40,7 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
 
       if (error) {
         toast({
-          title: "Payment Failed",
+          title: t('payment.payment_failed'),
           description: error.message,
           variant: "destructive",
         });
@@ -50,8 +52,8 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
         });
 
         toast({
-          title: "Payment Successful",
-          description: "Thank you for your payment! Your order has been confirmed.",
+          title: t('payment.payment_success'),
+          description: t('book_service.order_success'),
         });
 
         // Redirect to orders page
@@ -61,8 +63,8 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
       }
     } catch (err) {
       toast({
-        title: "Error",
-        description: "Failed to process payment",
+        title: t('common.error'),
+        description: t('errors.payment_error'),
         variant: "destructive",
       });
       setIsProcessing(false);
@@ -77,7 +79,7 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
             <div className="flex items-center justify-center h-40">
               <div className="text-center">
                 <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-sm text-muted-foreground">Loading payment form...</p>
+                <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
               </div>
             </div>
           ) : (
@@ -92,7 +94,7 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
           <Link href="/my-service-orders">
             <Button type="button" variant="outline" className="flex-1" data-testid="button-back">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Orders
+              {t('orders.title')}
             </Button>
           </Link>
           <Button 
@@ -102,7 +104,7 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
             data-testid="button-pay"
           >
             <CreditCard className="h-4 w-4 mr-2" />
-            {isProcessing ? 'Processing...' : 'Pay Now'}
+            {isProcessing ? t('payment.processing') : t('payment.pay_now')}
           </Button>
         </div>
       </div>
@@ -111,6 +113,7 @@ const PaymentForm = ({ orderId }: { orderId: string }) => {
 };
 
 export default function PayServiceOrder() {
+  const { t } = useTranslation();
   const [, params] = useRoute('/pay-service-order/:id');
   const orderId = params?.id;
   const [clientSecret, setClientSecret] = useState("");
@@ -122,8 +125,8 @@ export default function PayServiceOrder() {
   useEffect(() => {
     if (!orderId) {
       toast({
-        title: "Error",
-        description: "Invalid order ID",
+        title: t('common.error'),
+        description: t('errors.not_found'),
         variant: "destructive",
       });
       setLocation('/my-service-orders');
@@ -139,7 +142,7 @@ export default function PayServiceOrder() {
         });
 
         if (!orderRes.ok) {
-          throw new Error('Failed to fetch order');
+          throw new Error(t('errors.generic_error'));
         }
 
         const order = await orderRes.json();
@@ -150,21 +153,21 @@ export default function PayServiceOrder() {
         
         if (!paymentRes.ok) {
           const errorData = await paymentRes.json();
-          throw new Error(errorData.message || 'Failed to create payment intent');
+          throw new Error(errorData.message || t('errors.payment_error'));
         }
         
         const paymentData = await paymentRes.json();
         
         if (!paymentData.clientSecret) {
-          throw new Error('Payment initialization failed - no client secret received');
+          throw new Error(t('errors.payment_error'));
         }
         
         setClientSecret(paymentData.clientSecret);
       } catch (error: any) {
         console.error('Payment initialization error:', error);
         toast({
-          title: "Payment Initialization Failed",
-          description: error.message || "Failed to initialize payment. Please try again or contact support.",
+          title: t('errors.payment_error'),
+          description: error.message || t('errors.try_again_later'),
           variant: "destructive",
         });
         // Don't redirect immediately - show error on payment page
@@ -186,7 +189,7 @@ export default function PayServiceOrder() {
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading payment...</p>
+              <p className="text-muted-foreground">{t('common.loading')}</p>
             </div>
           </div>
         </div>
@@ -200,26 +203,26 @@ export default function PayServiceOrder() {
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle className="text-destructive">Payment Not Available</CardTitle>
-              <CardDescription>We couldn't initialize the payment for this order</CardDescription>
+              <CardTitle className="text-destructive">{t('errors.payment_error')}</CardTitle>
+              <CardDescription>{t('errors.try_again_later')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-4 bg-muted rounded-lg">
                   <p className="text-sm text-muted-foreground">
-                    <strong>Possible reasons:</strong>
+                    <strong>{t('errors.something_went_wrong')}</strong>
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
-                    <li>This order may not be confirmed yet</li>
-                    <li>Payment has already been processed</li>
-                    <li>There was a technical error connecting to the payment processor</li>
+                    <li>{t('orders.order_pending')}</li>
+                    <li>{t('errors.network_error')}</li>
+                    <li>{t('errors.server_error')}</li>
                   </ul>
                 </div>
                 <div className="text-center">
                   <Link href="/my-service-orders">
                     <Button data-testid="button-back-to-orders">
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to My Orders
+                      {t('orders.title')}
                     </Button>
                   </Link>
                 </div>
@@ -235,28 +238,28 @@ export default function PayServiceOrder() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" data-testid="heading-payment">Complete Payment</h1>
-          <p className="text-muted-foreground">Order #{orderDetails?.orderCode}</p>
+          <h1 className="text-3xl font-bold mb-2" data-testid="heading-payment">{t('payment.title')}</h1>
+          <p className="text-muted-foreground">{t('orders.order_number', { number: orderDetails?.orderCode })}</p>
         </div>
 
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Order Summary</CardTitle>
-            <CardDescription>Review your order details before payment</CardDescription>
+            <CardTitle>{t('book_service.order_summary')}</CardTitle>
+            <CardDescription>{t('booking.payment_details')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="text-muted-foreground">{t('orders.order_total')}:</span>
                 <span data-testid="text-subtotal">${parseFloat(orderDetails?.subtotal || '0').toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax:</span>
+                <span className="text-muted-foreground">{t('properties.taxes')}:</span>
                 <span data-testid="text-tax">${parseFloat(orderDetails?.taxAmount || '0').toFixed(2)}</span>
               </div>
               <div className="h-px bg-border" />
               <div className="flex justify-between text-lg font-bold">
-                <span>Total:</span>
+                <span>{t('booking.total')}:</span>
                 <span data-testid="text-total">${parseFloat(orderDetails?.totalAmount || '0').toLocaleString()}</span>
               </div>
             </div>
@@ -267,16 +270,16 @@ export default function PayServiceOrder() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
-              Payment Details
+              {t('payment.payment_details')}
             </CardTitle>
-            <CardDescription>Enter your payment information securely via Stripe</CardDescription>
+            <CardDescription>{t('payment.pay_securely')}</CardDescription>
           </CardHeader>
           <CardContent>
             {!clientSecret ? (
               <div className="flex items-center justify-center h-40">
                 <div className="text-center">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-sm text-muted-foreground">Initializing secure payment...</p>
+                  <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
                 </div>
               </div>
             ) : (
@@ -289,8 +292,7 @@ export default function PayServiceOrder() {
 
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
           <p className="text-sm text-blue-800 dark:text-blue-200 text-center">
-            <strong>🔒 Secure Payment:</strong> All transactions are encrypted and processed securely by Stripe. 
-            We never store your payment information.
+            <strong>🔒 {t('payment.secure_payment')}:</strong> {t('payment.payment_notice')}
           </p>
         </div>
       </div>

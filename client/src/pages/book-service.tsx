@@ -17,6 +17,7 @@ import { ArrowLeft, Calendar as CalendarIcon, Clock, DollarSign } from "lucide-r
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import type { ServiceProvider } from "@shared/schema";
+import { useTranslation } from 'react-i18next';
 
 const bookingSchema = z.object({
   serviceDate: z.date({
@@ -31,6 +32,7 @@ const bookingSchema = z.object({
 type BookingFormData = z.infer<typeof bookingSchema>;
 
 export default function BookServicePage() {
+  const { t } = useTranslation();
   const params = useParams();
   const providerId = params.id;
   const [, navigate] = useLocation();
@@ -87,8 +89,8 @@ export default function BookServicePage() {
     },
     onSuccess: (order) => {
       toast({
-        title: "Order placed successfully!",
-        description: `Your order code is ${order.orderCode}. Redirecting to payment...`,
+        title: t('book_service.order_success'),
+        description: t('book_service.order_code', { code: order.orderCode }) + ' ' + t('book_service.redirecting_payment'),
       });
       sessionStorage.removeItem('serviceSelection');
       queryClient.invalidateQueries({ queryKey: ['/api/service-orders'] });
@@ -100,7 +102,7 @@ export default function BookServicePage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to place order",
+        title: t('book_service.order_failed', 'Failed to place order'),
         description: error.message,
         variant: "destructive",
       });
@@ -117,11 +119,11 @@ export default function BookServicePage() {
         <Card>
           <CardContent className="py-8">
             <p className="text-center text-gray-500 dark:text-gray-400">
-              No items selected. Please go back and select items first.
+              {t('book_service.no_items_selected', 'No items selected. Please go back and select items first.')}
             </p>
             <div className="flex justify-center mt-4">
               <Button onClick={() => navigate(`/service-provider/${providerId}`)} data-testid="button-back-provider">
-                Back to Provider
+                {t('book_service.back_to_provider', 'Back to Provider')}
               </Button>
             </div>
           </CardContent>
@@ -133,7 +135,7 @@ export default function BookServicePage() {
   if (providerLoading) {
     return (
       <div className="container mx-auto p-6" data-testid="loading-booking">
-        <p className="text-center text-gray-500 dark:text-gray-400">Loading...</p>
+        <p className="text-center text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
       </div>
     );
   }
@@ -155,15 +157,15 @@ export default function BookServicePage() {
         data-testid="button-back-provider"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Provider
+        {t('book_service.back_to_provider', 'Back to Provider')}
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           <Card data-testid="card-booking-form">
             <CardHeader>
-              <CardTitle>Book Service with {provider?.businessName}</CardTitle>
-              <CardDescription>Select a date and time for your service</CardDescription>
+              <CardTitle>{t('book_service.title')} {t('common.with', 'with')} {provider?.businessName}</CardTitle>
+              <CardDescription>{t('book_service.select_date_time', 'Select a date and time for your service')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -173,7 +175,7 @@ export default function BookServicePage() {
                     name="serviceDate"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>Service Date</FormLabel>
+                        <FormLabel>{t('book_service.service_date')}</FormLabel>
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -192,11 +194,11 @@ export default function BookServicePage() {
                     name="startTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Start Time</FormLabel>
+                        <FormLabel>{t('book_service.start_time', 'Start Time')}</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger data-testid="select-start-time">
-                              <SelectValue placeholder="Select start time" />
+                              <SelectValue placeholder={t('book_service.select_start_time', 'Select start time')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
@@ -217,10 +219,10 @@ export default function BookServicePage() {
                     name="specialInstructions"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Special Instructions (Optional)</FormLabel>
+                        <FormLabel>{t('book_service.special_instructions', 'Special Instructions')} ({t('common.optional')})</FormLabel>
                         <FormControl>
                           <Textarea
-                            placeholder="Any special requests or instructions..."
+                            placeholder={t('book_service.special_requests_placeholder', 'Any special requests or instructions...')}
                             {...field}
                             data-testid="textarea-special-instructions"
                           />
@@ -236,7 +238,7 @@ export default function BookServicePage() {
                     disabled={createOrderMutation.isPending}
                     data-testid="button-submit-booking"
                   >
-                    {createOrderMutation.isPending ? "Placing Order..." : "Place Order"}
+                    {createOrderMutation.isPending ? t('book_service.placing_order', 'Placing Order...') : t('book_service.place_order')}
                   </Button>
                 </form>
               </Form>
@@ -247,11 +249,11 @@ export default function BookServicePage() {
         <div className="lg:col-span-1">
           <Card className="sticky top-4" data-testid="card-order-summary">
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle>{t('book_service.order_summary')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h4 className="font-semibold mb-2" data-testid="text-selected-items">Selected Items ({selectionData.items.length})</h4>
+                <h4 className="font-semibold mb-2" data-testid="text-selected-items">{t('book_service.selected_items', 'Selected Items')} ({selectionData.items.length})</h4>
                 <div className="space-y-2">
                   {selectionData.items.map((item: any, index: number) => (
                     <div key={index} className="flex justify-between text-sm" data-testid={`item-summary-${index}`}>
@@ -266,11 +268,11 @@ export default function BookServicePage() {
 
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span>Subtotal</span>
+                  <span>{t('book_service.subtotal', 'Subtotal')}</span>
                   <span data-testid="text-subtotal">${selectionData.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                  <span>Tax (10%)</span>
+                  <span>{t('book_service.tax', 'Tax')} (10%)</span>
                   <span data-testid="text-tax">${(selectionData.total * 0.1).toFixed(2)}</span>
                 </div>
               </div>
@@ -278,7 +280,7 @@ export default function BookServicePage() {
               <Separator />
 
               <div className="flex justify-between text-lg font-bold">
-                <span>Total</span>
+                <span>{t('booking.total')}</span>
                 <span data-testid="text-total">${(selectionData.total * 1.1).toFixed(2)}</span>
               </div>
             </CardContent>

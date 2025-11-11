@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +9,7 @@ import { Search, HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function Help() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -71,7 +73,7 @@ export default function Help() {
         <div className="text-center mb-12">
           <HelpCircle className="w-16 h-16 text-primary mx-auto mb-4" />
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-help-title">
-            Help Center
+            {t('info_pages.help_title')}
           </h1>
           <p className="text-xl text-muted-foreground" data-testid="text-help-subtitle">
             Find answers to common questions

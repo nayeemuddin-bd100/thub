@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Users, Target, Globe, Award } from "lucide-react";
 
 export default function About() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -42,7 +44,7 @@ export default function About() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4" data-testid="text-about-title">
-            About TravelHub
+            {t('info_pages.about_title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto" data-testid="text-about-subtitle">
             Revolutionizing travel by bringing together accommodations and services in one seamless platform

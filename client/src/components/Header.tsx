@@ -138,10 +138,10 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                     <Link href="/dashboard" data-testid="link-dashboard">{t('header.dashboard')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/favorites" data-testid="link-favorites">Favorites</Link>
+                    <Link href="/favorites" data-testid="link-favorites">{t('header.favorites')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/messages" data-testid="link-messages">Messages</Link>
+                    <Link href="/messages" data-testid="link-messages">{t('header.messages')}</Link>
                   </DropdownMenuItem>
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>

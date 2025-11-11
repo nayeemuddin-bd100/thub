@@ -7,6 +7,7 @@ import { Calendar, Clock, User, MapPin, DollarSign, Package, CheckCircle, XCircl
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 
 interface ServiceOrderItem {
   id: string;
@@ -43,6 +44,7 @@ interface ServiceOrder {
 }
 
 export default function MyServiceOrders() {
+  const { t } = useTranslation();
   const { data: orders, isLoading } = useQuery<ServiceOrder[]>({
     queryKey: ['/api/service-orders/client'],
   });
@@ -50,40 +52,40 @@ export default function MyServiceOrders() {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: { 
-        label: 'Pending Confirmation', 
+        label: t('orders.order_pending'), 
         variant: 'secondary' as const, 
         icon: Clock3,
-        description: 'Waiting for provider to accept'
+        description: t('orders.order_pending')
       },
       pending_payment: { 
-        label: 'Payment Required', 
+        label: t('orders.payment_status'), 
         variant: 'outline' as const, 
         icon: AlertCircle,
-        description: 'Please complete payment to confirm'
+        description: t('orders.unpaid')
       },
       confirmed: { 
-        label: 'Confirmed', 
+        label: t('orders.order_confirmed'), 
         variant: 'default' as const, 
         icon: CheckCircle,
-        description: 'Provider has accepted your order'
+        description: t('orders.order_confirmed')
       },
       in_progress: { 
-        label: 'Service in Progress', 
+        label: t('orders.order_processing'), 
         variant: 'default' as const, 
         icon: Clock,
-        description: 'Provider is currently working on your service'
+        description: t('orders.order_processing')
       },
       completed: { 
-        label: 'Completed', 
+        label: t('orders.order_completed'), 
         variant: 'default' as const, 
         icon: CheckCircle,
-        description: 'Service has been completed'
+        description: t('orders.order_completed')
       },
       cancelled: { 
-        label: 'Cancelled', 
+        label: t('orders.order_cancelled'), 
         variant: 'destructive' as const, 
         icon: XCircle,
-        description: 'Order was cancelled'
+        description: t('orders.order_cancelled')
       },
     };
     
@@ -103,9 +105,9 @@ export default function MyServiceOrders() {
 
   const getPaymentBadge = (status: string) => {
     const config = {
-      pending: { label: 'Payment Pending', variant: 'secondary' as const },
-      paid: { label: 'Paid', variant: 'default' as const },
-      refunded: { label: 'Refunded', variant: 'destructive' as const },
+      pending: { label: t('orders.unpaid'), variant: 'secondary' as const },
+      paid: { label: t('orders.paid'), variant: 'default' as const },
+      refunded: { label: t('orders.refunded'), variant: 'destructive' as const },
     };
     
     const { label, variant } = config[status as keyof typeof config] || config.pending;
@@ -127,7 +129,7 @@ export default function MyServiceOrders() {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading your orders...</p>
+            <p className="text-muted-foreground">{t('common.loading')}</p>
           </div>
         </div>
       </div>
@@ -141,23 +143,23 @@ export default function MyServiceOrders() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-my-orders">My Service Orders</h1>
-        <p className="text-muted-foreground">Track your service orders and view order history</p>
+        <h1 className="text-3xl font-bold mb-2" data-testid="heading-my-orders">{t('orders.title')}</h1>
+        <p className="text-muted-foreground">{t('orders.order_history')}</p>
       </div>
 
       <Tabs defaultValue="active" className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-6">
           <TabsTrigger value="active" data-testid="tab-active">
-            Active ({activeOrders.length})
+            {t('orders.active_orders')} ({activeOrders.length})
           </TabsTrigger>
           <TabsTrigger value="completed" data-testid="tab-completed">
-            Completed ({completedOrders.length})
+            {t('dashboard.completed')} ({completedOrders.length})
           </TabsTrigger>
           <TabsTrigger value="cancelled" data-testid="tab-cancelled">
-            Cancelled ({cancelledOrders.length})
+            {t('dashboard.cancelled')} ({cancelledOrders.length})
           </TabsTrigger>
           <TabsTrigger value="all" data-testid="tab-all">
-            All ({orders?.length || 0})
+            {t('common.all')} ({orders?.length || 0})
           </TabsTrigger>
         </TabsList>
 
@@ -169,10 +171,10 @@ export default function MyServiceOrders() {
                   <CardContent className="py-12">
                     <div className="text-center text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p data-testid={`text-no-orders-${tab}`}>No {tab === 'all' ? '' : tab} orders</p>
+                      <p data-testid={`text-no-orders-${tab}`}>{t('orders.no_orders')}</p>
                       <Link href="/services">
                         <Button className="mt-4" data-testid="button-browse-services">
-                          Browse Services
+                          {t('home.browse_services')}
                         </Button>
                       </Link>
                     </div>
@@ -223,7 +225,7 @@ export default function MyServiceOrders() {
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                          <h3 className="font-semibold mb-3">Service Provider</h3>
+                          <h3 className="font-semibold mb-3">{t('orders.provider_name')}</h3>
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
@@ -255,7 +257,7 @@ export default function MyServiceOrders() {
                         </div>
 
                         <div>
-                          <h3 className="font-semibold mb-3">Order Items</h3>
+                          <h3 className="font-semibold mb-3">{t('book_service.order_summary')}</h3>
                           <div className="space-y-2">
                             {order.items.map(item => (
                               <div key={item.id} className="flex justify-between text-sm" data-testid={`item-${item.id}`}>
@@ -271,7 +273,7 @@ export default function MyServiceOrders() {
 
                       {order.specialInstructions && (
                         <div className="mb-4">
-                          <h3 className="font-semibold mb-2">Your Instructions</h3>
+                          <h3 className="font-semibold mb-2">{t('book_service.additional_notes')}</h3>
                           <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md" data-testid={`text-instructions-${order.id}`}>
                             {order.specialInstructions}
                           </p>
@@ -282,11 +284,11 @@ export default function MyServiceOrders() {
                         <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
                           <div className="flex items-start justify-between gap-4">
                             <p className="text-sm text-blue-800 dark:text-blue-200 flex-1">
-                              <strong>Payment Required!</strong> Please complete payment to confirm your order.
+                              <strong>{t('orders.unpaid')}</strong>
                             </p>
                             <Link href={`/pay-service-order/${order.id}`}>
                               <Button size="sm" data-testid={`button-pay-${order.id}`}>
-                                Pay Now
+                                {t('dashboard.pay_now')}
                               </Button>
                             </Link>
                           </div>
@@ -296,7 +298,7 @@ export default function MyServiceOrders() {
                       {order.status === 'in_progress' && (
                         <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
                           <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Service in Progress!</strong> Your service provider is currently working on your order.
+                            <strong>{t('orders.order_processing')}</strong>
                           </p>
                         </div>
                       )}
@@ -304,7 +306,7 @@ export default function MyServiceOrders() {
                       {order.status === 'completed' && (
                         <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
                           <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>Service Completed!</strong> Thank you for using our service. We hope you enjoyed your experience.
+                            <strong>{t('orders.order_completed')}</strong>
                           </p>
                         </div>
                       )}

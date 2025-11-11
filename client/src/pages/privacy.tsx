@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 
 export default function Privacy() {
+  const { t } = useTranslation();
   const { user, isAuthenticated } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
@@ -39,7 +41,7 @@ export default function Privacy() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <h1 className="text-4xl font-bold text-foreground mb-6" data-testid="text-privacy-title">
-          Privacy Policy
+          {t('info_pages.privacy_title')}
         </h1>
         <p className="text-muted-foreground mb-8">Last updated: October 25, 2025</p>
 
