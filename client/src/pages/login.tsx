@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useTranslation } from 'react-i18next';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,8 +31,8 @@ export default function Login() {
       queryClient.setQueryData(['/api/auth/user'], userData);
       
       toast({
-        title: "Welcome back!",
-        description: "You've successfully logged in.",
+        title: t('auth.login_success'),
+        description: t('auth.login_success'),
       });
       
       // Redirect based on user role
@@ -42,8 +44,8 @@ export default function Login() {
     },
     onError: (error: any) => {
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
+        title: t('common.error'),
+        description: error.message || t('auth.login_failed'),
         variant: "destructive",
       });
     },
@@ -64,14 +66,14 @@ export default function Login() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-login-title">
-            Welcome to TravelHub
+            {t('auth.login_title')}
           </h1>
-          <p className="text-muted-foreground">Sign in to your account</p>
+          <p className="text-muted-foreground">{t('auth.sign_in')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <Input
               id="email"
               type="email"
@@ -84,7 +86,7 @@ export default function Login() {
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -112,16 +114,16 @@ export default function Login() {
             disabled={loginMutation.isPending}
             data-testid="button-login"
           >
-            {loginMutation.isPending ? "Signing in..." : "Sign in"}
+            {loginMutation.isPending ? t('common.loading') : t('auth.sign_in')}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm">
           <p className="text-muted-foreground">
-            Don't have an account?{" "}
+            {t('auth.no_account')}{" "}
             <Link href="/register">
               <span className="text-primary hover:underline cursor-pointer" data-testid="link-register">
-                Sign up
+                {t('auth.sign_up')}
               </span>
             </Link>
           </p>

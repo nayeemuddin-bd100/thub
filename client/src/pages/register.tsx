@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useTranslation } from 'react-i18next';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -23,10 +25,10 @@ export default function Register() {
   const registerMutation = useMutation({
     mutationFn: async () => {
       if (password !== confirmPassword) {
-        throw new Error("Passwords do not match");
+        throw new Error(t('auth.password_mismatch'));
       }
       if (password.length < 6) {
-        throw new Error("Password must be at least 6 characters");
+        throw new Error(t('auth.password_too_short'));
       }
       const response = await apiRequest("POST", "/api/auth/register", {
         email,
@@ -43,8 +45,8 @@ export default function Register() {
       queryClient.setQueryData(['/api/auth/user'], userData);
       
       toast({
-        title: "Welcome to TravelHub!",
-        description: "Your account has been created successfully.",
+        title: t('auth.register_success'),
+        description: t('auth.register_success'),
       });
       
       // Redirect based on user role (new users are typically clients)
@@ -56,8 +58,8 @@ export default function Register() {
     },
     onError: (error: any) => {
       toast({
-        title: "Registration failed",
-        description: error.message || "Failed to create account",
+        title: t('common.error'),
+        description: error.message || t('auth.register_failed'),
         variant: "destructive",
       });
     },
@@ -78,15 +80,15 @@ export default function Register() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-foreground mb-2" data-testid="text-register-title">
-            Create your account
+            {t('auth.register_title')}
           </h1>
-          <p className="text-muted-foreground">Join TravelHub today</p>
+          <p className="text-muted-foreground">{t('home.welcome_guest')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">{t('auth.first_name')}</Label>
               <Input
                 id="firstName"
                 type="text"
@@ -97,7 +99,7 @@ export default function Register() {
               />
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">{t('auth.last_name')}</Label>
               <Input
                 id="lastName"
                 type="text"
@@ -110,7 +112,7 @@ export default function Register() {
           </div>
 
           <div>
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <Input
               id="email"
               type="email"
@@ -123,7 +125,7 @@ export default function Register() {
           </div>
 
           <div>
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t('auth.password')}</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -146,7 +148,7 @@ export default function Register() {
           </div>
 
           <div>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">{t('auth.confirm_password')}</Label>
             <Input
               id="confirmPassword"
               type={showPassword ? "text" : "password"}
@@ -164,16 +166,16 @@ export default function Register() {
             disabled={registerMutation.isPending}
             data-testid="button-register"
           >
-            {registerMutation.isPending ? "Creating account..." : "Create account"}
+            {registerMutation.isPending ? t('common.loading') : t('auth.sign_up')}
           </Button>
         </form>
 
         <div className="mt-6 text-center text-sm">
           <p className="text-muted-foreground">
-            Already have an account?{" "}
+            {t('auth.have_account')}{" "}
             <Link href="/login">
               <span className="text-primary hover:underline cursor-pointer" data-testid="link-login">
-                Sign in
+                {t('auth.sign_in')}
               </span>
             </Link>
           </p>
