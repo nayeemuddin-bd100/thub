@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Search, MapPin } from "lucide-react";
+import type { ServiceCategory } from "@shared/schema";
 
 export default function Services() {
   const { t } = useTranslation();
@@ -53,7 +54,7 @@ export default function Services() {
     }
   };
 
-  const { data: categories } = useQuery({
+  const { data: categories } = useQuery<ServiceCategory[]>({
     queryKey: ['/api/service-categories'],
   });
 
