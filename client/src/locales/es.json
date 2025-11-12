@@ -508,6 +508,19 @@
     "resources_title": "Recursos",
     "community_title": "Comunidad"
   },
+  "blog": {
+    "subtitle": "Descubre consejos de viaje, guías de destinos e historias de nuestra comunidad",
+    "search_placeholder": "Buscar publicaciones...",
+    "all_categories": "Todas las categorías",
+    "error_loading": "Error al cargar las publicaciones. Por favor intenta de nuevo.",
+    "posts_found": "{{count}} publicación encontrada",
+    "posts_found_plural": "{{count}} publicaciones encontradas",
+    "anonymous_author": "Anónimo",
+    "read_more": "Leer más",
+    "no_posts_filter": "No se encontraron publicaciones que coincidan con tu búsqueda",
+    "no_posts": "Aún no hay publicaciones publicadas. ¡Vuelve pronto!",
+    "clear_filters": "Limpiar filtros"
+  },
   "forms": {
     "first_name_label": "Nombre",
     "last_name_label": "Apellido",

@@ -648,6 +648,69 @@ export const regionalAnalytics = pgTable("regional_analytics", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Contact submissions
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  subject: varchar("subject").notNull(),
+  message: text("message").notNull(),
+  status: varchar("status", { enum: ["new", "read", "responded", "archived"] }).default("new"),
+  respondedBy: varchar("responded_by").references(() => users.id),
+  response: text("response"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Job postings
+export const jobPostings = pgTable("job_postings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title").notNull(),
+  department: varchar("department").notNull(),
+  location: varchar("location").notNull(),
+  type: varchar("type", { enum: ["full-time", "part-time", "contract", "internship"] }).notNull(),
+  description: text("description").notNull(),
+  requirements: text("requirements").notNull(),
+  responsibilities: text("responsibilities").notNull(),
+  benefits: text("benefits"),
+  salary: varchar("salary"),
+  status: varchar("status", { enum: ["draft", "active", "closed"] }).default("draft"),
+  postedBy: varchar("posted_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Job applications
+export const jobApplications = pgTable("job_applications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  jobPostingId: uuid("job_posting_id").references(() => jobPostings.id).notNull(),
+  applicantName: varchar("applicant_name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone"),
+  resumeUrl: varchar("resume_url"),
+  coverLetter: text("cover_letter"),
+  status: varchar("status", { enum: ["pending", "reviewing", "interview", "rejected", "accepted"] }).default("pending"),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Blog posts
+export const blogPosts = pgTable("blog_posts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title").notNull(),
+  slug: varchar("slug").unique().notNull(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  featuredImage: varchar("featured_image"),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  category: varchar("category").notNull(),
+  tags: text("tags").array().default([]),
+  status: varchar("status", { enum: ["draft", "published", "archived"] }).default("draft"),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   properties: many(properties),
@@ -985,3 +1048,33 @@ export type InsertDispute = z.infer<typeof insertDisputeSchema>;
 export type DisputeMessage = typeof disputeMessages.$inferSelect;
 export type Territory = typeof territories.$inferSelect;
 export type RegionalAnalytics = typeof regionalAnalytics.$inferSelect;
+
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+
+export type JobPosting = typeof jobPostings.$inferSelect;
+export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
+
+export type JobApplication = typeof jobApplications.$inferSelect;
+export const insertJobApplicationSchema = createInsertSchema(jobApplications).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
+
+export type BlogPost = typeof blogPosts.$inferSelect;
+export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;

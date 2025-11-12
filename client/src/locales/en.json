@@ -603,6 +603,19 @@
     "resources_title": "Resources",
     "community_title": "Community"
   },
+  "blog": {
+    "subtitle": "Discover travel tips, destination guides, and insider stories from our community",
+    "search_placeholder": "Search blog posts...",
+    "all_categories": "All Categories",
+    "error_loading": "Failed to load blog posts. Please try again.",
+    "posts_found": "{{count}} post found",
+    "posts_found_plural": "{{count}} posts found",
+    "anonymous_author": "Anonymous",
+    "read_more": "Read More",
+    "no_posts_filter": "No blog posts match your search criteria",
+    "no_posts": "No blog posts published yet. Check back soon!",
+    "clear_filters": "Clear Filters"
+  },
   "forms": {
     "first_name_label": "First Name",
     "last_name_label": "Last Name",

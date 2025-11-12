@@ -40,6 +40,10 @@ import {
   disputeMessages,
   territories,
   regionalAnalytics,
+  contactSubmissions,
+  jobPostings,
+  jobApplications,
+  blogPosts,
   type User,
   type UpsertUser,
   type Property,
@@ -106,6 +110,14 @@ import {
   type DisputeMessage,
   type Territory,
   type RegionalAnalytics,
+  type ContactSubmission,
+  type InsertContactSubmission,
+  type JobPosting,
+  type InsertJobPosting,
+  type JobApplication,
+  type InsertJobApplication,
+  type BlogPost,
+  type InsertBlogPost,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, asc, like, gte, lte, sql, inArray, or } from "drizzle-orm";
@@ -279,6 +291,32 @@ export interface IStorage {
   getPublicSettings(): Promise<PlatformSetting[]>;
   getAllSettings(): Promise<PlatformSetting[]>;
   updateSetting(key: string, value: string, updatedBy: string): Promise<PlatformSetting>;
+  
+  // Contact Submissions
+  createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission>;
+  getAllContactSubmissions(): Promise<ContactSubmission[]>;
+  updateContactSubmissionResponse(id: string, respondedBy: string, response: string): Promise<ContactSubmission>;
+  
+  // Job Postings
+  getActiveJobPostings(): Promise<JobPosting[]>;
+  getJobPosting(id: string): Promise<JobPosting | undefined>;
+  createJobPosting(posting: InsertJobPosting): Promise<JobPosting>;
+  updateJobPosting(id: string, updates: Partial<InsertJobPosting>): Promise<JobPosting>;
+  deleteJobPosting(id: string): Promise<void>;
+  
+  // Job Applications
+  createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
+  getAllJobApplications(): Promise<JobApplication[]>;
+  getJobApplicationsByJobId(jobId: string): Promise<JobApplication[]>;
+  updateJobApplicationStatus(id: string, status: string, reviewedBy: string, notes?: string): Promise<JobApplication>;
+  
+  // Blog Posts
+  getPublishedBlogPosts(): Promise<BlogPost[]>;
+  getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
+  getBlogPost(id: string): Promise<BlogPost | undefined>;
+  createBlogPost(post: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost>;
+  deleteBlogPost(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1341,6 +1379,129 @@ export class DatabaseStorage implements IStorage {
       .returning();
 
     return result;
+  }
+
+  // Contact Submissions
+  async createContactSubmission(submission: InsertContactSubmission): Promise<ContactSubmission> {
+    const [result] = await db.insert(contactSubmissions).values(submission).returning();
+    return result;
+  }
+
+  async getAllContactSubmissions(): Promise<ContactSubmission[]> {
+    return await db.select().from(contactSubmissions).orderBy(desc(contactSubmissions.createdAt));
+  }
+
+  async updateContactSubmissionResponse(id: string, respondedBy: string, response: string): Promise<ContactSubmission> {
+    const [result] = await db.update(contactSubmissions)
+      .set({
+        status: 'responded',
+        respondedBy,
+        response,
+      })
+      .where(eq(contactSubmissions.id, id))
+      .returning();
+
+    return result;
+  }
+
+  // Job Postings
+  async getActiveJobPostings(): Promise<JobPosting[]> {
+    return await db.select().from(jobPostings)
+      .where(eq(jobPostings.status, 'active'))
+      .orderBy(desc(jobPostings.createdAt));
+  }
+
+  async getJobPosting(id: string): Promise<JobPosting | undefined> {
+    const [result] = await db.select().from(jobPostings).where(eq(jobPostings.id, id));
+    return result;
+  }
+
+  async createJobPosting(posting: InsertJobPosting): Promise<JobPosting> {
+    const [result] = await db.insert(jobPostings).values(posting).returning();
+    return result;
+  }
+
+  async updateJobPosting(id: string, updates: Partial<InsertJobPosting>): Promise<JobPosting> {
+    const [result] = await db.update(jobPostings)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(jobPostings.id, id))
+      .returning();
+
+    return result;
+  }
+
+  async deleteJobPosting(id: string): Promise<void> {
+    await db.delete(jobPostings).where(eq(jobPostings.id, id));
+  }
+
+  // Job Applications
+  async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const [result] = await db.insert(jobApplications).values(application).returning();
+    return result;
+  }
+
+  async getAllJobApplications(): Promise<JobApplication[]> {
+    return await db.select().from(jobApplications).orderBy(desc(jobApplications.createdAt));
+  }
+
+  async getJobApplicationsByJobId(jobId: string): Promise<JobApplication[]> {
+    return await db.select().from(jobApplications)
+      .where(eq(jobApplications.jobPostingId, jobId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async updateJobApplicationStatus(id: string, status: string, reviewedBy: string, notes?: string): Promise<JobApplication> {
+    const updateData: any = {
+      status: status as any,
+      reviewedBy,
+    };
+
+    if (notes !== undefined) {
+      updateData.notes = notes;
+    }
+
+    const [result] = await db.update(jobApplications)
+      .set(updateData)
+      .where(eq(jobApplications.id, id))
+      .returning();
+
+    return result;
+  }
+
+  // Blog Posts
+  async getPublishedBlogPosts(): Promise<BlogPost[]> {
+    return await db.select().from(blogPosts)
+      .where(eq(blogPosts.status, 'published'))
+      .orderBy(desc(blogPosts.publishedAt));
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<BlogPost | undefined> {
+    const [result] = await db.select().from(blogPosts)
+      .where(and(eq(blogPosts.slug, slug), eq(blogPosts.status, 'published')));
+    return result;
+  }
+
+  async getBlogPost(id: string): Promise<BlogPost | undefined> {
+    const [result] = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+    return result;
+  }
+
+  async createBlogPost(post: InsertBlogPost): Promise<BlogPost> {
+    const [result] = await db.insert(blogPosts).values(post).returning();
+    return result;
+  }
+
+  async updateBlogPost(id: string, updates: Partial<InsertBlogPost>): Promise<BlogPost> {
+    const [result] = await db.update(blogPosts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(blogPosts.id, id))
+      .returning();
+
+    return result;
+  }
+
+  async deleteBlogPost(id: string): Promise<void> {
+    await db.delete(blogPosts).where(eq(blogPosts.id, id));
   }
 }
 

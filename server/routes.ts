@@ -8,7 +8,13 @@ import { storage } from "./storage";
 import { hashPassword, verifyPassword, requireAuth } from "./auth";
 import { generateBookingCode } from "./base44";
 import { whatsappService } from "./whatsapp";
-import { insertServiceProviderSchema } from "@shared/schema";
+import { 
+  insertServiceProviderSchema,
+  insertContactSubmissionSchema,
+  insertJobPostingSchema,
+  insertJobApplicationSchema,
+  insertBlogPostSchema,
+} from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import { format } from "date-fns";
@@ -2501,6 +2507,331 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error sending WhatsApp message:", error);
       res.status(500).json({ message: "Failed to send WhatsApp message" });
+    }
+  });
+
+  // ============ CONTACT SUBMISSIONS ENDPOINTS ============
+  // POST /api/contact - Submit a new contact form (public)
+  app.post('/api/contact', async (req, res) => {
+    try {
+      const validatedData = insertContactSubmissionSchema.parse(req.body);
+      const submission = await storage.createContactSubmission(validatedData);
+      res.status(201).json(submission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating contact submission:", error);
+      res.status(500).json({ message: "Failed to submit contact form" });
+    }
+  });
+
+  // GET /api/contact - Get all contact submissions (admin only)
+  app.get('/api/contact', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const submissions = await storage.getAllContactSubmissions();
+      res.json(submissions);
+    } catch (error) {
+      console.error("Error fetching contact submissions:", error);
+      res.status(500).json({ message: "Failed to fetch contact submissions" });
+    }
+  });
+
+  // PATCH /api/contact/:id/respond - Admin responds to a submission (admin only)
+  app.patch('/api/contact/:id/respond', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+
+      const { response } = req.body;
+      
+      if (!response) {
+        return res.status(400).json({ message: "Response is required" });
+      }
+      
+      const submission = await storage.updateContactSubmissionResponse(
+        req.params.id,
+        userId,
+        response
+      );
+      
+      res.json(submission);
+    } catch (error) {
+      console.error("Error responding to contact submission:", error);
+      res.status(500).json({ message: "Failed to respond to submission" });
+    }
+  });
+
+  // ============ JOB POSTINGS ENDPOINTS ============
+  // GET /api/jobs - Get all active job postings (public)
+  app.get('/api/jobs', async (req, res) => {
+    try {
+      const jobs = await storage.getActiveJobPostings();
+      res.json(jobs);
+    } catch (error) {
+      console.error("Error fetching job postings:", error);
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
+  });
+
+  // GET /api/jobs/:id - Get single job posting (public)
+  app.get('/api/jobs/:id', async (req, res) => {
+    try {
+      const job = await storage.getJobPosting(req.params.id);
+      
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      res.json(job);
+    } catch (error) {
+      console.error("Error fetching job posting:", error);
+      res.status(500).json({ message: "Failed to fetch job posting" });
+    }
+  });
+
+  // POST /api/jobs - Create job posting (admin only)
+  app.post('/api/jobs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const validatedData = insertJobPostingSchema.parse({
+        ...req.body,
+        postedBy: userId,
+      });
+      
+      const job = await storage.createJobPosting(validatedData);
+      res.status(201).json(job);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating job posting:", error);
+      res.status(500).json({ message: "Failed to create job posting" });
+    }
+  });
+
+  // PATCH /api/jobs/:id - Update job posting (admin only)
+  app.patch('/api/jobs/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const job = await storage.updateJobPosting(req.params.id, req.body);
+      res.json(job);
+    } catch (error) {
+      console.error("Error updating job posting:", error);
+      res.status(500).json({ message: "Failed to update job posting" });
+    }
+  });
+
+  // DELETE /api/jobs/:id - Delete job posting (admin only)
+  app.delete('/api/jobs/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      await storage.deleteJobPosting(req.params.id);
+      res.json({ message: "Job posting deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting job posting:", error);
+      res.status(500).json({ message: "Failed to delete job posting" });
+    }
+  });
+
+  // ============ JOB APPLICATIONS ENDPOINTS ============
+  // POST /api/applications - Submit job application (public)
+  app.post('/api/applications', async (req, res) => {
+    try {
+      const validatedData = insertJobApplicationSchema.parse(req.body);
+      const application = await storage.createJobApplication(validatedData);
+      res.status(201).json(application);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating job application:", error);
+      res.status(500).json({ message: "Failed to submit application" });
+    }
+  });
+
+  // GET /api/applications - Get all applications (admin only)
+  app.get('/api/applications', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const applications = await storage.getAllJobApplications();
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  // GET /api/applications/job/:jobId - Get applications for specific job (admin only)
+  app.get('/api/applications/job/:jobId', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const applications = await storage.getJobApplicationsByJobId(req.params.jobId);
+      res.json(applications);
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      res.status(500).json({ message: "Failed to fetch applications" });
+    }
+  });
+
+  // PATCH /api/applications/:id/status - Update application status (admin only)
+  app.patch('/api/applications/:id/status', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+
+      const { status, notes } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+      
+      const application = await storage.updateJobApplicationStatus(
+        req.params.id,
+        status,
+        userId,
+        notes
+      );
+      
+      res.json(application);
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      res.status(500).json({ message: "Failed to update application status" });
+    }
+  });
+
+  // ============ BLOG POSTS ENDPOINTS ============
+  // GET /api/blog - Get all published blog posts (public)
+  app.get('/api/blog', async (req, res) => {
+    try {
+      const posts = await storage.getPublishedBlogPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ message: "Failed to fetch blog posts" });
+    }
+  });
+
+  // GET /api/blog/:slug - Get single blog post by slug (public)
+  app.get('/api/blog/:slug', async (req, res) => {
+    try {
+      const post = await storage.getBlogPostBySlug(req.params.slug);
+      
+      if (!post) {
+        return res.status(404).json({ message: "Blog post not found" });
+      }
+      
+      res.json(post);
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ message: "Failed to fetch blog post" });
+    }
+  });
+
+  // POST /api/blog - Create blog post (admin only)
+  app.post('/api/blog', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const validatedData = insertBlogPostSchema.parse({
+        ...req.body,
+        authorId: userId,
+      });
+      
+      const post = await storage.createBlogPost(validatedData);
+      res.status(201).json(post);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ message: "Failed to create blog post" });
+    }
+  });
+
+  // PATCH /api/blog/:id - Update blog post (admin only)
+  app.patch('/api/blog/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      const post = await storage.updateBlogPost(req.params.id, req.body);
+      res.json(post);
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ message: "Failed to update blog post" });
+    }
+  });
+
+  // DELETE /api/blog/:id - Delete blog post (admin only)
+  app.delete('/api/blog/:id', requireAuth, async (req: any, res) => {
+    try {
+      const userId = (req.session as any).userId;
+      const user = await storage.getUser(userId);
+      
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ message: "Admin privileges required" });
+      }
+      
+      await storage.deleteBlogPost(req.params.id);
+      res.json({ message: "Blog post deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ message: "Failed to delete blog post" });
     }
   });
 
