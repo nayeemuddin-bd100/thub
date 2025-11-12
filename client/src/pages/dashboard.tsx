@@ -22,6 +22,14 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { type User, type Booking, type ServiceCategory } from "@shared/schema";
+
+interface AdminStats {
+  totalUsers: number;
+  totalProperties: number;
+  totalServiceProviders: number;
+  totalBookings: number;
+}
 
 export default function Dashboard() {
   const { t } = useTranslation();
@@ -82,21 +90,21 @@ export default function Dashboard() {
     }
   };
 
-  const { data: bookings, isLoading: bookingsLoading, error: bookingsError } = useQuery({
+  const { data: bookings, isLoading: bookingsLoading, error: bookingsError } = useQuery<Booking[]>({
     queryKey: ['/api/bookings'],
     enabled: isAuthenticated,
     retry: false,
   });
 
   // Admin stats query
-  const { data: adminStats, isLoading: statsLoading } = useQuery({
+  const { data: adminStats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,
   });
 
   // Admin users query
-  const { data: allUsers, isLoading: usersLoading } = useQuery({
+  const { data: allUsers, isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
     enabled: isAuthenticated && user?.role === 'admin',
     retry: false,
@@ -114,7 +122,7 @@ export default function Dashboard() {
   const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<string | null>(null);
   
   // Service categories query
-  const { data: serviceCategories } = useQuery({
+  const { data: serviceCategories } = useQuery<ServiceCategory[]>({
     queryKey: ['/api/service-categories'],
     enabled: isAuthenticated,
   });
@@ -181,10 +189,7 @@ export default function Dashboard() {
   // Mutation to assign user role
   const assignRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      return await apiRequest('/api/admin/assign-role', {
-        method: 'PUT',
-        body: JSON.stringify({ userId, role }),
-      });
+      return await apiRequest('PUT', '/api/admin/assign-role', { userId, role });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
@@ -211,21 +216,18 @@ export default function Dashboard() {
         ? formData.certifications.split(',').map(cert => cert.trim()).filter(Boolean)
         : [];
       
-      return await apiRequest('/api/user/become-provider', {
-        method: 'POST',
-        body: JSON.stringify({
-          categoryId: formData.categoryId,
-          businessName: formData.businessName,
-          description: formData.description,
-          hourlyRate: formData.hourlyRate ? formData.hourlyRate : null,
-          fixedRate: formData.fixedRate ? formData.fixedRate : null,
-          location: formData.location,
-          radius: formData.radius ? parseInt(formData.radius) : 50,
-          certifications,
-          portfolio: [],
-          isVerified: false,
-          isActive: true,
-        }),
+      return await apiRequest('POST', '/api/user/become-provider', {
+        categoryId: formData.categoryId,
+        businessName: formData.businessName,
+        description: formData.description,
+        hourlyRate: formData.hourlyRate ? formData.hourlyRate : null,
+        fixedRate: formData.fixedRate ? formData.fixedRate : null,
+        location: formData.location,
+        radius: formData.radius ? parseInt(formData.radius) : 50,
+        certifications,
+        portfolio: [],
+        isVerified: false,
+        isActive: true,
       });
     },
     onSuccess: () => {
@@ -253,10 +255,7 @@ export default function Dashboard() {
   // Booking cancellation mutation
   const cancelBookingMutation = useMutation({
     mutationFn: async ({ bookingId, reason }: { bookingId: string; reason: string }) => {
-      return await apiRequest(`/api/bookings/${bookingId}/cancel`, {
-        method: 'POST',
-        body: JSON.stringify({ reason }),
-      });
+      return await apiRequest('POST', `/api/bookings/${bookingId}/cancel`, { reason });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/bookings'] });
