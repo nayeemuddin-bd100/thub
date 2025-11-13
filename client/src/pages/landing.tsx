@@ -58,7 +58,7 @@ export default function Landing() {
         <Button 
           data-testid="button-quick-book"
           className="bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center space-x-2"
-          onClick={() => window.location.href = '/api/login'}
+          onClick={() => window.location.href = '/login'}
         >
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">{t('home.quick_book')}</span>

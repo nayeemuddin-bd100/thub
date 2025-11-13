@@ -57,7 +57,7 @@ export default function Host() {
               </Button>
             </Link>
           ) : (
-            <Button size="lg" onClick={() => window.location.href = "/api/login"} data-testid="button-get-started">
+            <Button size="lg" onClick={() => window.location.href = "/login"} data-testid="button-get-started">
               {t('host.get_started')}
             </Button>
           )}

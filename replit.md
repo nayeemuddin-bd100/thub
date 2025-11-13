@@ -19,7 +19,7 @@ Preferred communication style: Simple, everyday language.
 ## Backend Architecture
 - **Runtime**: Node.js with Express.js for RESTful API endpoints
 - **Language**: TypeScript throughout the stack
-- **Authentication**: OpenID Connect (OIDC) with Replit Auth using Passport.js
+- **Authentication**: Email/password authentication with bcrypt hashing
 - **Session Management**: Express sessions with PostgreSQL store
 - **API Structure**: RESTful endpoints organized by resource type
 
@@ -118,7 +118,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Core Infrastructure
 - **Database**: Neon PostgreSQL serverless database
-- **Authentication**: Replit OIDC provider
+- **Authentication**: Email/password with session-based authentication
 - **WebSocket**: Native WebSocket implementation for real-time chat messaging
 
 ## Payment Processing

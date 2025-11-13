@@ -45,7 +45,7 @@ const roles = [
 export default function UserRoles() {
   const handleRoleClick = (roleId: string) => {
     if (roleId === 'admin') return;
-    window.location.href = '/api/login';
+    window.location.href = '/login';
   };
 
   return (

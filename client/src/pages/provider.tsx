@@ -62,7 +62,7 @@ export default function Provider() {
               {t('provider.become_provider')}
             </Button>
           ) : (
-            <Button size="lg" onClick={() => window.location.href = "/api/login"} data-testid="button-start-providing">
+            <Button size="lg" onClick={() => window.location.href = "/login"} data-testid="button-start-providing">
               {t('provider.become_provider')}
             </Button>
           )}
