@@ -68,7 +68,7 @@ export default function Dashboard() {
     const { t } = useTranslation();
     const { user, isAuthenticated, isLoading: authLoading } = useAuth();
     const { toast } = useToast();
-    const [, setLocation] = useLocation();
+    const [location, setLocation] = useLocation();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [activeTab, setActiveTab] = useState(() => {
         // Check URL params first
@@ -80,6 +80,19 @@ export default function Dashboard() {
         return "bookings";
     });
 
+    // Handle contact support query parameter on mount
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const contactSupport = urlParams.get("contactSupport");
+        
+        if (contactSupport === "true") {
+            setContactSupportDialogOpen(true);
+            // Clean up URL parameter
+            const newUrl = window.location.pathname + (urlParams.has('tab') ? `?tab=${urlParams.get('tab')}` : '');
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, []); // Run once on mount
+
     useEffect(() => {
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme === "dark") {
@@ -87,23 +100,15 @@ export default function Dashboard() {
             document.documentElement.classList.add("dark");
         }
 
-        // Parse URL parameters for active tab and contact support
+        // Parse URL parameters for active tab
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get("tab");
-        const contactSupport = urlParams.get("contactSupport");
         
         if (tab) {
             setActiveTab(tab);
         } else if (user) {
             // Set default tab based on role once user is loaded
             setActiveTab(user.role === "admin" ? "overview" : "bookings");
-        }
-        
-        // Auto-open contact support modal if query parameter is present
-        if (contactSupport === "true") {
-            setContactSupportDialogOpen(true);
-            // Clean up URL parameter
-            window.history.replaceState({}, '', window.location.pathname);
         }
     }, [user]);
 

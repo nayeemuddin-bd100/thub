@@ -37,10 +37,14 @@ export const users = pgTable("users", {
     role: varchar("role", {
         enum: [
             "admin",
+            "billing",
+            "operation",
+            "marketing",
             "property_owner",
             "service_provider",
             "client",
             "country_manager",
+            "city_manager",
             "operation_support",
         ],
     })

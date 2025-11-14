@@ -45,6 +45,10 @@ import SeasonalPricing from "@/pages/seasonal-pricing";
 import Disputes from "@/pages/disputes";
 import Messages from "@/pages/messages";
 import SupportDashboard from "@/pages/support-dashboard";
+import BillingDashboard from "@/pages/billing-dashboard";
+import OperationDashboard from "@/pages/operation-dashboard";
+import MarketingDashboard from "@/pages/marketing-dashboard";
+import CityManagerDashboard from "@/pages/city-manager-dashboard";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -98,6 +102,10 @@ function Router() {
           <Route path="/messages" component={Messages} />
           <Route path="/admin" component={AdminDashboard} />
           <Route path="/support-dashboard" component={SupportDashboard} />
+          <Route path="/billing-dashboard" component={BillingDashboard} />
+          <Route path="/operation-dashboard" component={OperationDashboard} />
+          <Route path="/marketing-dashboard" component={MarketingDashboard} />
+          <Route path="/city-manager-dashboard" component={CityManagerDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />
           <Route path="/my-service-orders" component={MyServiceOrders} />

@@ -152,11 +152,16 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                     <MessageSquare className="w-5 h-5" />
                   </Button>
                 </Link>
-                <Link href="/dashboard?contactSupport=true">
-                  <Button variant="ghost" size="icon" data-testid="button-contact-support-header" className="relative" title="Contact Support">
-                    <HeadsetIcon className="w-5 h-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  data-testid="button-contact-support-header" 
+                  className="relative" 
+                  title="Contact Support"
+                  onClick={() => window.location.href = '/dashboard?contactSupport=true'}
+                >
+                  <HeadsetIcon className="w-5 h-5" />
+                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" data-testid="button-notifications" className="relative">
@@ -271,6 +276,26 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   {user.role === 'admin' && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" data-testid="link-admin">{t('header.admin_panel')}</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'billing' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/billing-dashboard">Billing Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'operation' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/operation-dashboard">Operation Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'marketing' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/marketing-dashboard">Marketing Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'city_manager' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/city-manager-dashboard">City Manager Dashboard</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>

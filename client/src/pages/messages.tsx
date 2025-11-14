@@ -6,11 +6,14 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare, Send, ArrowLeft } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MessageSquare, Send, ArrowLeft, Plus } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
+import { getAllowedMessagingRoles, ROLE_LABELS, type UserRole } from '@shared/messagingPermissions';
 
 interface Message {
   id: string;
@@ -44,6 +47,9 @@ export default function MessagesPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedNewUser, setSelectedNewUser] = useState<string>('');
   
   // Check for user query parameter to auto-select conversation
   useEffect(() => {
@@ -178,6 +184,24 @@ export default function MessagesPage() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  // Get allowed messaging roles for current user
+  const allowedRoles = currentUser ? getAllowedMessagingRoles(currentUser.role as UserRole) : [];
+
+  // Fetch users by selected role for new message
+  const { data: usersByRole = [] } = useQuery<User[]>({
+    queryKey: ['/api/users/by-role', selectedRole],
+    enabled: !!selectedRole && isNewMessageOpen,
+  });
+
+  const handleStartConversation = () => {
+    if (selectedNewUser) {
+      setSelectedUserId(selectedNewUser);
+      setIsNewMessageOpen(false);
+      setSelectedRole('');
+      setSelectedNewUser('');
+    }
+  };
+
   if (!currentUser) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -207,7 +231,74 @@ export default function MessagesPage() {
         {/* Conversations List */}
         <Card className={`${selectedUserId ? 'hidden lg:block' : ''}`}>
           <CardHeader>
-            <CardTitle>{t('messages.conversations')}</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>{t('messages.conversations')}</CardTitle>
+              <Dialog open={isNewMessageOpen} onOpenChange={setIsNewMessageOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Message
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Start New Conversation</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Select User Role</label>
+                      <Select value={selectedRole} onValueChange={(value) => {
+                        setSelectedRole(value);
+                        setSelectedNewUser('');
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a role..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allowedRoles.map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {ROLE_LABELS[role]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {selectedRole && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Select User</label>
+                        {usersByRole.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            No users found with this role
+                          </p>
+                        ) : (
+                          <Select value={selectedNewUser} onValueChange={setSelectedNewUser}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a user..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {usersByRole.map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.firstName} {user.lastName} ({user.email})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                    )}
+
+                    <Button
+                      onClick={handleStartConversation}
+                      disabled={!selectedNewUser}
+                      className="w-full"
+                    >
+                      Start Conversation
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[600px]">

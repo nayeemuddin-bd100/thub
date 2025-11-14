@@ -28,6 +28,7 @@ import path from "path";
 import { fileTypeFromBuffer } from "file-type";
 import signature from "cookie-signature";
 import { Resend } from "resend";
+import { canMessageRole, getAllowedMessagingRoles, type UserRole } from "@shared/messagingPermissions";
 
 const PgSession = connectPg(session);
 
@@ -197,6 +198,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Get users by role (for role-based messaging)
+    app.get("/api/users/by-role/:role", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const currentUser = await storage.getUser(userId);
+            
+            if (!currentUser) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            const { role } = req.params;
+            const validRoles = [
+                "admin",
+                "billing",
+                "operation",
+                "marketing",
+                "property_owner",
+                "service_provider",
+                "client",
+                "country_manager",
+                "city_manager",
+                "operation_support",
+            ];
+            
+            if (!validRoles.includes(role)) {
+                return res.status(400).json({ message: "Invalid role" });
+            }
+
+            // Check if current user is allowed to message users of this role
+            if (!canMessageRole(currentUser.role as UserRole, role as UserRole)) {
+                return res.status(403).json({ 
+                    message: "You are not authorized to view users with this role" 
+                });
+            }
+
+            const users = await storage.getUsersByRole(role);
+            const usersWithoutPasswords = users.map(({ password, ...user }) => user);
+            res.json(usersWithoutPasswords);
+        } catch (error) {
+            console.error("Error fetching users by role:", error);
+            res.status(500).json({ message: "Failed to fetch users" });
+        }
+    });
+
     // User role management routes
     app.put("/api/auth/change-role", requireAuth, async (req, res) => {
         try {
@@ -241,7 +286,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 "property_owner",
                 "service_provider",
                 "admin",
+                "billing",
+                "operation",
+                "marketing",
                 "country_manager",
+                "city_manager",
                 "operation_support",
             ];
             if (!validRoles.includes(role)) {
@@ -921,6 +970,276 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
         }
     );
+
+    // Billing Dashboard routes
+    app.get("/api/billing/stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "billing") {
+                return res
+                    .status(403)
+                    .json({ message: "Billing role required" });
+            }
+
+            const allBookings = await storage.getAllBookings();
+            const allOrders = await storage.getAllServiceOrders();
+
+            const totalRevenue = [...allBookings, ...allOrders].reduce(
+                (sum, item) =>
+                    sum +
+                    (item.paymentStatus === "paid"
+                        ? parseFloat(item.totalAmount.toString())
+                        : 0),
+                0
+            );
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthlyRevenue = [...allBookings, ...allOrders]
+                .filter((item) => {
+                    if (!item.createdAt) return false;
+                    const itemDate = new Date(item.createdAt);
+                    return (
+                        itemDate.getMonth() === currentMonth &&
+                        itemDate.getFullYear() === currentYear &&
+                        item.paymentStatus === "paid"
+                    );
+                })
+                .reduce(
+                    (sum, item) => sum + parseFloat(item.totalAmount.toString()),
+                    0
+                );
+
+            const totalTransactions = allBookings.length + allOrders.length;
+            const pendingPayments = [...allBookings, ...allOrders].filter(
+                (item) => item.paymentStatus === "pending"
+            ).length;
+
+            res.json({
+                totalRevenue,
+                monthlyRevenue,
+                totalTransactions,
+                pendingPayments,
+            });
+        } catch (error) {
+            console.error("Error fetching billing stats:", error);
+            res.status(500).json({ message: "Failed to fetch billing stats" });
+        }
+    });
+
+    app.get("/api/billing/transactions", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "billing") {
+                return res
+                    .status(403)
+                    .json({ message: "Billing role required" });
+            }
+
+            const allBookings = await storage.getAllBookings();
+            const allOrders = await storage.getAllServiceOrders();
+
+            const transactions = [];
+
+            for (const booking of allBookings) {
+                const client = await storage.getUser(booking.clientId);
+                transactions.push({
+                    id: booking.id,
+                    type: "booking",
+                    amount: parseFloat(booking.totalAmount.toString()),
+                    status: booking.status,
+                    paymentStatus: booking.paymentStatus,
+                    createdAt: booking.createdAt,
+                    clientName: client
+                        ? `${client.firstName} ${client.lastName}`
+                        : "Unknown",
+                });
+            }
+
+            for (const order of allOrders) {
+                const client = await storage.getUser(order.clientId);
+                transactions.push({
+                    id: order.id,
+                    type: "service_order",
+                    amount: parseFloat(order.totalAmount.toString()),
+                    status: order.status,
+                    paymentStatus: order.paymentStatus,
+                    createdAt: order.createdAt,
+                    clientName: client
+                        ? `${client.firstName} ${client.lastName}`
+                        : "Unknown",
+                });
+            }
+
+            transactions.sort(
+                (a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return dateB - dateA;
+                }
+            );
+
+            res.json(transactions);
+        } catch (error) {
+            console.error("Error fetching billing transactions:", error);
+            res.status(500).json({
+                message: "Failed to fetch billing transactions",
+            });
+        }
+    });
+
+    // Operation Dashboard routes
+    app.get("/api/operation/stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "operation") {
+                return res.status(403).json({ message: "Operation role required" });
+            }
+
+            const allUsers = await storage.getAllUsers();
+            const allBookings = await storage.getAllBookings();
+            const allProperties = await storage.getAllProperties();
+
+            res.json({
+                totalUsers: allUsers.length,
+                activeUsers: allUsers.filter((u) => u.createdAt).length,
+                totalBookings: allBookings.length,
+                activeProperties: allProperties.filter((p) => p.isActive).length,
+            });
+        } catch (error) {
+            console.error("Error fetching operation stats:", error);
+            res.status(500).json({ message: "Failed to fetch operation stats" });
+        }
+    });
+
+    app.get("/api/operation/users", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "operation") {
+                return res.status(403).json({ message: "Operation role required" });
+            }
+
+            const allUsers = await storage.getAllUsers();
+            const usersWithoutPasswords = allUsers.map(({ password, ...user }) => user);
+            res.json(usersWithoutPasswords);
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            res.status(500).json({ message: "Failed to fetch users" });
+        }
+    });
+
+    // Marketing Dashboard routes
+    app.get("/api/marketing/stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "marketing") {
+                return res.status(403).json({ message: "Marketing role required" });
+            }
+
+            const allProperties = await storage.getAllProperties();
+            const allProviders = await storage.getServiceProviders();
+            const allPromoCodes = await storage.getAllPromoCodes();
+
+            res.json({
+                totalProperties: allProperties.length,
+                totalProviders: allProviders.length,
+                activePromoCodes: allPromoCodes.filter((p: any) => p.isActive).length,
+                totalViews: 0,
+            });
+        } catch (error) {
+            console.error("Error fetching marketing stats:", error);
+            res.status(500).json({ message: "Failed to fetch marketing stats" });
+        }
+    });
+
+    app.get("/api/marketing/promo-codes", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "marketing") {
+                return res.status(403).json({ message: "Marketing role required" });
+            }
+
+            const promoCodes = await storage.getAllPromoCodes();
+            res.json(promoCodes);
+        } catch (error) {
+            console.error("Error fetching promo codes:", error);
+            res.status(500).json({ message: "Failed to fetch promo codes" });
+        }
+    });
+
+    // City Manager Dashboard routes
+    app.get("/api/city-manager/stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "city_manager") {
+                return res.status(403).json({ message: "City Manager role required" });
+            }
+
+            const allProperties = await storage.getAllProperties();
+            const allProviders = await storage.getServiceProviders();
+            const allUsers = await storage.getAllUsers();
+
+            res.json({
+                totalProperties: allProperties.length,
+                totalProviders: allProviders.filter((p: any) => p.approvalStatus === "approved").length,
+                pendingApplications: allProviders.filter((p: any) => p.approvalStatus === "pending").length,
+                totalHosts: allUsers.filter((u) => u.role === "property_owner").length,
+            });
+        } catch (error) {
+            console.error("Error fetching city manager stats:", error);
+            res.status(500).json({ message: "Failed to fetch city manager stats" });
+        }
+    });
+
+    app.get("/api/city-manager/providers", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "city_manager") {
+                return res.status(403).json({ message: "City Manager role required" });
+            }
+
+            const providers = await storage.getServiceProviders();
+            const providersWithUsers = await Promise.all(
+                providers.map(async (provider: any) => {
+                    const providerUser = await storage.getUser(provider.userId);
+                    return {
+                        ...provider,
+                        user: providerUser
+                            ? {
+                                  firstName: providerUser.firstName,
+                                  lastName: providerUser.lastName,
+                                  email: providerUser.email,
+                              }
+                            : {
+                                  firstName: "Unknown",
+                                  lastName: "",
+                                  email: "",
+                              },
+                    };
+                })
+            );
+            res.json(providersWithUsers);
+        } catch (error) {
+            console.error("Error fetching providers:", error);
+            res.status(500).json({ message: "Failed to fetch providers" });
+        }
+    });
 
     // Property routes
     app.get("/api/properties", async (req, res) => {
@@ -2975,15 +3294,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.post("/api/messages", requireAuth, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
+            const sender = await storage.getUser(userId);
+            const receiver = await storage.getUser(req.body.receiverId);
+            
+            if (!sender || !receiver) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Validate messaging permissions
+            if (!canMessageRole(sender.role as UserRole, receiver.role as UserRole)) {
+                return res.status(403).json({ 
+                    message: "You are not authorized to send messages to users with this role" 
+                });
+            }
+
             const messageData = {
                 ...req.body,
                 senderId: userId,
             };
 
             const message = await storage.sendMessage(messageData);
-
-            // Get sender details for notification
-            const sender = await storage.getUser(userId);
 
             // Send notification to receiver
             await storage.createNotification({

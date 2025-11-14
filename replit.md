@@ -32,13 +32,28 @@ Preferred communication style: Simple, everyday language.
 ## Authentication & Authorization
 - **Strategy**: Custom email/password authentication with bcrypt hashing
 - **Session Management**: Express sessions with `connect-pg-simple` for PostgreSQL session storage
-- **Role-based Access Control (RBAC)**: Five distinct user roles (Admin, Property Owner, Service Provider, Client, Country Manager) with specialized dashboards
+- **Role-based Access Control (RBAC)**: Ten distinct user roles with specialized dashboards:
+  - **Admin**: Overall system management
+  - **Billing**: Financial reports, payments, revenue management
+  - **Operation**: User management, system monitoring, operations
+  - **Marketing**: Campaigns, promotional codes, featured content
+  - **Property Owner (Host)**: Property management and listings
+  - **Service Provider**: Service offerings and bookings
+  - **Client**: Travel bookings and service orders
+  - **Country Manager**: Country-level operations, recruit city managers
+  - **City Manager**: City-level operations, recruit hosts and providers
+  - **Operation Support**: Customer support management
 - **Session Security**: HTTP-only cookies with secure flags and PostgreSQL-backed sessions
 - **Public Browsing Policy**: Users can browse public pages without logging in; authentication is required only for transactional operations (bookings, orders, etc.).
+- **Operation Support Role**: Single-user role for managing customer support messages with exclusive access to support dashboard (enforced at API level)
 
 ## Unique Features
 - **Base44 Encoding**: Custom encoding for human-readable booking codes.
-- **Multi-role Dashboards**: Specialized dashboards for each user role.
+- **Multi-role Dashboards**: Specialized dashboards for each user role:
+  - **Billing Dashboard** (`/billing-dashboard`): Financial overview, transaction history, revenue reports, payment status tracking
+  - **Operation Dashboard** (`/operation-dashboard`): User management with search, system stats, activity monitoring
+  - **Marketing Dashboard** (`/marketing-dashboard`): Promotional codes, campaign management, analytics, featured property management
+  - **City Manager Dashboard** (`/city-manager-dashboard`): Provider applications, host recruitment, city-level property and service management
 - **Granular Task Management**: Predefined maid service tasks with client selection and real-time completion tracking.
 - **Job Assignment Workflow**: Country managers assign service providers to jobs with automated acceptance/rejection.
 - **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, and task completions.
@@ -91,6 +106,19 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/conversations` - Get user's conversation list with unread counts (requires auth)
 - `GET /api/messages/:userId` - Get conversation history with specific user (requires auth)
 - `PUT /api/messages/read` - Mark messages as read (requires auth)
+- `GET /api/users/by-role/:role` - Fetch users by role for role-based messaging (requires auth)
+
+### Role-Based Messaging Permissions
+**New Message Feature**: Users can start new conversations with a "New Message" button that shows role-based recipient options
+- **Admin/Billing/Operation/Marketing** can message: Country Manager, City Manager, Property Owner, Service Provider, Client
+- **Country Manager** can message: Admin roles (admin, billing, operation, marketing), other Country Managers, Property Owners, Service Providers
+- **City Manager** can message: Admin roles, Country Managers, Property Owners, Clients
+- **Property Owner** can message: Admin roles, City Managers, Clients
+- **Service Provider** can message: Admin roles, Country Managers, Clients
+- **Client** can message: Admin roles, Property Owners, Service Providers
+- **Operation Support** can message: All roles
+
+**Implementation**: Permissions defined in `shared/messagingPermissions.ts` with helper functions for validation
 
 ### Database Schema
 - **Messages Table**: Stores all chat messages with sender/receiver, content, read status, timestamps
@@ -113,6 +141,36 @@ Preferred communication style: Simple, everyday language.
 - **Real-time Badge**: Connection status indicator (Connected/Disconnected)
 - **Provider Pages**: "Send Message" button navigates to Messages page with auto-selected conversation
 - **Query Parameters**: Supports `?user=<userId>` to auto-open specific conversations
+
+## Operation Support System
+### Contact Support Feature
+- **Header Button**: HeadsetIcon button accessible to all authenticated users (testid: button-contact-support-header)
+- **Modal Workflow**: Clicking the button navigates to `/dashboard?contactSupport=true` and auto-opens contact support modal
+- **Contact Form**: Simple form with message field (minimum 10 characters required)
+- **Message Delivery**: Messages sent to designated operation_support user via existing messages infrastructure
+- **Endpoint**: `POST /api/contact/support` with authentication required
+- **Notifications**: Real-time WebSocket notifications sent to operation_support user when new support messages arrive
+
+### Support Dashboard
+- **Route**: `/support-dashboard` (protected, accessible only to operation_support role)
+- **Features**:
+  - Conversation list showing all support messages with search functionality
+  - Message thread viewer for selected conversation
+  - Reply functionality using existing messages API
+  - Real-time updates via WebSocket for new messages
+  - Conversation search and filtering
+- **Access Control**: Only users with `operation_support` role can access this dashboard
+
+### Single-User Constraint
+- **Enforcement**: Admin role assignment endpoint prevents multiple users from having operation_support role
+- **Validation**: API validates that only one operation_support user exists before role assignment
+- **Default User**: `support@test.com` / `password123` (seeded in database)
+- **Security**: Single-user constraint enforced at API level in `PUT /api/admin/assign-role` endpoint
+
+### Database Schema
+- **Role Enum**: `operation_support` added to user roles enum
+- **Messages Table**: Reuses existing messages infrastructure for support conversations
+- **Notifications**: Support messages trigger notifications to operation_support user
 
 # External Dependencies
 
