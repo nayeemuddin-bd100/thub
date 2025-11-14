@@ -42,6 +42,7 @@ import {
     ChevronRight,
     Edit,
     Eye,
+    Home,
     LayoutDashboard,
     LogOut,
     Mail,
@@ -924,14 +925,24 @@ export default function AdminDashboard() {
                                     </p>
                                 </div>
                             </div>
-                            <Button
-                                onClick={logout}
-                                variant="outline"
-                                className="w-full"
-                            >
-                                <LogOut className="w-4 h-4 mr-2" />
-                                {t("common.logout")}
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={() => window.location.href = '/'}
+                                    variant="outline"
+                                    className="flex-1"
+                                >
+                                    <Home className="w-4 h-4 mr-2" />
+                                    {t("common.home")}
+                                </Button>
+                                <Button
+                                    onClick={logout}
+                                    variant="outline"
+                                    className="flex-1"
+                                >
+                                    <LogOut className="w-4 h-4 mr-2" />
+                                    {t("common.logout")}
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </SidebarDrawerContent>
@@ -1082,15 +1093,26 @@ export default function AdminDashboard() {
                             </p>
                         </div>
                     </div>
-                    <Button
-                        onClick={logout}
-                        variant="outline"
-                        className="w-full"
-                        data-testid="button-logout"
-                    >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        {t("common.logout")}
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            onClick={() => window.location.href = '/'}
+                            variant="outline"
+                            className="flex-1"
+                            data-testid="button-home"
+                        >
+                            <Home className="w-4 h-4 mr-2" />
+                            {t("common.home")}
+                        </Button>
+                        <Button
+                            onClick={logout}
+                            variant="outline"
+                            className="flex-1"
+                            data-testid="button-logout"
+                        >
+                            <LogOut className="w-4 h-4 mr-2" />
+                            {t("common.logout")}
+                        </Button>
+                    </div>
                 </div>
             </div>
 
