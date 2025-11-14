@@ -170,6 +170,10 @@ export default function Dashboard() {
         string | null
     >(null);
 
+    // State for contact support dialog
+    const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+    const [supportMessage, setSupportMessage] = useState("");
+
     // Service categories query
     const { data: serviceCategories } = useQuery<ServiceCategory[]>({
         queryKey: ["/api/service-categories"],
@@ -346,6 +350,49 @@ export default function Dashboard() {
 
     const handleProviderFormSubmit = (values: ProviderFormValues) => {
         becomeProviderMutation.mutate(values);
+    };
+
+    // Contact support mutation
+    const contactSupportMutation = useMutation({
+        mutationFn: async (message: string) => {
+            // Find first admin user
+            const admins = allUsers?.filter((u: any) => u.role === "admin") || [];
+            if (admins.length === 0) {
+                throw new Error("No admin available to contact");
+            }
+            
+            return await apiRequest("POST", "/api/messages", {
+                receiverId: admins[0].id,
+                content: message,
+            });
+        },
+        onSuccess: () => {
+            setSupportDialogOpen(false);
+            setSupportMessage("");
+            toast({
+                title: t("common.success"),
+                description: "Your message has been sent to support. We'll get back to you soon.",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to send message to support",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const handleSendSupportMessage = () => {
+        if (supportMessage.trim().length < 10) {
+            toast({
+                title: t("common.error"),
+                description: "Please provide a more detailed message (at least 10 characters)",
+                variant: "destructive",
+            });
+            return;
+        }
+        contactSupportMutation.mutate(supportMessage);
     };
 
     // Booking cancellation mutation
@@ -1471,7 +1518,10 @@ export default function Dashboard() {
                             </h2>
                             {user?.role === "property_owner" ||
                             user?.role === "admin" ? (
-                                <Button data-testid="button-add-property">
+                                <Button 
+                                    data-testid="button-add-property"
+                                    onClick={() => window.location.href = '/add-property'}
+                                >
                                     {t("dashboard.add_property")}
                                 </Button>
                             ) : (
@@ -1509,7 +1559,10 @@ export default function Dashboard() {
                                 >
                                     {t("dashboard.start_earning_property")}
                                 </p>
-                                <Button data-testid="button-list-first-property">
+                                <Button 
+                                    data-testid="button-list-first-property"
+                                    onClick={() => window.location.href = '/add-property'}
+                                >
                                     {t("dashboard.list_first_property")}
                                 </Button>
                             </div>
@@ -1532,6 +1585,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support"
+                                    onClick={() => setSupportDialogOpen(true)}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -1550,7 +1604,10 @@ export default function Dashboard() {
                             </h2>
                             {user?.role === "service_provider" ||
                             user?.role === "admin" ? (
-                                <Button data-testid="button-add-service">
+                                <Button 
+                                    data-testid="button-add-service"
+                                    onClick={() => window.location.href = '/add-service'}
+                                >
                                     {t("dashboard.add_service")}
                                 </Button>
                             ) : (
@@ -1579,7 +1636,10 @@ export default function Dashboard() {
                                 >
                                     {t("dashboard.start_earning_service")}
                                 </p>
-                                <Button data-testid="button-list-first-service">
+                                <Button 
+                                    data-testid="button-list-first-service"
+                                    onClick={() => window.location.href = '/add-service'}
+                                >
                                     {t("dashboard.list_first_service")}
                                 </Button>
                             </div>
@@ -1602,6 +1662,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support-services"
+                                    onClick={() => setSupportDialogOpen(true)}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -2151,6 +2212,61 @@ export default function Dashboard() {
                             </div>
                         </form>
                     </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Contact Support Dialog */}
+            <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Contact Support</DialogTitle>
+                        <DialogDescription>
+                            Send a message to our support team. We'll get back to you as soon as possible.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground mb-2 block">
+                                Your Message
+                            </label>
+                            <Textarea
+                                placeholder="Describe your issue or question in detail..."
+                                rows={6}
+                                value={supportMessage}
+                                onChange={(e) => setSupportMessage(e.target.value)}
+                                data-testid="textarea-support-message"
+                            />
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Minimum 10 characters required
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setSupportDialogOpen(false);
+                                    setSupportMessage("");
+                                }}
+                                disabled={contactSupportMutation.isPending}
+                                data-testid="button-cancel-support"
+                            >
+                                {t("common.cancel")}
+                            </Button>
+                            <Button
+                                type="button"
+                                onClick={handleSendSupportMessage}
+                                disabled={contactSupportMutation.isPending || supportMessage.trim().length < 10}
+                                data-testid="button-send-support"
+                            >
+                                {contactSupportMutation.isPending
+                                    ? "Sending..."
+                                    : "Send Message"}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
 

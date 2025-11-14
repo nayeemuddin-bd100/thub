@@ -12,7 +12,7 @@ type Cancellation = {
   userId: string;
   reason: string;
   status: string;
-  requestDate: string;
+  createdAt: string;
   bookingCode?: string;
 };
 
@@ -87,7 +87,7 @@ export default function CancellationManagement() {
                       Booking: {cancellation.bookingCode || cancellation.bookingId}
                     </p>
                     <p className="text-sm text-muted-foreground" data-testid={`text-date-${cancellation.id}`}>
-                      Requested: {new Date(cancellation.requestDate).toLocaleDateString()}
+                      Requested: {new Date(cancellation.createdAt).toLocaleDateString()}
                     </p>
                   </div>
                   <Badge 
