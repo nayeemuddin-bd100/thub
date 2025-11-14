@@ -182,6 +182,9 @@ export default function Dashboard() {
     // State for service modal
     const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
 
+    // State for contact support modal
+    const [contactSupportDialogOpen, setContactSupportDialogOpen] = useState(false);
+
     // State for booking cancellation dialog
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<
@@ -474,6 +477,48 @@ export default function Dashboard() {
             });
         },
     });
+
+    // Contact support form schema
+    const contactSupportFormSchema = z.object({
+        message: z.string().min(10, "Message must be at least 10 characters"),
+    });
+
+    type ContactSupportFormValues = z.infer<typeof contactSupportFormSchema>;
+
+    const contactSupportForm = useForm<ContactSupportFormValues>({
+        resolver: zodResolver(contactSupportFormSchema),
+        defaultValues: {
+            message: "",
+        },
+    });
+
+    // Contact support mutation
+    const contactSupportMutation = useMutation({
+        mutationFn: async (formData: ContactSupportFormValues) => {
+            return await apiRequest("POST", "/api/contact/support", {
+                message: formData.message,
+            });
+        },
+        onSuccess: () => {
+            setContactSupportDialogOpen(false);
+            contactSupportForm.reset();
+            toast({
+                title: "Success!",
+                description: "Your message has been sent to support. We'll get back to you soon.",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to send message",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const handleContactSupportSubmit = (values: ContactSupportFormValues) => {
+        contactSupportMutation.mutate(values);
+    };
 
     // Booking cancellation mutation
     const cancelBookingMutation = useMutation({
@@ -1670,7 +1715,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support"
-                                    onClick={() => setLocation("/contact")}
+                                    onClick={() => setContactSupportDialogOpen(true)}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -1747,7 +1792,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support-services"
-                                    onClick={() => setLocation("/contact")}
+                                    onClick={() => setContactSupportDialogOpen(true)}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -2558,6 +2603,60 @@ export default function Dashboard() {
                                 </Button>
                                 <Button type="submit" disabled={createServiceMutation.isPending}>
                                     {createServiceMutation.isPending ? "Adding..." : "Add Service"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Contact Support Modal */}
+            <Dialog open={contactSupportDialogOpen} onOpenChange={setContactSupportDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Contact Support</DialogTitle>
+                        <DialogDescription>
+                            Send a message to our support team and we'll get back to you as soon as possible.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...contactSupportForm}>
+                        <form
+                            onSubmit={contactSupportForm.handleSubmit(handleContactSupportSubmit)}
+                            className="space-y-4"
+                        >
+                            <FormField
+                                control={contactSupportForm.control}
+                                name="message"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Your Message *</FormLabel>
+                                        <FormControl>
+                                            <Textarea 
+                                                placeholder="Describe your issue or question..." 
+                                                rows={5} 
+                                                {...field} 
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex justify-end space-x-2 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setContactSupportDialogOpen(false);
+                                        contactSupportForm.reset();
+                                    }}
+                                    disabled={contactSupportMutation.isPending}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={contactSupportMutation.isPending}>
+                                    {contactSupportMutation.isPending ? "Sending..." : "Send Message"}
                                 </Button>
                             </div>
                         </form>

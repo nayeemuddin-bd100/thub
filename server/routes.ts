@@ -3043,8 +3043,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // Contact support endpoint
-    app.post("/api/contact-support", requireAuth, async (req: any, res) => {
+    // Contact support endpoint (sends message to operation_support user)
+    app.post("/api/contact/support", requireAuth, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const { message: supportMessage } = req.body;
@@ -3055,23 +3055,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
             }
 
-            // Find all admin users using a more efficient query
+            // Find the operation_support user
             const allUsers = await storage.getAllUsers();
-            const admins = allUsers.filter((u) => u.role === "admin");
+            const operationSupport = allUsers.find((u) => u.role === "operation_support");
 
-            if (admins.length === 0) {
+            if (!operationSupport) {
                 return res.status(400).json({
-                    message: "No admin available to contact at this time. Please try again later.",
+                    message: "Support is currently unavailable. Please try again later.",
                 });
             }
 
             // Get sender details
             const sender = await storage.getUser(userId);
 
-            // Send message to first admin
+            // Send message to operation_support user
             const messageData = {
                 senderId: userId,
-                receiverId: admins[0].id,
+                receiverId: operationSupport.id,
                 content: supportMessage,
                 bookingId: null,
                 messageType: "text" as const,
@@ -3079,46 +3079,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const sentMessage = await storage.sendMessage(messageData);
 
-            // Send notifications to all admins (await each operation)
-            const notificationPromises = admins.map(async (admin) => {
-                try {
-                    await storage.createNotification({
-                        userId: admin.id,
-                        type: "message",
-                        title: "New Support Message",
-                        message: `${sender?.firstName || "User"} ${sender?.lastName || ""} sent a support message: ${supportMessage.substring(0, 100)}${supportMessage.length > 100 ? "..." : ""}`,
-                        isRead: false,
-                    });
+            // Send notification to operation_support user
+            try {
+                await storage.createNotification({
+                    userId: operationSupport.id,
+                    type: "message",
+                    title: "New Support Message",
+                    message: `${sender?.firstName || "User"} ${sender?.lastName || ""} sent a support message: ${supportMessage.substring(0, 100)}${supportMessage.length > 100 ? "..." : ""}`,
+                    isRead: false,
+                });
 
-                    // Broadcast via WebSocket if connected
-                    if (connectedClients.has(admin.id)) {
-                        const ws = connectedClients.get(admin.id);
-                        try {
-                            if (ws?.readyState === WebSocket.OPEN) {
-                                ws.send(
-                                    JSON.stringify({
-                                        type: "new_notification",
-                                        data: {
-                                            type: "message",
-                                            title: "New Support Message",
-                                            message: `${sender?.firstName || "User"} sent a support message`,
-                                        },
-                                    })
-                                );
-                            }
-                        } catch (wsError) {
-                            console.error(`WebSocket error for admin ${admin.id}:`, wsError);
-                            // Continue execution, don't fail the request
+                // Broadcast via WebSocket if connected
+                if (connectedClients.has(operationSupport.id)) {
+                    const ws = connectedClients.get(operationSupport.id);
+                    try {
+                        if (ws?.readyState === WebSocket.OPEN) {
+                            ws.send(
+                                JSON.stringify({
+                                    type: "new_notification",
+                                    data: {
+                                        type: "message",
+                                        title: "New Support Message",
+                                        message: `${sender?.firstName || "User"} sent a support message`,
+                                    },
+                                })
+                            );
                         }
+                    } catch (wsError) {
+                        console.error(`WebSocket error for operation support:`, wsError);
                     }
-                } catch (notifError) {
-                    console.error(`Error notifying admin ${admin.id}:`, notifError);
-                    // Continue execution, don't fail the request
                 }
-            });
-
-            // Wait for all notifications to complete
-            await Promise.allSettled(notificationPromises);
+            } catch (notifError) {
+                console.error(`Error notifying operation support:`, notifError);
+            }
 
             res.status(201).json({
                 success: true,
