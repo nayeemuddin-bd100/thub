@@ -87,14 +87,23 @@ export default function Dashboard() {
             document.documentElement.classList.add("dark");
         }
 
-        // Parse URL parameters for active tab
+        // Parse URL parameters for active tab and contact support
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get("tab");
+        const contactSupport = urlParams.get("contactSupport");
+        
         if (tab) {
             setActiveTab(tab);
         } else if (user) {
             // Set default tab based on role once user is loaded
             setActiveTab(user.role === "admin" ? "overview" : "bookings");
+        }
+        
+        // Auto-open contact support modal if query parameter is present
+        if (contactSupport === "true") {
+            setContactSupportDialogOpen(true);
+            // Clean up URL parameter
+            window.history.replaceState({}, '', window.location.pathname);
         }
     }, [user]);
 

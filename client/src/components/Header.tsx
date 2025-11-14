@@ -6,7 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight } from "lucide-react";
+import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight, HeadsetIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
@@ -150,6 +150,11 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                 <Link href="/messages">
                   <Button variant="ghost" size="icon" data-testid="button-messages" className="relative">
                     <MessageSquare className="w-5 h-5" />
+                  </Button>
+                </Link>
+                <Link href="/dashboard?contactSupport=true">
+                  <Button variant="ghost" size="icon" data-testid="button-contact-support-header" className="relative" title="Contact Support">
+                    <HeadsetIcon className="w-5 h-5" />
                   </Button>
                 </Link>
                 <Popover>
