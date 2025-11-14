@@ -82,7 +82,18 @@ export class WhatsAppService {
   }
 
   getWhatsAppLink(phoneNumber: string, message?: string): string {
-    // Always use business WhatsApp number
+    // Format to E.164 (e.g., +15551234567), then remove '+' for WhatsApp link
+    const formatted = this.formatWhatsAppNumber(phoneNumber);
+    const cleanNumber = formatted.replace(/\+/g, '');
+    
+    if (message) {
+      return `https://api.whatsapp.com/send?phone=${cleanNumber}&text=${encodeURIComponent(message)}`;
+    }
+    return `https://api.whatsapp.com/send?phone=${cleanNumber}`;
+  }
+  
+  getBusinessWhatsAppLink(message?: string): string {
+    // For general business contact (used by WhatsAppBubble component)
     const businessNumber = '18495815558';
     
     if (message) {
