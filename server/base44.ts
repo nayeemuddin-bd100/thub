@@ -1,49 +1,54 @@
 /**
- * Base44 encoding implementation for TravelHub
- * Uses a 44-character alphabet for URL-safe, human-readable codes
+ * Base42 encoding implementation for TravelHub
+ * Uses a 42-character alphabet for URL-safe, human-readable codes
+ * Excludes visually confusing characters: 0, 1, I, O, i
  */
 
-const BASE44_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789BCDEFGHJK';
-const BASE = 44;
+const BASE44_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghjk';
+const BASE = 42;
 
 /**
- * Encodes a number to Base44 string
+ * Encodes a number to Base42 string
  */
-function encodeNumber(num: number): string {
-  if (num === 0) return BASE44_ALPHABET[0];
+function encodeNumber(num: number | bigint): string {
+  let n = typeof num === 'bigint' ? num : BigInt(num);
+  if (n === BigInt(0)) return BASE44_ALPHABET[0];
   
   let result = '';
-  while (num > 0) {
-    result = BASE44_ALPHABET[num % BASE] + result;
-    num = Math.floor(num / BASE);
+  const base = BigInt(BASE);
+  while (n > BigInt(0)) {
+    result = BASE44_ALPHABET[Number(n % base)] + result;
+    n = n / base;
   }
   return result;
 }
 
 /**
- * Decodes a Base44 string to number
+ * Decodes a Base42 string to bigint
  */
-function decodeNumber(str: string): number {
-  let result = 0;
+function decodeToBigInt(str: string): bigint {
+  let result = BigInt(0);
+  const base = BigInt(BASE);
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
     const value = BASE44_ALPHABET.indexOf(char);
     if (value === -1) {
-      throw new Error(`Invalid Base44 character: ${char}`);
+      throw new Error(`Invalid Base42 character: ${char}`);
     }
-    result = result * BASE + value;
+    result = result * base + BigInt(value);
   }
   return result;
 }
 
 /**
- * Generates a unique Base44 booking code
+ * Generates a unique Base42 booking code
  */
 export function generateBookingCode(): string {
   // Use timestamp and random number for uniqueness
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 100000);
-  const combined = timestamp * 100000 + random;
+  // Using BigInt to avoid precision loss
+  const timestamp = BigInt(Date.now());
+  const random = BigInt(Math.floor(Math.random() * 1000000)); // Increased from 100k to 1M for better uniqueness
+  const combined = timestamp * BigInt(1000000) + random;
   
   const encoded = encodeNumber(combined);
   return `TH-${encoded}`;
@@ -80,21 +85,21 @@ export function generateAccessCode(): string {
  * Validates a Base44 string
  */
 export function validateBase44(str: string): boolean {
-  return /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]+$/.test(str);
+  return /^[ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjk23456789]+$/.test(str);
 }
 
 /**
- * Decodes a booking code to extract timestamp
+ * Decodes a booking code to extract timestamp and random number
  */
 export function decodeBookingCode(code: string): { timestamp: number; random: number } | null {
   try {
     if (!code.startsWith('TH-')) return null;
     
     const encoded = code.substring(3);
-    const decoded = decodeNumber(encoded);
+    const decoded = decodeToBigInt(encoded);
     
-    const timestamp = Math.floor(decoded / 100000);
-    const random = decoded % 100000;
+    const timestamp = Number(decoded / BigInt(1000000));
+    const random = Number(decoded % BigInt(1000000));
     
     return { timestamp, random };
   } catch {
