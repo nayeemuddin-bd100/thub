@@ -188,6 +188,12 @@ export interface IStorage {
     markMessagesAsRead(userId: string, senderId: string): Promise<void>;
     getUserConversations(userId: string): Promise<any[]>;
 
+    // Notification operations
+    getUserNotifications(userId: string): Promise<Notification[]>;
+    createNotification(notification: InsertNotification): Promise<Notification>;
+    markNotificationAsRead(id: string): Promise<void>;
+    getUnreadNotificationCount(userId: string): Promise<number>;
+
     // Property-Service associations
     getPropertyServices(propertyId: string): Promise<ServiceProvider[]>;
     addPropertyService(
@@ -1002,6 +1008,45 @@ export class DatabaseStorage implements IStorage {
         );
 
         return conversations;
+    }
+
+    // Notification operations
+    async getUserNotifications(userId: string): Promise<Notification[]> {
+        return await db
+            .select()
+            .from(notifications)
+            .where(eq(notifications.userId, userId))
+            .orderBy(desc(notifications.createdAt));
+    }
+
+    async createNotification(
+        notification: InsertNotification
+    ): Promise<Notification> {
+        const [newNotification] = await db
+            .insert(notifications)
+            .values(notification)
+            .returning();
+        return newNotification;
+    }
+
+    async markNotificationAsRead(id: string): Promise<void> {
+        await db
+            .update(notifications)
+            .set({ isRead: true })
+            .where(eq(notifications.id, id));
+    }
+
+    async getUnreadNotificationCount(userId: string): Promise<number> {
+        const result = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(notifications)
+            .where(
+                and(
+                    eq(notifications.userId, userId),
+                    eq(notifications.isRead, false)
+                )
+            );
+        return result[0]?.count || 0;
     }
 
     // Property-Service associations
