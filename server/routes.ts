@@ -241,9 +241,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 "property_owner",
                 "service_provider",
                 "admin",
+                "country_manager",
+                "operation_support",
             ];
             if (!validRoles.includes(role)) {
                 return res.status(400).json({ message: "Invalid role" });
+            }
+
+            // Check if trying to assign operation_support role
+            if (role === "operation_support") {
+                // Get all users to check if operation_support already exists
+                const allUsers = await storage.getAllUsers();
+                const existingOperationSupport = allUsers.find(
+                    (user) => user.role === "operation_support" && user.id !== userId
+                );
+
+                if (existingOperationSupport) {
+                    return res.status(400).json({
+                        message: "Only one user can have the operation support role. Another user already has this role.",
+                    });
+                }
             }
 
             const updatedUser = await storage.updateUserRole(userId, role);
