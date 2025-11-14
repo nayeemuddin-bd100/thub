@@ -1026,6 +1026,15 @@ export class DatabaseStorage implements IStorage {
             .insert(notifications)
             .values(notification)
             .returning();
+        
+        // Send real-time notification via WebSocket
+        if ((this as any).sendNotificationToUser) {
+            await (this as any).sendNotificationToUser(
+                notification.userId,
+                newNotification
+            );
+        }
+        
         return newNotification;
     }
 
@@ -1745,6 +1754,20 @@ export class DatabaseStorage implements IStorage {
             })
             .returning();
 
+        // Notify all admins about the new cancellation request
+        const allUsers = await this.getAllUsers();
+        const admins = allUsers.filter((u) => u.role === "admin");
+
+        for (const admin of admins) {
+            await this.createNotification({
+                userId: admin.id,
+                title: "New Cancellation Request",
+                message: `A new cancellation request has been submitted for booking ${booking.bookingCode}`,
+                type: "cancellation",
+                relatedId: cancellation.id,
+            });
+        }
+
         return cancellation;
     }
 
@@ -1754,6 +1777,12 @@ export class DatabaseStorage implements IStorage {
         approvedBy: string,
         rejectionReason?: string
     ): Promise<BookingCancellation> {
+        // Get the cancellation first to get booking info and user
+        const [cancellation] = await db
+            .select()
+            .from(bookingCancellations)
+            .where(eq(bookingCancellations.id, id));
+
         const updates: any = {
             status,
             approvedBy,
@@ -1773,6 +1802,29 @@ export class DatabaseStorage implements IStorage {
             .set(updates)
             .where(eq(bookingCancellations.id, id))
             .returning();
+
+        // Notify the user who requested the cancellation
+        if (cancellation && cancellation.requestedBy) {
+            const booking = await this.getBooking(cancellation.bookingId);
+            
+            if (status === "approved") {
+                await this.createNotification({
+                    userId: cancellation.requestedBy,
+                    title: "Cancellation Approved",
+                    message: `Your cancellation request for booking ${booking?.bookingCode} has been approved. Refund will be processed soon.`,
+                    type: "approval",
+                    relatedId: id,
+                });
+            } else if (status === "rejected") {
+                await this.createNotification({
+                    userId: cancellation.requestedBy,
+                    title: "Cancellation Rejected",
+                    message: `Your cancellation request for booking ${booking?.bookingCode} has been rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : ''}`,
+                    type: "rejection",
+                    relatedId: id,
+                });
+            }
+        }
 
         return result;
     }

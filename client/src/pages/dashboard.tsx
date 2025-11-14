@@ -204,13 +204,9 @@ export default function Dashboard() {
     // Mark notification as read mutation
     const markNotificationAsReadMutation = useMutation({
         mutationFn: async (notificationId: string) => {
-            console.log("Marking notification as read:", notificationId);
-            const result = await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
-            console.log("Mark as read result:", result);
-            return result;
+            return await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
         },
         onSuccess: () => {
-            console.log("Successfully marked notification as read");
             queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
             queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
         },

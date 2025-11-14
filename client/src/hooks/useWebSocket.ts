@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface WebSocketMessage {
-  type: 'auth' | 'auth_success' | 'new_message' | 'error';
-  userId?: string;
+  type: 'auth_success' | 'new_message' | 'notification' | 'error';
   message?: any;
+  data?: any;
+  unreadCount?: number;
   error?: string;
 }
 
@@ -11,11 +12,15 @@ interface UseWebSocketReturn {
   isConnected: boolean;
   sendMessage: (message: any) => void;
   lastMessage: any | null;
+  lastNotification: any | null;
+  unreadCount: number | null;
 }
 
 export function useWebSocket(userId: string | null): UseWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<any | null>(null);
+  const [lastNotification, setLastNotification] = useState<any | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttemptsRef = useRef(0);
@@ -44,12 +49,7 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
           console.log('WebSocket connected');
           setIsConnected(true);
           reconnectAttemptsRef.current = 0;
-          
-          // Authenticate
-          ws.send(JSON.stringify({
-            type: 'auth',
-            userId: userId
-          }));
+          // No need to send auth - session cookie handles authentication
         };
 
         ws.onmessage = (event) => {
@@ -60,6 +60,15 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
               console.log('WebSocket authenticated');
             } else if (data.type === 'new_message') {
               setLastMessage(data.message);
+            } else if (data.type === 'notification') {
+              // Create a new object with timestamp to ensure React detects change
+              setLastNotification({ 
+                ...data.data, 
+                _receivedAt: Date.now() 
+              });
+              if (data.unreadCount !== undefined) {
+                setUnreadCount(data.unreadCount);
+              }
             } else if (data.type === 'error') {
               console.error('WebSocket error:', data.error);
             }
@@ -118,5 +127,7 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
     isConnected,
     sendMessage,
     lastMessage,
+    lastNotification,
+    unreadCount,
   };
 }

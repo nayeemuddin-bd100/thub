@@ -26,6 +26,7 @@ import multer from "multer";
 import { promises as fs } from "fs";
 import path from "path";
 import { fileTypeFromBuffer } from "file-type";
+import signature from "cookie-signature";
 
 const PgSession = connectPg(session);
 
@@ -4105,34 +4106,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const httpServer = createServer(app);
 
-    // WebSocket setup for real-time messaging
+    // WebSocket setup for real-time messaging and notifications
     const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
     const connectedClients = new Map<string, WebSocket>();
 
-    wss.on("connection", (ws, req) => {
-        let userId: string | null = null;
-
-        ws.on("message", async (data) => {
-            try {
-                const message = JSON.parse(data.toString());
-
-                if (message.type === "auth" && message.userId) {
-                    userId = message.userId;
-                    if (userId) {
-                        connectedClients.set(userId, ws);
-                    }
-
-                    ws.send(
-                        JSON.stringify({
-                            type: "auth_success",
-                            message: "Connected successfully",
-                        })
-                    );
-                }
-            } catch (error) {
-                console.error("WebSocket message error:", error);
+    // Helper function to send notification to a user via WebSocket
+    const sendNotificationToUser = async (userId: string, notification: any) => {
+        if (connectedClients.has(userId)) {
+            const ws = connectedClients.get(userId);
+            if (ws?.readyState === WebSocket.OPEN) {
+                // Get fresh unread count
+                const unreadCount = await storage.getUnreadNotificationCount(userId);
+                
+                ws.send(
+                    JSON.stringify({
+                        type: "notification",
+                        data: notification,
+                        unreadCount,
+                    })
+                );
             }
-        });
+        }
+    };
+
+    // Export helper for use in notification creation
+    (storage as any).sendNotificationToUser = sendNotificationToUser;
+
+    wss.on("connection", async (ws, req) => {
+        let userId: string | null = null;
+        let authenticated = false;
+
+        // Parse session cookie from WebSocket upgrade request
+        try {
+            const cookies = req.headers.cookie;
+            if (cookies) {
+                // Extract session ID from cookie
+                const sessionMatch = cookies.match(/connect\.sid=([^;]+)/);
+                if (sessionMatch) {
+                    const signedCookie = decodeURIComponent(sessionMatch[1]);
+                    
+                    // Unsign the cookie using the session secret
+                    const sessionSecret = process.env.SESSION_SECRET || "travelhub-secret-key-change-in-production";
+                    const sid = signature.unsign(signedCookie.slice(2), sessionSecret); // Remove 's:' prefix and unsign
+                    
+                    if (sid === false) {
+                        console.error("Invalid session signature");
+                        ws.close(1008, "Authentication failed: invalid signature");
+                        return;
+                    }
+                    
+                    // Get session from store
+                    const sessionStore = new PgSession({ pool, tableName: "sessions" });
+                    
+                    await new Promise<void>((resolve, reject) => {
+                        sessionStore.get(sid as string, (err, session) => {
+                            if (err) {
+                                console.error("Error getting session:", err);
+                                reject(err);
+                                return;
+                            }
+                            if (session && (session as any).userId) {
+                                const sessionUserId = (session as any).userId as string;
+                                if (sessionUserId) {
+                                    userId = sessionUserId;
+                                    connectedClients.set(sessionUserId, ws);
+                                    authenticated = true;
+                                    ws.send(
+                                        JSON.stringify({
+                                            type: "auth_success",
+                                            message: "WebSocket authenticated",
+                                        })
+                                    );
+                                }
+                            }
+                            resolve();
+                        });
+                    });
+                }
+            }
+            
+            // Close connection if authentication failed
+            if (!authenticated) {
+                console.log("WebSocket authentication failed - closing connection");
+                ws.close(1008, "Authentication required");
+                return;
+            }
+        } catch (error) {
+            console.error("WebSocket authentication error:", error);
+            ws.close(1011, "Authentication error");
+            return;
+        }
 
         ws.on("close", () => {
             if (userId) {
