@@ -41,6 +41,7 @@ export const users = pgTable("users", {
             "service_provider",
             "client",
             "country_manager",
+            "operation_support",
         ],
     })
         .notNull()
