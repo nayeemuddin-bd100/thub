@@ -54,6 +54,7 @@ import {
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "wouter";
 import { z } from "zod";
 
 interface AdminStats {
@@ -67,6 +68,7 @@ export default function Dashboard() {
     const { t } = useTranslation();
     const { user, isAuthenticated, isLoading: authLoading } = useAuth();
     const { toast } = useToast();
+    const [, setLocation] = useLocation();
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [activeTab, setActiveTab] = useState(() => {
         // Check URL params first
@@ -174,15 +176,18 @@ export default function Dashboard() {
     // State for provider application dialog
     const [providerDialogOpen, setProviderDialogOpen] = useState(false);
 
+    // State for property modal
+    const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
+
+    // State for service modal
+    const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
+
     // State for booking cancellation dialog
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedBookingForCancel, setSelectedBookingForCancel] = useState<
         string | null
     >(null);
 
-    // State for contact support dialog
-    const [supportDialogOpen, setSupportDialogOpen] = useState(false);
-    const [supportMessage, setSupportMessage] = useState("");
 
     // Service categories query
     const { data: serviceCategories } = useQuery<ServiceCategory[]>({
@@ -360,42 +365,6 @@ export default function Dashboard() {
 
     const handleProviderFormSubmit = (values: ProviderFormValues) => {
         becomeProviderMutation.mutate(values);
-    };
-
-    // Contact support mutation
-    const contactSupportMutation = useMutation({
-        mutationFn: async (message: string) => {
-            return await apiRequest("POST", "/api/contact-support", {
-                message,
-            });
-        },
-        onSuccess: () => {
-            setSupportDialogOpen(false);
-            setSupportMessage("");
-            toast({
-                title: t("common.success"),
-                description: "Your message has been sent to support. We'll get back to you soon.",
-            });
-        },
-        onError: (error: any) => {
-            toast({
-                title: t("common.error"),
-                description: error.message || "Failed to send message to support",
-                variant: "destructive",
-            });
-        },
-    });
-
-    const handleSendSupportMessage = () => {
-        if (supportMessage.trim().length < 10) {
-            toast({
-                title: t("common.error"),
-                description: "Please provide a more detailed message (at least 10 characters)",
-                variant: "destructive",
-            });
-            return;
-        }
-        contactSupportMutation.mutate(supportMessage);
     };
 
     // Booking cancellation mutation
@@ -1593,7 +1562,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support"
-                                    onClick={() => setSupportDialogOpen(true)}
+                                    onClick={() => setLocation("/contact")}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -1670,7 +1639,7 @@ export default function Dashboard() {
                                 <Button
                                     variant="outline"
                                     data-testid="button-contact-support-services"
-                                    onClick={() => setSupportDialogOpen(true)}
+                                    onClick={() => setLocation("/contact")}
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
@@ -2220,61 +2189,6 @@ export default function Dashboard() {
                             </div>
                         </form>
                     </Form>
-                </DialogContent>
-            </Dialog>
-
-            {/* Contact Support Dialog */}
-            <Dialog open={supportDialogOpen} onOpenChange={setSupportDialogOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Contact Support</DialogTitle>
-                        <DialogDescription>
-                            Send a message to our support team. We'll get back to you as soon as possible.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-foreground mb-2 block">
-                                Your Message
-                            </label>
-                            <Textarea
-                                placeholder="Describe your issue or question in detail..."
-                                rows={6}
-                                value={supportMessage}
-                                onChange={(e) => setSupportMessage(e.target.value)}
-                                data-testid="textarea-support-message"
-                            />
-                            <p className="text-xs text-muted-foreground mt-1">
-                                Minimum 10 characters required
-                            </p>
-                        </div>
-
-                        <div className="flex justify-end space-x-2 pt-4">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    setSupportDialogOpen(false);
-                                    setSupportMessage("");
-                                }}
-                                disabled={contactSupportMutation.isPending}
-                                data-testid="button-cancel-support"
-                            >
-                                {t("common.cancel")}
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={handleSendSupportMessage}
-                                disabled={contactSupportMutation.isPending || supportMessage.trim().length < 10}
-                                data-testid="button-send-support"
-                            >
-                                {contactSupportMutation.isPending
-                                    ? "Sending..."
-                                    : "Send Message"}
-                            </Button>
-                        </div>
-                    </div>
                 </DialogContent>
             </Dialog>
 

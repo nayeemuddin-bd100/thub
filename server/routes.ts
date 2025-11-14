@@ -27,6 +27,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { fileTypeFromBuffer } from "file-type";
 import signature from "cookie-signature";
+import { Resend } from "resend";
 
 const PgSession = connectPg(session);
 
@@ -36,6 +37,11 @@ if (!process.env.STRIPE_SECRET_KEY) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-08-27.basil",
 });
+
+// Initialize Resend for email sending (optional - gracefully handles missing key)
+const resend = process.env.RESEND_API_KEY 
+    ? new Resend(process.env.RESEND_API_KEY)
+    : null;
 
 export async function registerRoutes(app: Express): Promise<Server> {
     // Trust proxy - required for Coolify/Docker deployments behind reverse proxy
@@ -3819,6 +3825,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const submission = await storage.createContactSubmission(
                 validatedData
             );
+
+            // Send email notification to admin if Resend is configured
+            if (resend && process.env.ADMIN_EMAIL) {
+                try {
+                    await resend.emails.send({
+                        from: process.env.FROM_EMAIL || "noreply@travelhub.com",
+                        to: process.env.ADMIN_EMAIL,
+                        subject: `New Contact Form: ${validatedData.subject}`,
+                        html: `
+                            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                                <h2 style="color: #333;">New Contact Form Submission</h2>
+                                <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+                                    <p><strong>Name:</strong> ${validatedData.name}</p>
+                                    <p><strong>Email:</strong> ${validatedData.email}</p>
+                                    <p><strong>Subject:</strong> ${validatedData.subject}</p>
+                                    <p><strong>Message:</strong></p>
+                                    <p style="white-space: pre-wrap;">${validatedData.message}</p>
+                                </div>
+                                <p style="color: #666; font-size: 12px;">
+                                    This message was sent from the TravelHub contact form.
+                                </p>
+                            </div>
+                        `,
+                    });
+                    console.log("Contact form email sent successfully");
+                } catch (emailError) {
+                    console.error("Error sending contact email:", emailError);
+                    // Don't fail the request if email fails
+                }
+            }
+
             res.status(201).json(submission);
         } catch (error) {
             if (error instanceof z.ZodError) {
