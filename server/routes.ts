@@ -2921,7 +2921,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     app.patch("/api/notifications/:id/read", requireAuth, async (req: any, res) => {
         try {
-            await storage.markNotificationAsRead(req.params.id);
+            const userId = (req.session as any).userId;
+            const updatedCount = await storage.markNotificationAsRead(req.params.id, userId);
+            
+            if (updatedCount === 0) {
+                return res.status(404).json({ message: "Notification not found" });
+            }
+            
             res.json({ success: true });
         } catch (error) {
             console.error("Error marking notification as read:", error);

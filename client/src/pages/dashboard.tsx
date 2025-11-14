@@ -38,6 +38,7 @@ import { type Booking, type ServiceCategory, type User } from "@shared/schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     Award,
+    Bell,
     Building,
     Calendar,
     Check,
@@ -191,6 +192,23 @@ export default function Dashboard() {
         queryKey: ["/api/trip-plans"],
         enabled: isAuthenticated && user?.role !== "admin",
         retry: false,
+    });
+
+    // Notifications query
+    const { data: notifications, isLoading: notificationsLoading } = useQuery<any[]>({
+        queryKey: ["/api/notifications"],
+        enabled: isAuthenticated,
+        retry: false,
+    });
+
+    // Mark notification as read mutation
+    const markNotificationAsReadMutation = useMutation({
+        mutationFn: async (notificationId: string) => {
+            return await apiRequest("PATCH", `/api/notifications/${notificationId}/read`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+        },
     });
 
     // Cancellation form schema
@@ -490,7 +508,7 @@ export default function Dashboard() {
                     className="space-y-6"
                 >
                     {user?.role === "admin" ? (
-                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 gap-2">
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 gap-2">
                             <TabsTrigger
                                 value="overview"
                                 data-testid="tab-overview"
@@ -540,6 +558,16 @@ export default function Dashboard() {
                                 </span>
                             </TabsTrigger>
                             <TabsTrigger
+                                value="notifications"
+                                data-testid="tab-notifications"
+                                className="text-xs sm:text-sm"
+                            >
+                                <Bell className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">
+                                    Notifications
+                                </span>
+                            </TabsTrigger>
+                            <TabsTrigger
                                 value="profile"
                                 data-testid="tab-profile"
                                 className="text-xs sm:text-sm"
@@ -551,7 +579,7 @@ export default function Dashboard() {
                             </TabsTrigger>
                         </TabsList>
                     ) : (
-                        <TabsList className="grid w-full grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-5">
                             <TabsTrigger
                                 value="bookings"
                                 data-testid="tab-bookings"
@@ -572,6 +600,13 @@ export default function Dashboard() {
                             >
                                 <UserCheck className="w-4 h-4 mr-2" />
                                 {t("dashboard.my_services")}
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="notifications"
+                                data-testid="tab-notifications"
+                            >
+                                <Bell className="w-4 h-4 mr-2" />
+                                Notifications
                             </TabsTrigger>
                             <TabsTrigger
                                 value="profile"
@@ -1561,6 +1596,98 @@ export default function Dashboard() {
                                 >
                                     {t("dashboard.contact_support")}
                                 </Button>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    {/* Notifications */}
+                    <TabsContent value="notifications" className="space-y-6">
+                        <h2 className="text-2xl font-semibold text-foreground">
+                            Notifications
+                        </h2>
+
+                        {notificationsLoading ? (
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="h-24 bg-muted rounded-lg animate-pulse"
+                                    ></div>
+                                ))}
+                            </div>
+                        ) : notifications && notifications.length > 0 ? (
+                            <div className="space-y-4">
+                                {notifications.map((notification: any) => (
+                                    <Card
+                                        key={notification.id}
+                                        className={`p-4 ${
+                                            !notification.isRead
+                                                ? "border-primary bg-primary/5"
+                                                : ""
+                                        }`}
+                                    >
+                                        <div className="flex items-start justify-between">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <h3 className="font-semibold text-foreground">
+                                                        {notification.title}
+                                                    </h3>
+                                                    {!notification.isRead && (
+                                                        <Badge
+                                                            variant="default"
+                                                            className="text-xs"
+                                                        >
+                                                            New
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <p className="text-muted-foreground text-sm mb-2">
+                                                    {notification.message}
+                                                </p>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <Badge variant="outline">
+                                                        {notification.type}
+                                                    </Badge>
+                                                    <span>
+                                                        {new Date(
+                                                            notification.createdAt
+                                                        ).toLocaleDateString()}{" "}
+                                                        {new Date(
+                                                            notification.createdAt
+                                                        ).toLocaleTimeString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            {!notification.isRead && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        markNotificationAsReadMutation.mutate(
+                                                            notification.id
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        markNotificationAsReadMutation.isPending
+                                                    }
+                                                >
+                                                    <Check className="w-4 h-4 mr-1" />
+                                                    Mark as read
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </Card>
+                                ))}
+                            </div>
+                        ) : (
+                            <Card className="p-8 text-center">
+                                <Bell className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                <h3 className="text-lg font-semibold text-foreground mb-2">
+                                    No Notifications
+                                </h3>
+                                <p className="text-muted-foreground">
+                                    You're all caught up! You'll receive notifications here for bookings, messages, and important updates.
+                                </p>
                             </Card>
                         )}
                     </TabsContent>

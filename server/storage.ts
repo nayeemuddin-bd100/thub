@@ -191,7 +191,7 @@ export interface IStorage {
     // Notification operations
     getUserNotifications(userId: string): Promise<Notification[]>;
     createNotification(notification: InsertNotification): Promise<Notification>;
-    markNotificationAsRead(id: string): Promise<void>;
+    markNotificationAsRead(id: string, userId: string): Promise<number>;
     getUnreadNotificationCount(userId: string): Promise<number>;
 
     // Property-Service associations
@@ -1029,11 +1029,18 @@ export class DatabaseStorage implements IStorage {
         return newNotification;
     }
 
-    async markNotificationAsRead(id: string): Promise<void> {
-        await db
+    async markNotificationAsRead(id: string, userId: string): Promise<number> {
+        const result = await db
             .update(notifications)
             .set({ isRead: true })
-            .where(eq(notifications.id, id));
+            .where(
+                and(
+                    eq(notifications.id, id),
+                    eq(notifications.userId, userId)
+                )
+            )
+            .returning();
+        return result.length;
     }
 
     async getUnreadNotificationCount(userId: string): Promise<number> {
