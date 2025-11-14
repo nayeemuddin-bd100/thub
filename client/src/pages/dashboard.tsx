@@ -365,15 +365,8 @@ export default function Dashboard() {
     // Contact support mutation
     const contactSupportMutation = useMutation({
         mutationFn: async (message: string) => {
-            // Find first admin user
-            const admins = allUsers?.filter((u: any) => u.role === "admin") || [];
-            if (admins.length === 0) {
-                throw new Error("No admin available to contact");
-            }
-            
-            return await apiRequest("POST", "/api/messages", {
-                receiverId: admins[0].id,
-                content: message,
+            return await apiRequest("POST", "/api/contact-support", {
+                message,
             });
         },
         onSuccess: () => {

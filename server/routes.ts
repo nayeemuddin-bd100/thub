@@ -3020,6 +3020,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Contact support endpoint
+    app.post("/api/contact-support", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const { message: supportMessage } = req.body;
+
+            if (!supportMessage || supportMessage.trim().length < 10) {
+                return res.status(400).json({
+                    message: "Please provide a detailed message (at least 10 characters)",
+                });
+            }
+
+            // Find all admin users using a more efficient query
+            const allUsers = await storage.getAllUsers();
+            const admins = allUsers.filter((u) => u.role === "admin");
+
+            if (admins.length === 0) {
+                return res.status(400).json({
+                    message: "No admin available to contact at this time. Please try again later.",
+                });
+            }
+
+            // Get sender details
+            const sender = await storage.getUser(userId);
+
+            // Send message to first admin
+            const messageData = {
+                senderId: userId,
+                receiverId: admins[0].id,
+                content: supportMessage,
+            };
+
+            const sentMessage = await storage.sendMessage(messageData);
+
+            // Send notifications to all admins (await each operation)
+            const notificationPromises = admins.map(async (admin) => {
+                try {
+                    await storage.createNotification({
+                        userId: admin.id,
+                        type: "message",
+                        title: "New Support Message",
+                        message: `${sender?.firstName || "User"} ${sender?.lastName || ""} sent a support message: ${supportMessage.substring(0, 100)}${supportMessage.length > 100 ? "..." : ""}`,
+                        isRead: false,
+                    });
+
+                    // Broadcast via WebSocket if connected
+                    if (connectedClients.has(admin.id)) {
+                        const ws = connectedClients.get(admin.id);
+                        try {
+                            if (ws?.readyState === WebSocket.OPEN) {
+                                ws.send(
+                                    JSON.stringify({
+                                        type: "new_notification",
+                                        data: {
+                                            type: "message",
+                                            title: "New Support Message",
+                                            message: `${sender?.firstName || "User"} sent a support message`,
+                                        },
+                                    })
+                                );
+                            }
+                        } catch (wsError) {
+                            console.error(`WebSocket error for admin ${admin.id}:`, wsError);
+                            // Continue execution, don't fail the request
+                        }
+                    }
+                } catch (notifError) {
+                    console.error(`Error notifying admin ${admin.id}:`, notifError);
+                    // Continue execution, don't fail the request
+                }
+            });
+
+            // Wait for all notifications to complete
+            await Promise.allSettled(notificationPromises);
+
+            res.status(201).json({
+                success: true,
+                message: "Your message has been sent to our support team",
+            });
+        } catch (error) {
+            console.error("Error sending support message:", error);
+            res.status(500).json({
+                message: "Failed to send support message. Please try again.",
+            });
+        }
+    });
+
     // Mark messages as read
     app.put("/api/messages/read", requireAuth, async (req: any, res) => {
         try {
