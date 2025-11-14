@@ -157,6 +157,16 @@ export default function Dashboard() {
         retry: false,
     });
 
+    // User cancellations query (for non-admin users)
+    const {
+        data: userCancellations,
+        isLoading: userCancellationsLoading,
+    } = useQuery<Array<{ id: string; bookingId: string; status: string; bookingCode?: string }>>({
+        queryKey: ["/api/cancellations"],
+        enabled: isAuthenticated,
+        retry: false,
+    });
+
     // State for user search and filter
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -1458,7 +1468,12 @@ export default function Dashboard() {
                                                 {(booking.status ===
                                                     "confirmed" ||
                                                     booking.status ===
-                                                        "pending_payment") && (
+                                                        "pending_payment") &&
+                                                    !userCancellations?.some(
+                                                        (c) =>
+                                                            c.bookingId === booking.id &&
+                                                            c.status === "approved"
+                                                    ) && (
                                                     <Button
                                                         variant="destructive"
                                                         size="sm"

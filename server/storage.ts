@@ -38,6 +38,7 @@ import {
     type BlogPost,
     type Booking,
     type BookingCancellation,
+    type BookingCancellationWithBooking,
     type ContactSubmission,
     type Dispute,
     type Favorite,
@@ -359,6 +360,8 @@ export interface IStorage {
         approvedBy: string,
         rejectionReason?: string
     ): Promise<BookingCancellation>;
+    getAllCancellations(): Promise<BookingCancellation[]>;
+    getUserCancellations(userId: string): Promise<BookingCancellationWithBooking[]>;
 
     // NEW FEATURES - Trip Plans
     createTripPlan(plan: InsertTripPlan): Promise<TripPlan>;
@@ -1834,6 +1837,31 @@ export class DatabaseStorage implements IStorage {
             .select()
             .from(bookingCancellations)
             .orderBy(desc(bookingCancellations.createdAt));
+    }
+
+    async getUserCancellations(userId: string): Promise<BookingCancellationWithBooking[]> {
+        const results = await db
+            .select({
+                id: bookingCancellations.id,
+                bookingId: bookingCancellations.bookingId,
+                requestedBy: bookingCancellations.requestedBy,
+                reason: bookingCancellations.reason,
+                cancellationFee: bookingCancellations.cancellationFee,
+                refundAmount: bookingCancellations.refundAmount,
+                status: bookingCancellations.status,
+                approvedBy: bookingCancellations.approvedBy,
+                rejectionReason: bookingCancellations.rejectionReason,
+                refundedAt: bookingCancellations.refundedAt,
+                createdAt: bookingCancellations.createdAt,
+                updatedAt: bookingCancellations.updatedAt,
+                bookingCode: bookings.bookingCode,
+            })
+            .from(bookingCancellations)
+            .innerJoin(bookings, eq(bookingCancellations.bookingId, bookings.id))
+            .where(eq(bookings.clientId, userId))
+            .orderBy(desc(bookingCancellations.createdAt));
+        
+        return results as BookingCancellationWithBooking[];
     }
 
     // NEW FEATURES - Trip Plans

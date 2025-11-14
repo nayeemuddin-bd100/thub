@@ -1333,6 +1333,11 @@ export type InsertBookingCancellation = z.infer<
     typeof insertBookingCancellationSchema
 >;
 
+// Enriched type for user cancellations with booking details
+export type BookingCancellationWithBooking = BookingCancellation & {
+    bookingCode?: string;
+};
+
 export type TripPlan = typeof tripPlans.$inferSelect;
 export const insertTripPlanSchema = createInsertSchema(tripPlans).omit({
     id: true,
