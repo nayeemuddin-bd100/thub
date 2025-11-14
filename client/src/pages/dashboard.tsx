@@ -288,6 +288,54 @@ export default function Dashboard() {
         },
     });
 
+    // Property form schema
+    const propertyFormSchema = z.object({
+        title: z.string().min(3, "Title must be at least 3 characters"),
+        description: z.string().optional(),
+        location: z.string().min(2, "Location is required"),
+        pricePerNight: z.coerce.number().positive("Price must be greater than 0"),
+        maxGuests: z.coerce.number().int().positive("Max guests must be at least 1"),
+        bedrooms: z.coerce.number().int().positive("Bedrooms must be at least 1"),
+        bathrooms: z.coerce.number().int().positive("Bathrooms must be at least 1"),
+    });
+
+    type PropertyFormValues = z.infer<typeof propertyFormSchema>;
+
+    const propertyForm = useForm<PropertyFormValues>({
+        resolver: zodResolver(propertyFormSchema),
+        defaultValues: {
+            title: "",
+            description: "",
+            location: "",
+            pricePerNight: 0,
+            maxGuests: 1,
+            bedrooms: 1,
+            bathrooms: 1,
+        },
+    });
+
+    // Service form schema
+    const serviceFormSchema = z.object({
+        categoryId: z.string().min(1, "Category is required"),
+        businessName: z.string().min(2, "Business name must be at least 2 characters"),
+        description: z.string().min(10, "Description must be at least 10 characters"),
+        hourlyRate: z.coerce.number().positive("Hourly rate must be greater than 0").optional().or(z.literal(0)),
+        location: z.string().optional(),
+    });
+
+    type ServiceFormValues = z.infer<typeof serviceFormSchema>;
+
+    const serviceForm = useForm<ServiceFormValues>({
+        resolver: zodResolver(serviceFormSchema),
+        defaultValues: {
+            categoryId: "",
+            businessName: "",
+            description: "",
+            hourlyRate: undefined,
+            location: "",
+        },
+    });
+
     // Mutation to assign user role
     const assignRoleMutation = useMutation({
         mutationFn: async ({
@@ -366,6 +414,66 @@ export default function Dashboard() {
     const handleProviderFormSubmit = (values: ProviderFormValues) => {
         becomeProviderMutation.mutate(values);
     };
+
+    // Property creation mutation
+    const createPropertyMutation = useMutation({
+        mutationFn: async (formData: PropertyFormValues) => {
+            return await apiRequest("POST", "/api/properties", {
+                title: formData.title,
+                description: formData.description || "",
+                location: formData.location,
+                pricePerNight: formData.pricePerNight,
+                maxGuests: formData.maxGuests,
+                bedrooms: formData.bedrooms,
+                bathrooms: formData.bathrooms,
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+            setPropertyDialogOpen(false);
+            propertyForm.reset();
+            toast({
+                title: "Success!",
+                description: "Your property has been added successfully.",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to add property",
+                variant: "destructive",
+            });
+        },
+    });
+
+    // Service creation mutation
+    const createServiceMutation = useMutation({
+        mutationFn: async (formData: ServiceFormValues) => {
+            return await apiRequest("POST", "/api/service-providers", {
+                categoryId: formData.categoryId,
+                businessName: formData.businessName,
+                description: formData.description,
+                hourlyRate: formData.hourlyRate,
+                location: formData.location || "",
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/service-providers"] });
+            setServiceDialogOpen(false);
+            serviceForm.reset();
+            toast({
+                title: "Success!",
+                description: "Your service has been added successfully.",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to add service",
+                variant: "destructive",
+            });
+        },
+    });
 
     // Booking cancellation mutation
     const cancelBookingMutation = useMutation({
@@ -1497,7 +1605,7 @@ export default function Dashboard() {
                             user?.role === "admin" ? (
                                 <Button 
                                     data-testid="button-add-property"
-                                    onClick={() => window.location.href = '/add-property'}
+                                    onClick={() => setPropertyDialogOpen(true)}
                                 >
                                     {t("dashboard.add_property")}
                                 </Button>
@@ -1538,7 +1646,7 @@ export default function Dashboard() {
                                 </p>
                                 <Button 
                                     data-testid="button-list-first-property"
-                                    onClick={() => window.location.href = '/add-property'}
+                                    onClick={() => setPropertyDialogOpen(true)}
                                 >
                                     {t("dashboard.list_first_property")}
                                 </Button>
@@ -1583,7 +1691,7 @@ export default function Dashboard() {
                             user?.role === "admin" ? (
                                 <Button 
                                     data-testid="button-add-service"
-                                    onClick={() => window.location.href = '/add-service'}
+                                    onClick={() => setServiceDialogOpen(true)}
                                 >
                                     {t("dashboard.add_service")}
                                 </Button>
@@ -1615,7 +1723,7 @@ export default function Dashboard() {
                                 </p>
                                 <Button 
                                     data-testid="button-list-first-service"
-                                    onClick={() => window.location.href = '/add-service'}
+                                    onClick={() => setServiceDialogOpen(true)}
                                 >
                                     {t("dashboard.list_first_service")}
                                 </Button>
@@ -2185,6 +2293,271 @@ export default function Dashboard() {
                                     {cancelBookingMutation.isPending
                                         ? t("dashboard.submitting")
                                         : t("dashboard.submit_cancellation")}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Property Creation Modal */}
+            <Dialog open={propertyDialogOpen} onOpenChange={setPropertyDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Add New Property</DialogTitle>
+                        <DialogDescription>
+                            List your property to start earning. Fill in the basic details below.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...propertyForm}>
+                        <form
+                            onSubmit={propertyForm.handleSubmit((values) =>
+                                createPropertyMutation.mutate(values)
+                            )}
+                            className="space-y-4"
+                        >
+                            <FormField
+                                control={propertyForm.control}
+                                name="title"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Property Title *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Cozy 2BR apartment in downtown" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={propertyForm.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Description</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Describe your property..." rows={3} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={propertyForm.control}
+                                name="location"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Location *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="City, Country" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="pricePerNight"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Price per Night ($) *</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min="1" step="0.01" placeholder="100" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="maxGuests"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Max Guests *</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min="1" placeholder="2" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="bedrooms"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bedrooms *</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min="1" placeholder="1" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="bathrooms"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Bathrooms *</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min="1" placeholder="1" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-2 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setPropertyDialogOpen(false);
+                                        propertyForm.reset();
+                                    }}
+                                    disabled={createPropertyMutation.isPending}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={createPropertyMutation.isPending}>
+                                    {createPropertyMutation.isPending ? "Adding..." : "Add Property"}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Service Creation Modal */}
+            <Dialog open={serviceDialogOpen} onOpenChange={setServiceDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Add New Service</DialogTitle>
+                        <DialogDescription>
+                            List your service to start earning. Fill in the basic details below.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Form {...serviceForm}>
+                        <form
+                            onSubmit={serviceForm.handleSubmit((values) =>
+                                createServiceMutation.mutate(values)
+                            )}
+                            className="space-y-4"
+                        >
+                            <FormField
+                                control={serviceForm.control}
+                                name="categoryId"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Service Category *</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {serviceCategories?.map((category: any) => (
+                                                    <SelectItem key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={serviceForm.control}
+                                name="businessName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Business Name *</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Your business name" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={serviceForm.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Description *</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                placeholder="Describe your service..."
+                                                rows={4}
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={serviceForm.control}
+                                    name="hourlyRate"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Hourly Rate ($)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" min="1" step="0.01" placeholder="50" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={serviceForm.control}
+                                    name="location"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Location</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="City, Country" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-2 pt-4">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setServiceDialogOpen(false);
+                                        serviceForm.reset();
+                                    }}
+                                    disabled={createServiceMutation.isPending}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={createServiceMutation.isPending}>
+                                    {createServiceMutation.isPending ? "Adding..." : "Add Service"}
                                 </Button>
                             </div>
                         </form>

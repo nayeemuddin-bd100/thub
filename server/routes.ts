@@ -3056,6 +3056,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 senderId: userId,
                 receiverId: admins[0].id,
                 content: supportMessage,
+                bookingId: null,
+                messageType: "text" as const,
             };
 
             const sentMessage = await storage.sendMessage(messageData);
