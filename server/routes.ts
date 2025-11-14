@@ -465,6 +465,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     "service_provider"
                 );
 
+                // Send approval notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'approval',
+                    title: 'Application Approved!',
+                    message: `Congratulations! Your service provider application for ${provider.businessName} has been approved.`,
+                    isRead: false
+                });
+
                 res.json({
                     message: "Provider application approved successfully",
                     provider: updatedProvider,
@@ -510,6 +519,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         "rejected",
                         reason
                     );
+
+                // Send rejection notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'rejection',
+                    title: 'Application Update',
+                    message: `Your service provider application was not approved. Reason: ${reason || 'Not specified'}`,
+                    isRead: false
+                });
 
                 res.json({
                     message: "Provider application rejected",
@@ -2006,6 +2024,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 orderData,
                 validatedItems as any
             );
+
+            // Send notification to client
+            await storage.createNotification({
+                userId: userId,
+                type: 'order',
+                title: 'Service Order Created',
+                message: `Your ${provider.businessName} order has been created. Please complete payment to confirm.`,
+                isRead: false
+            });
+
+            // Send notification to service provider
+            await storage.createNotification({
+                userId: provider.userId,
+                type: 'order',
+                title: 'New Service Order',
+                message: `New order for ${new Date(serviceDate).toLocaleDateString()} at ${startTime}. Order code: ${orderData.orderCode}`,
+                isRead: false
+            });
+
             res.status(201).json(order);
         } catch (error) {
             console.error("Error creating service order:", error);
@@ -2249,6 +2286,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         order.id,
                         "confirmed"
                     );
+
+                    // Get service provider details for notifications
+                    const provider = await storage.getServiceProvider(order.serviceProviderId);
+
+                    // Send payment success notification to client
+                    await storage.createNotification({
+                        userId: userId,
+                        type: 'payment',
+                        title: 'Payment Successful',
+                        message: `Your payment of $${order.totalAmount} for ${provider?.businessName || 'service'} has been confirmed. Order code: ${order.orderCode}`,
+                        isRead: false
+                    });
+
+                    // Send payment received notification to service provider
+                    if (provider) {
+                        await storage.createNotification({
+                            userId: provider.userId,
+                            type: 'payment',
+                            title: 'Payment Received',
+                            message: `Payment of $${order.totalAmount} received. Order code: ${order.orderCode}`,
+                            isRead: false
+                        });
+                    }
+
                     res.json({ success: true, message: "Payment confirmed" });
                 } else {
                     res.status(400).json({
@@ -2623,6 +2684,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             const booking = await storage.createBooking(bookingData, services);
+
+            // Send notification to client
+            await storage.createNotification({
+                userId: userId,
+                type: 'booking',
+                title: 'Booking Created',
+                message: `Your booking at ${property.title} has been created. Please complete payment to confirm.`,
+                isRead: false
+            });
+
+            // Send notification to property owner
+            await storage.createNotification({
+                userId: property.ownerId,
+                type: 'booking',
+                title: 'New Booking Received',
+                message: `New booking request for ${property.title} from ${new Date(checkIn).toLocaleDateString()} to ${new Date(checkOut).toLocaleDateString()}`,
+                isRead: false
+            });
+
             res.status(201).json(booking);
         } catch (error) {
             console.error("Error creating booking:", error);
@@ -2762,6 +2842,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         "paid"
                     );
                     await storage.updateBookingStatus(booking.id, "confirmed");
+
+                    // Get property details for notifications
+                    const property = await storage.getProperty(booking.propertyId);
+
+                    // Send payment success notification to client
+                    await storage.createNotification({
+                        userId: userId,
+                        type: 'payment',
+                        title: 'Payment Successful',
+                        message: `Your payment of $${booking.totalAmount} for ${property?.title || 'booking'} has been confirmed. Booking code: ${booking.bookingCode}`,
+                        isRead: false
+                    });
+
+                    // Send payment received notification to property owner
+                    if (property) {
+                        await storage.createNotification({
+                            userId: property.ownerId,
+                            type: 'payment',
+                            title: 'Payment Received',
+                            message: `Payment of $${booking.totalAmount} received for ${property.title}. Booking code: ${booking.bookingCode}`,
+                            isRead: false
+                        });
+                    }
+
                     res.json({ success: true, message: "Payment confirmed" });
                 } else {
                     res.status(400).json({
@@ -2785,6 +2889,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             const review = await storage.createReview(reviewData);
+
+            // Get reviewer details
+            const reviewer = await storage.getUser(userId);
+
+            // Send notification based on review type
+            if (reviewData.propertyId) {
+                const property = await storage.getProperty(reviewData.propertyId);
+                if (property) {
+                    await storage.createNotification({
+                        userId: property.ownerId,
+                        type: 'review',
+                        title: 'New Review Received',
+                        message: `${reviewer?.firstName || 'Someone'} left a ${reviewData.rating}-star review for ${property.title}`,
+                        isRead: false
+                    });
+                }
+            } else if (reviewData.serviceProviderId) {
+                const provider = await storage.getServiceProvider(reviewData.serviceProviderId);
+                if (provider) {
+                    await storage.createNotification({
+                        userId: provider.userId,
+                        type: 'review',
+                        title: 'New Review Received',
+                        message: `${reviewer?.firstName || 'Someone'} left a ${reviewData.rating}-star review for your service`,
+                        isRead: false
+                    });
+                }
+            }
+
             res.status(201).json(review);
         } catch (error) {
             console.error("Error creating review:", error);
@@ -2824,6 +2957,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             const message = await storage.sendMessage(messageData);
+
+            // Get sender details for notification
+            const sender = await storage.getUser(userId);
+
+            // Send notification to receiver
+            await storage.createNotification({
+                userId: messageData.receiverId,
+                type: 'message',
+                title: 'New Message',
+                message: `${sender?.firstName || 'Someone'} ${sender?.lastName || ''} sent you a message`,
+                isRead: false
+            });
 
             // Broadcast message via WebSocket if connected
             if (connectedClients.has(messageData.receiverId)) {
@@ -3140,6 +3285,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 reason
             );
 
+            // Get booking details
+            const booking = await storage.getBooking(req.params.id);
+            const user = await storage.getUser(userId);
+
+            // Notify all admins about cancellation request
+            const allUsers = await storage.getAllUsers();
+            const admins = allUsers.filter(u => u.role === 'admin');
+            
+            for (const admin of admins) {
+                await storage.createNotification({
+                    userId: admin.id,
+                    type: 'cancellation',
+                    title: 'Cancellation Request',
+                    message: `${user?.firstName || 'User'} requested cancellation for booking ${booking?.bookingCode}. Reason: ${reason}`,
+                    isRead: false
+                });
+            }
+
+            // Notify client that request was submitted
+            await storage.createNotification({
+                userId: userId,
+                type: 'cancellation',
+                title: 'Cancellation Requested',
+                message: `Your cancellation request for booking ${booking?.bookingCode} has been submitted and is under review.`,
+                isRead: false
+            });
+
             res.status(201).json(cancellation);
         } catch (error) {
             console.error("Error requesting cancellation:", error);
@@ -3167,6 +3339,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     userId,
                     rejectionReason
                 );
+
+                // Get cancellation details
+                const booking = await storage.getBooking(cancellation.bookingId);
+
+                // Notify the client about the decision
+                if (status === 'approved') {
+                    await storage.createNotification({
+                        userId: cancellation.requestedBy,
+                        type: 'cancellation',
+                        title: 'Cancellation Approved',
+                        message: `Your cancellation request for booking ${booking?.bookingCode} has been approved.`,
+                        isRead: false
+                    });
+                } else if (status === 'rejected') {
+                    await storage.createNotification({
+                        userId: cancellation.requestedBy,
+                        type: 'cancellation',
+                        title: 'Cancellation Rejected',
+                        message: `Your cancellation request for booking ${booking?.bookingCode} was not approved. ${rejectionReason ? `Reason: ${rejectionReason}` : ''}`,
+                        isRead: false
+                    });
+                }
 
                 res.json(cancellation);
             } catch (error) {
