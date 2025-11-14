@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,7 @@ interface ReviewSystemProps {
 }
 
 export default function ReviewSystem({ reviews, propertyId, serviceProviderId, canReview }: ReviewSystemProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const { toast } = useToast();
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -35,7 +37,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
     },
     onSuccess: async () => {
       toast({
-        title: "Review Submitted",
+        title: t("reviews.review_submitted"),
         description: "Thank you for your feedback!",
       });
       setShowReviewForm(false);
@@ -59,7 +61,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
         return;
       }
       toast({
-        title: "Review Failed",
+        title: t("reviews.review_failed"),
         description: "Failed to submit review. Please try again.",
         variant: "destructive",
       });
@@ -69,7 +71,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
   const handleSubmitReview = () => {
     if (!reviewData.title.trim() || !reviewData.comment.trim()) {
       toast({
-        title: "Missing Information",
+        title: t("reviews.missing_information"),
         description: "Please provide both a title and comment for your review.",
         variant: "destructive",
       });
@@ -137,7 +139,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
             </div>
             
             <div>
-              <Label htmlFor="title">Review Title</Label>
+              <Label htmlFor="title">{t("reviews.review_title")}</Label>
               <Input
                 id="title"
                 data-testid="input-review-title"
@@ -148,7 +150,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
             </div>
             
             <div>
-              <Label htmlFor="comment">Your Review</Label>
+              <Label htmlFor="comment">{t("reviews.your_review")}</Label>
               <Textarea
                 id="comment"
                 data-testid="textarea-review-comment"
