@@ -2896,6 +2896,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Notification routes
+    app.get("/api/notifications", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const notifications = await storage.getUserNotifications(userId);
+            res.json(notifications);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+            res.status(500).json({ message: "Failed to fetch notifications" });
+        }
+    });
+
+    app.get("/api/notifications/unread-count", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const count = await storage.getUnreadNotificationCount(userId);
+            res.json({ count });
+        } catch (error) {
+            console.error("Error fetching unread notification count:", error);
+            res.status(500).json({ message: "Failed to fetch unread count" });
+        }
+    });
+
+    app.patch("/api/notifications/:id/read", requireAuth, async (req: any, res) => {
+        try {
+            await storage.markNotificationAsRead(req.params.id);
+            res.json({ success: true });
+        } catch (error) {
+            console.error("Error marking notification as read:", error);
+            res.status(500).json({
+                message: "Failed to mark notification as read",
+            });
+        }
+    });
+
     // Update user role (admin only)
     app.patch("/api/users/:id/role", requireAuth, async (req: any, res) => {
         try {
