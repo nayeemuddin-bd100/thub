@@ -166,7 +166,15 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
     description: provider.description || "",
     location: provider.location || "",
     whatsappNumber: provider.whatsappNumber || "",
+    yearsExperience: provider.yearsExperience || 0,
+    languages: (provider.languages as string[]) || [],
+    certifications: (provider.certifications as string[]) || [],
+    awards: (provider.awards as string[]) || [],
   });
+  
+  const [newLanguage, setNewLanguage] = useState("");
+  const [newCertification, setNewCertification] = useState("");
+  const [newAward, setNewAward] = useState("");
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -257,6 +265,182 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
             disabled={!isEditing}
             placeholder="+1234567890"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="yearsExperience">Years of Experience</Label>
+          <Input
+            id="yearsExperience"
+            type="number"
+            min="0"
+            value={formData.yearsExperience}
+            onChange={(e) => {
+              const value = e.target.value;
+              const parsed = parseInt(value);
+              setFormData({ 
+                ...formData, 
+                yearsExperience: value === '' ? (provider.yearsExperience || 0) : (isNaN(parsed) ? 0 : parsed)
+              });
+            }}
+            disabled={!isEditing}
+            placeholder="0"
+          />
+        </div>
+
+        {/* Languages Section */}
+        <div className="md:col-span-2">
+          <Label>Languages Spoken</Label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {formData.languages.map((lang, index) => (
+              <Badge key={index} variant="secondary" className="pr-1">
+                {lang}
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      languages: formData.languages.filter((_, i) => i !== index)
+                    })}
+                    className="ml-2 hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </Badge>
+            ))}
+          </div>
+          {isEditing && (
+            <div className="flex gap-2">
+              <Input
+                value={newLanguage}
+                onChange={(e) => setNewLanguage(e.target.value)}
+                placeholder="e.g., English, Spanish"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newLanguage.trim()) {
+                    e.preventDefault();
+                    setFormData({ ...formData, languages: [...formData.languages, newLanguage.trim()] });
+                    setNewLanguage("");
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (newLanguage.trim()) {
+                    setFormData({ ...formData, languages: [...formData.languages, newLanguage.trim()] });
+                    setNewLanguage("");
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Certifications Section */}
+        <div className="md:col-span-2">
+          <Label>Certifications</Label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {formData.certifications.map((cert, index) => (
+              <Badge key={index} variant="secondary" className="pr-1">
+                {cert}
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      certifications: formData.certifications.filter((_, i) => i !== index)
+                    })}
+                    className="ml-2 hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </Badge>
+            ))}
+          </div>
+          {isEditing && (
+            <div className="flex gap-2">
+              <Input
+                value={newCertification}
+                onChange={(e) => setNewCertification(e.target.value)}
+                placeholder="e.g., Certified Professional Chef"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newCertification.trim()) {
+                    e.preventDefault();
+                    setFormData({ ...formData, certifications: [...formData.certifications, newCertification.trim()] });
+                    setNewCertification("");
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (newCertification.trim()) {
+                    setFormData({ ...formData, certifications: [...formData.certifications, newCertification.trim()] });
+                    setNewCertification("");
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Awards Section */}
+        <div className="md:col-span-2">
+          <Label>Awards & Recognitions</Label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {formData.awards.map((award, index) => (
+              <Badge key={index} variant="secondary" className="pr-1">
+                {award}
+                {isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      awards: formData.awards.filter((_, i) => i !== index)
+                    })}
+                    className="ml-2 hover:text-destructive"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </Badge>
+            ))}
+          </div>
+          {isEditing && (
+            <div className="flex gap-2">
+              <Input
+                value={newAward}
+                onChange={(e) => setNewAward(e.target.value)}
+                placeholder="e.g., Best Chef 2024"
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && newAward.trim()) {
+                    e.preventDefault();
+                    setFormData({ ...formData, awards: [...formData.awards, newAward.trim()] });
+                    setNewAward("");
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (newAward.trim()) {
+                    setFormData({ ...formData, awards: [...formData.awards, newAward.trim()] });
+                    setNewAward("");
+                  }
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="md:col-span-2 pt-4 border-t">

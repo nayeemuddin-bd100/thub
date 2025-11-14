@@ -251,7 +251,7 @@ export default function ServiceProviderDetailsPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <span className="font-semibold" data-testid="text-rating">{provider.rating ? Number(provider.rating).toFixed(1) : 'N/A'}</span>
               <span className="text-sm text-gray-500 dark:text-gray-400" data-testid="text-review-count">
-                ({t('service_provider.reviews_count', { count: provider.reviewCount })})
+                ({t('service_provider.reviews_count', { count: provider.reviewCount || 0 })})
               </span>
             </div>
           </div>
@@ -297,7 +297,7 @@ export default function ServiceProviderDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {(provider.photoUrls as string[]).map((url: string, index: number) => (
+              {(provider.photoUrls as unknown as string[]).map((url: string, index: number) => (
                 <div
                   key={index}
                   className="aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"

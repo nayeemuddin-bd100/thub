@@ -38,6 +38,8 @@ import {
     Briefcase,
     Building,
     Calendar,
+    ChevronLeft,
+    ChevronRight,
     Edit,
     Eye,
     LayoutDashboard,
@@ -3624,50 +3626,83 @@ export default function AdminDashboard() {
                             </h2>
 
                             <Tabs defaultValue="platform" className="space-y-6">
-                                <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-grid">
-                                    <TabsTrigger
-                                        value="platform"
-                                        data-testid="tab-platform-settings"
+                                <div className="relative flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0 h-10 w-10"
+                                        onClick={() => {
+                                            const container = document.getElementById('settings-tabs-container');
+                                            if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
+                                        }}
                                     >
-                                        {t("admin.platform_settings")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="associations"
-                                        data-testid="tab-associations"
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+                                    <div id="settings-tabs-container" className="overflow-x-auto scrollbar-hide flex-1">
+                                        <TabsList className="inline-flex w-max">
+                                            <TabsTrigger
+                                                value="platform"
+                                                data-testid="tab-platform-settings"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.platform_settings")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="associations"
+                                                data-testid="tab-associations"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.property_service_assoc")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="promocodes"
+                                                data-testid="tab-promocodes"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.promo_codes")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="cancellations"
+                                                data-testid="tab-cancellations"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.cancellations")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="territories"
+                                                data-testid="tab-territories"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.territories")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="emails"
+                                                data-testid="tab-emails"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.email_templates")}
+                                            </TabsTrigger>
+                                            <TabsTrigger
+                                                value="logs"
+                                                data-testid="tab-logs"
+                                                className="whitespace-nowrap"
+                                            >
+                                                {t("admin.activity_logs")}
+                                            </TabsTrigger>
+                                        </TabsList>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0 h-10 w-10"
+                                        onClick={() => {
+                                            const container = document.getElementById('settings-tabs-container');
+                                            if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
+                                        }}
                                     >
-                                        {t("admin.property_service_assoc")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="promocodes"
-                                        data-testid="tab-promocodes"
-                                    >
-                                        {t("admin.promo_codes")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="cancellations"
-                                        data-testid="tab-cancellations"
-                                    >
-                                        {t("admin.cancellations")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="territories"
-                                        data-testid="tab-territories"
-                                    >
-                                        {t("admin.territories")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="emails"
-                                        data-testid="tab-emails"
-                                    >
-                                        {t("admin.email_templates")}
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="logs"
-                                        data-testid="tab-logs"
-                                    >
-                                        {t("admin.activity_logs")}
-                                    </TabsTrigger>
-                                </TabsList>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
 
                                 <TabsContent
                                     value="platform"

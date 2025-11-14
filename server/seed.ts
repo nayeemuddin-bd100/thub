@@ -9,6 +9,45 @@ import {
     serviceCategories,
     serviceProviders,
     users,
+    serviceOrderItems,
+    serviceTaskAssignments,
+    jobAssignments,
+    providerTaskConfigs,
+    providerMaterials,
+    providerAvailability,
+    providerPricing,
+    providerMenus,
+    menuItems,
+    providerEarnings,
+    providerPayouts,
+    servicePackages,
+    propertyServices,
+    tripPlanItems,
+    promoCodeUsage,
+    loyaltyPointsTransactions,
+    bookingCancellations,
+    disputeMessages,
+    disputes,
+    jobApplications,
+    regionalAnalytics,
+    userActivityLogs,
+    favorites,
+    payments,
+    messages,
+    notifications,
+    serviceOrders,
+    tripPlans,
+    loyaltyPoints,
+    jobPostings,
+    propertySeasonalPricing,
+    contactSubmissions,
+    serviceTasks,
+    promotionalCodes,
+    territories,
+    platformSettings,
+    emailTemplates,
+    blogPosts,
+    sessions,
 } from "../shared/schema";
 import { db } from "./db";
 
@@ -16,13 +55,53 @@ async function seed() {
     console.log("🌱 Starting database seeding...");
 
     try {
-        // Delete existing data in reverse order of dependencies
+        // Delete existing data in reverse order of dependencies (child-first → root)
         console.log("Cleaning existing data...");
+        await db.delete(serviceOrderItems);
+        await db.delete(serviceTaskAssignments);
+        await db.delete(jobAssignments);
+        await db.delete(providerTaskConfigs);
+        await db.delete(providerMaterials);
+        await db.delete(providerAvailability);
+        await db.delete(providerPricing);
+        await db.delete(providerMenus);
+        await db.delete(menuItems);
+        await db.delete(providerEarnings);
+        await db.delete(providerPayouts);
+        await db.delete(servicePackages);
+        await db.delete(propertyServices);
+        await db.delete(tripPlanItems);
+        await db.delete(promoCodeUsage);
+        await db.delete(loyaltyPointsTransactions);
+        await db.delete(bookingCancellations);
+        await db.delete(disputeMessages);
+        await db.delete(disputes);
+        await db.delete(jobApplications);
+        await db.delete(regionalAnalytics);
+        await db.delete(userActivityLogs);
+        await db.delete(favorites);
+        await db.delete(payments);
+        await db.delete(messages);
         await db.delete(reviews);
+        await db.delete(notifications);
         await db.delete(serviceBookings);
+        await db.delete(serviceOrders);
+        await db.delete(tripPlans);
+        await db.delete(loyaltyPoints);
+        await db.delete(jobPostings);
+        await db.delete(propertySeasonalPricing);
+        await db.delete(contactSubmissions);
         await db.delete(bookings);
+        await db.delete(serviceTasks);
         await db.delete(serviceProviders);
         await db.delete(properties);
+        await db.delete(serviceCategories);
+        await db.delete(promotionalCodes);
+        await db.delete(territories);
+        await db.delete(platformSettings);
+        await db.delete(emailTemplates);
+        await db.delete(blogPosts);
+        await db.delete(sessions);
         await db.delete(users);
         console.log("✓ Existing data cleaned");
 

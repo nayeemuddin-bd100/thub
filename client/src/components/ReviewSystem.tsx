@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, ThumbsUp, Flag } from "lucide-react";
+import { Star, ThumbsUp, Flag, Upload, X, ImageIcon } from "lucide-react";
 
 interface ReviewSystemProps {
   reviews: any[];
@@ -30,6 +30,8 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
     title: '',
     comment: '',
   });
+  const [reviewImages, setReviewImages] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   const createReviewMutation = useMutation({
     mutationFn: async (review: any) => {
@@ -42,6 +44,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
       });
       setShowReviewForm(false);
       setReviewData({ rating: 5, title: '', comment: '' });
+      setReviewImages([]);
       queryClient.invalidateQueries({ 
         queryKey: propertyId ? 
           ['/api/properties', propertyId, 'reviews'] : 
@@ -68,6 +71,56 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
     },
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    const newImages: string[] = [];
+
+    try {
+      for (let i = 0; i < Math.min(files.length, 5); i++) {
+        const file = files[i];
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `${file.name} is larger than 5MB`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const imageUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (reader.result) {
+              resolve(reader.result as string);
+            } else {
+              reject(new Error('Failed to read file'));
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+        newImages.push(imageUrl);
+      }
+
+      setReviewImages((prev) => [...prev, ...newImages].slice(0, 5));
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to process images. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setReviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmitReview = () => {
     if (!reviewData.title.trim() || !reviewData.comment.trim()) {
       toast({
@@ -84,6 +137,7 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
       rating: reviewData.rating,
       title: reviewData.title,
       comment: reviewData.comment,
+      images: reviewImages,
     });
   };
 
@@ -159,6 +213,77 @@ export default function ReviewSystem({ reviews, propertyId, serviceProviderId, c
                 value={reviewData.comment}
                 onChange={(e) => setReviewData(prev => ({ ...prev, comment: e.target.value }))}
               />
+            </div>
+
+            {/* Image Upload Section */}
+            <div>
+              <Label htmlFor="review-images">Photos (Optional)</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                Add up to 5 photos to your review (max 5MB each)
+              </p>
+              
+              <div className="space-y-3">
+                {/* Image previews */}
+                {reviewImages.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {reviewImages.map((image, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={image}
+                          alt={`Review image ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg border border-border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          data-testid={`button-remove-image-${index}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Upload button */}
+                {reviewImages.length < 5 && (
+                  <div>
+                    <input
+                      type="file"
+                      id="review-images"
+                      data-testid="input-review-images"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <label htmlFor="review-images">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        disabled={uploading}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById('review-images')?.click();
+                        }}
+                        data-testid="button-upload-images"
+                      >
+                        {uploading ? (
+                          <>Processing...</>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4 mr-2" />
+                            Add Photos ({reviewImages.length}/5)
+                          </>
+                        )}
+                      </Button>
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="flex space-x-3">
