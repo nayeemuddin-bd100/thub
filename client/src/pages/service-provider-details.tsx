@@ -286,6 +286,28 @@ export default function ServiceProviderDetailsPage() {
         </CardContent>
       </Card>
 
+      {provider.videoUrl && (
+        <Card className="mb-6" data-testid="card-provider-video">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              {t('service_provider.introduction_video', 'Introduction Video')}
+            </CardTitle>
+            <CardDescription>{t('service_provider.watch_intro', 'Watch our introduction and service showcase')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <video
+              src={provider.videoUrl}
+              controls
+              className="w-full max-w-3xl rounded-lg border border-gray-200 dark:border-gray-700"
+              data-testid="provider-video"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </CardContent>
+        </Card>
+      )}
+
       {provider.photoUrls && Array.isArray(provider.photoUrls) && provider.photoUrls.length > 0 && (
         <Card className="mb-6" data-testid="card-photo-gallery">
           <CardHeader>

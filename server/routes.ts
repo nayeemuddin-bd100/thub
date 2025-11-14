@@ -22,6 +22,10 @@ import { generateBookingCode } from "./base44";
 import { db, pool } from "./db";
 import { storage } from "./storage";
 import { whatsappService } from "./whatsapp";
+import multer from "multer";
+import { promises as fs } from "fs";
+import path from "path";
+import { fileTypeFromBuffer } from "file-type";
 
 const PgSession = connectPg(session);
 
@@ -1050,6 +1054,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .json({ message: "Provider profile not found" });
             }
 
+            // Handle video deletion if videoUrl is being set to null
+            if (req.body.videoUrl === null && provider.videoUrl) {
+                try {
+                    const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+                    const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-videos';
+                    const oldFilename = path.basename(provider.videoUrl);
+                    if (oldFilename.startsWith('provider-video-')) {
+                        const oldFilepath = path.join(publicDir, oldFilename);
+                        await fs.unlink(oldFilepath).catch(() => {});
+                    }
+                } catch (error) {
+                    console.error("Error deleting video file:", error);
+                }
+            }
+
             // Only allow updating specific fields, not userId, categoryId, approvalStatus
             const allowedUpdates: Record<string, any> = {
                 businessName: req.body.businessName,
@@ -1058,6 +1077,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 whatsappNumber: req.body.whatsappNumber,
                 hourlyRate: req.body.hourlyRate,
                 fixedRate: req.body.fixedRate,
+                videoUrl: req.body.videoUrl,
+                yearsExperience: req.body.yearsExperience,
+                languages: req.body.languages,
+                certifications: req.body.certifications,
+                awards: req.body.awards,
             };
 
             // Remove undefined fields
@@ -1077,6 +1101,144 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({
                 message: "Failed to update provider profile",
             });
+        }
+    });
+
+    // Video upload endpoint
+    const allowedVideoExtensions = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v'];
+    const upload = multer({
+        storage: multer.memoryStorage(),
+        limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+        fileFilter: (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            if (!allowedVideoExtensions.includes(ext)) {
+                return cb(new Error('Only video files are allowed (mp4, mov, webm, avi, mkv, m4v)'));
+            }
+            if (!file.mimetype.startsWith('video/')) {
+                return cb(new Error('Invalid file type'));
+            }
+            cb(null, true);
+        },
+    });
+
+    app.post("/api/provider/upload-video", requireAuth, upload.single('video'), async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const provider = await storage.getServiceProviderByUserId(userId);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider profile not found" });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ message: "No video file uploaded" });
+            }
+
+            // Security: Validate actual file content using magic bytes
+            const fileType = await fileTypeFromBuffer(req.file.buffer);
+            const allowedMimeTypes = [
+                'video/mp4',
+                'video/quicktime',
+                'video/webm',
+                'video/x-msvideo',
+                'video/x-matroska',
+                'video/x-m4v'
+            ];
+            
+            if (!fileType || !allowedMimeTypes.includes(fileType.mime)) {
+                return res.status(400).json({ 
+                    message: "Invalid file type. Only video files are allowed." 
+                });
+            }
+
+            // Use public object storage for introduction videos (they're meant to be viewed by potential clients)
+            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-videos';
+            await fs.mkdir(publicDir, { recursive: true });
+            
+            // Delete old video if it exists
+            if (provider.videoUrl) {
+                try {
+                    const oldFilename = path.basename(provider.videoUrl);
+                    if (oldFilename.startsWith('provider-video-')) {
+                        const oldFilepath = path.join(publicDir, oldFilename);
+                        await fs.unlink(oldFilepath).catch(() => {});
+                    }
+                } catch (error) {
+                    console.error("Error deleting old video:", error);
+                }
+            }
+            
+            const filename = `provider-video-${provider.id}-${Date.now()}${path.extname(req.file.originalname)}`;
+            const filepath = path.join(publicDir, filename);
+            
+            await fs.writeFile(filepath, req.file.buffer);
+            
+            // Return a URL that can be accessed via the static serving route
+            const videoUrl = `/videos/${filename}`;
+            
+            res.json({ videoUrl });
+        } catch (error) {
+            console.error("Error uploading video:", error);
+            res.status(500).json({ message: "Failed to upload video" });
+        }
+    });
+
+    // Serve uploaded videos
+    app.get("/videos/:filename", async (req, res) => {
+        try {
+            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-videos';
+            
+            // Security: Use basename to prevent path traversal attacks
+            const safeFilename = path.basename(req.params.filename);
+            
+            // Only allow files with expected prefix
+            if (!safeFilename.startsWith('provider-video-')) {
+                return res.status(404).json({ message: "Video not found" });
+            }
+            
+            // Security: Validate file extension to prevent XSS
+            const ext = path.extname(safeFilename).toLowerCase();
+            const allowedExts = ['.mp4', '.mov', '.webm', '.avi', '.mkv', '.m4v'];
+            if (!allowedExts.includes(ext)) {
+                return res.status(403).json({ message: "Access denied" });
+            }
+            
+            const filepath = path.join(publicDir, safeFilename);
+            
+            // Verify the resolved path is still within the public directory
+            const resolvedPath = path.resolve(filepath);
+            const resolvedPublicDir = path.resolve(publicDir);
+            if (!resolvedPath.startsWith(resolvedPublicDir)) {
+                return res.status(403).json({ message: "Access denied" });
+            }
+            
+            // Check if file exists
+            try {
+                await fs.access(filepath);
+            } catch {
+                return res.status(404).json({ message: "Video not found" });
+            }
+            
+            // Set proper Content-Type header to prevent browsers from executing files
+            const mimeTypes: Record<string, string> = {
+                '.mp4': 'video/mp4',
+                '.mov': 'video/quicktime',
+                '.webm': 'video/webm',
+                '.avi': 'video/x-msvideo',
+                '.mkv': 'video/x-matroska',
+                '.m4v': 'video/x-m4v'
+            };
+            
+            res.setHeader('Content-Type', mimeTypes[ext] || 'video/mp4');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            
+            // Serve the video file
+            res.sendFile(filepath);
+        } catch (error) {
+            console.error("Error serving video:", error);
+            res.status(500).json({ message: "Failed to serve video" });
         }
     });
 

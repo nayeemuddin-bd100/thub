@@ -468,6 +468,123 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
           </div>
         </div>
       </div>
+
+      <VideoUploadSection provider={provider} />
+    </Card>
+  );
+}
+
+function VideoUploadSection({ provider }: { provider: ServiceProvider }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(provider.videoUrl || "");
+
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Video must be less than 50MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type.startsWith('video/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a video file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('video', file);
+
+      const response = await fetch('/api/provider/upload-video', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setVideoUrl(data.videoUrl);
+      
+      await apiRequest("PATCH", `/api/provider/profile`, { videoUrl: data.videoUrl });
+      
+      toast({ 
+        title: "Success", 
+        description: "Video uploaded successfully" 
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeVideo = async () => {
+    try {
+      await apiRequest("PATCH", `/api/provider/profile`, { videoUrl: null });
+      setVideoUrl("");
+      toast({ title: "Video removed" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove video",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card className="p-6 mt-6">
+      <h3 className="text-lg font-semibold mb-4">Introduction Video</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Upload a video to introduce yourself and showcase your services (max 50MB)
+      </p>
+
+      {videoUrl ? (
+        <div className="space-y-4">
+          <video 
+            src={videoUrl} 
+            controls 
+            className="w-full max-w-2xl rounded-lg border"
+          />
+          <Button 
+            variant="destructive" 
+            onClick={removeVideo}
+            disabled={uploading}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Remove Video
+          </Button>
+        </div>
+      ) : (
+        <div>
+          <Input
+            type="file"
+            accept="video/*"
+            onChange={handleVideoUpload}
+            disabled={uploading}
+            className="max-w-md"
+          />
+          {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
+        </div>
+      )}
     </Card>
   );
 }
