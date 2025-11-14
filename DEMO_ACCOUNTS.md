@@ -80,6 +80,16 @@ This document lists all demo/test accounts available after running the database 
 
 ---
 
+### 6. Operation Support Account
+- **Email**: `support@test.com`
+- **Password**: `password123`
+- **Name**: Support Team
+- **Role**: Operation Support
+- **Access**: Manage all support messages, respond to user inquiries, support dashboard
+- **Note**: Only one operation support user can exist in the system at a time
+
+---
+
 ## 🚀 How to Use Demo Accounts
 
 ### 1. Seed the Database
@@ -101,6 +111,7 @@ Each role has different dashboards and capabilities:
 - **Property Owner**: List and manage properties
 - **Service Provider**: Offer and deliver services
 - **Country Manager**: Assign and manage service jobs
+- **Operation Support**: Manage all support messages, respond to user inquiries
 
 ---
 
@@ -129,6 +140,7 @@ Each role has different dashboards and capabilities:
 | provider1@test.com | password123 | Carlos Rodriguez | Service Provider |
 | provider2@test.com | password123 | Lisa Anderson | Service Provider |
 | manager@test.com | password123 | James Wilson | Country Manager |
+| support@test.com | password123 | Support Team | Operation Support |
 
 ---
 

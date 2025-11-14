@@ -117,6 +117,7 @@ async function seed() {
         const provider1Id = randomUUID();
         const provider2Id = randomUUID();
         const managerId = randomUUID();
+        const operationSupportId = randomUUID();
 
         const sampleUsers = [
             {
@@ -182,6 +183,14 @@ async function seed() {
                 firstName: "James",
                 lastName: "Wilson",
                 role: "country_manager" as const,
+            },
+            {
+                id: operationSupportId,
+                email: "support@test.com",
+                password: hashedPassword,
+                firstName: "Support",
+                lastName: "Team",
+                role: "operation_support" as const,
             },
         ];
 
