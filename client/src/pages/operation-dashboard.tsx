@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
-import { Users, Activity, AlertCircle, CheckCircle } from 'lucide-react';
+import { Users, Activity, AlertCircle, CheckCircle, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -62,9 +62,15 @@ export default function OperationDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Operation Dashboard</h1>
-        <p className="text-muted-foreground">Monitor system health and manage users</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Operation Dashboard</h1>
+          <p className="text-muted-foreground">Monitor system health and manage users</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          <Home className="w-4 h-4 mr-2" />
+          Home
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, Eye, Users, DollarSign } from 'lucide-react';
+import { TrendingUp, Eye, Users, DollarSign, Home } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 
@@ -52,9 +52,15 @@ export default function MarketingDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Marketing Dashboard</h1>
-        <p className="text-muted-foreground">Manage campaigns, promotions, and featured content</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Marketing Dashboard</h1>
+          <p className="text-muted-foreground">Manage campaigns, promotions, and featured content</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          <Home className="w-4 h-4 mr-2" />
+          Home
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

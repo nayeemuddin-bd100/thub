@@ -1341,6 +1341,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     // City Manager: Approve provider application
+    // MVP LIMITATION: No jurisdiction validation - any city_manager can approve any provider
+    // TODO: Add jurisdiction checks in production (verify provider belongs to manager's city)
     app.post(
         "/api/city-manager/providers/:providerId/approve",
         requireAuth,
@@ -1364,7 +1366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         .json({ message: "Provider application not found" });
                 }
 
-                // Verify provider is still pending
+                // Verify provider is still pending (prevents duplicate approvals)
                 if (provider.approvalStatus !== "pending") {
                     return res
                         .status(400)
@@ -1408,6 +1410,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
 
     // City Manager: Reject provider application
+    // MVP LIMITATION: No jurisdiction validation - any city_manager can reject any provider
+    // TODO: Add jurisdiction checks in production (verify provider belongs to manager's city)
     app.post(
         "/api/city-manager/providers/:providerId/reject",
         requireAuth,
@@ -1432,7 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         .json({ message: "Provider application not found" });
                 }
 
-                // Verify provider is still pending
+                // Verify provider is still pending (prevents duplicate rejections)
                 if (provider.approvalStatus !== "pending") {
                     return res
                         .status(400)
@@ -1470,6 +1474,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
 
     // Country Manager: Approve provider application
+    // MVP LIMITATION: No jurisdiction validation - any country_manager can approve any provider
+    // TODO: Add jurisdiction checks in production (verify provider belongs to manager's country)
     app.post(
         "/api/country-manager/providers/:providerId/approve",
         requireAuth,
@@ -1493,7 +1499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         .json({ message: "Provider application not found" });
                 }
 
-                // Verify provider is still pending
+                // Verify provider is still pending (prevents duplicate approvals)
                 if (provider.approvalStatus !== "pending") {
                     return res
                         .status(400)
@@ -1537,6 +1543,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
 
     // Country Manager: Reject provider application
+    // MVP LIMITATION: No jurisdiction validation - any country_manager can reject any provider
+    // TODO: Add jurisdiction checks in production (verify provider belongs to manager's country)
     app.post(
         "/api/country-manager/providers/:providerId/reject",
         requireAuth,
@@ -1561,7 +1569,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         .json({ message: "Provider application not found" });
                 }
 
-                // Verify provider is still pending
+                // Verify provider is still pending (prevents duplicate rejections)
                 if (provider.approvalStatus !== "pending") {
                     return res
                         .status(400)

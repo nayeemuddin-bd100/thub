@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, TrendingUp, FileText, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, FileText, Download, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -55,9 +55,15 @@ export default function BillingDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Billing Dashboard</h1>
-        <p className="text-muted-foreground">Manage payments, revenue, and financial reports</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Billing Dashboard</h1>
+          <p className="text-muted-foreground">Manage payments, revenue, and financial reports</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          <Home className="w-4 h-4 mr-2" />
+          Home
+        </Button>
       </div>
 
       {/* Stats Cards */}
