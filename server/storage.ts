@@ -100,7 +100,7 @@ import {
     type UpsertUser,
     type User,
 } from "@shared/schema";
-import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -272,6 +272,13 @@ export interface IStorage {
     getClientServiceOrders(clientId: string): Promise<ServiceOrder[]>;
     getProviderServiceOrders(providerId: string): Promise<ServiceOrder[]>;
     getAllServiceOrders(): Promise<ServiceOrder[]>;
+    getFilteredServiceOrders(filters: {
+        status?: string[];
+        providerName?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        paymentStatus?: string;
+    }): Promise<ServiceOrder[]>;
     updateServiceOrderStatus(id: string, status: string): Promise<ServiceOrder>;
     updateServiceOrderPaymentStatus(
         id: string,
@@ -1388,6 +1395,87 @@ export class DatabaseStorage implements IStorage {
             .select()
             .from(serviceOrders)
             .orderBy(desc(serviceOrders.createdAt));
+    }
+
+    async getFilteredServiceOrders(filters: {
+        status?: string[];
+        providerName?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        paymentStatus?: string;
+    }): Promise<ServiceOrder[]> {
+        let query = db
+            .select({
+                id: serviceOrders.id,
+                orderCode: serviceOrders.orderCode,
+                clientId: serviceOrders.clientId,
+                serviceProviderId: serviceOrders.serviceProviderId,
+                serviceDate: serviceOrders.serviceDate,
+                startTime: serviceOrders.startTime,
+                endTime: serviceOrders.endTime,
+                status: serviceOrders.status,
+                totalAmount: serviceOrders.totalAmount,
+                platformFeeAmount: serviceOrders.platformFeeAmount,
+                providerAmount: serviceOrders.providerAmount,
+                paymentStatus: serviceOrders.paymentStatus,
+                paymentIntentId: serviceOrders.paymentIntentId,
+                specialInstructions: serviceOrders.specialInstructions,
+                createdAt: serviceOrders.createdAt,
+                updatedAt: serviceOrders.updatedAt,
+                // Join provider details
+                providerBusinessName: serviceProviders.businessName,
+                // Join client details
+                clientFirstName: users.firstName,
+                clientLastName: users.lastName,
+                clientEmail: users.email,
+            })
+            .from(serviceOrders)
+            .leftJoin(serviceProviders, eq(serviceOrders.serviceProviderId, serviceProviders.id))
+            .leftJoin(users, eq(serviceOrders.clientId, users.id))
+            .$dynamic();
+
+        const conditions = [];
+
+        if (filters.status && filters.status.length > 0) {
+            conditions.push(inArray(serviceOrders.status, filters.status as any));
+        }
+
+        if (filters.paymentStatus) {
+            conditions.push(eq(serviceOrders.paymentStatus, filters.paymentStatus as any));
+        }
+
+        if (filters.dateFrom) {
+            conditions.push(gte(serviceOrders.serviceDate, filters.dateFrom));
+        }
+
+        if (filters.dateTo) {
+            conditions.push(lte(serviceOrders.serviceDate, filters.dateTo));
+        }
+
+        if (filters.providerName) {
+            conditions.push(
+                like(serviceProviders.businessName, `%${filters.providerName}%`)
+            );
+        }
+
+        if (conditions.length > 0) {
+            query = query.where(and(...conditions));
+        }
+
+        const results = await query.orderBy(desc(serviceOrders.createdAt));
+
+        // Transform results to match ServiceOrder type
+        return results.map(row => ({
+            ...row,
+            provider: row.providerBusinessName ? {
+                businessName: row.providerBusinessName
+            } : undefined,
+            client: row.clientFirstName ? {
+                firstName: row.clientFirstName,
+                lastName: row.clientLastName,
+                email: row.clientEmail,
+            } : undefined,
+        })) as any;
     }
 
     async updateServiceOrderStatus(

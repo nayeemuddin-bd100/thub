@@ -649,8 +649,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .json({ message: "Admin privileges required" });
             }
 
-            const orders = await storage.getAllServiceOrders();
-            res.json(orders);
+            // Parse filter parameters
+            const filters = {
+                status: req.query.status ? (Array.isArray(req.query.status) ? req.query.status : [req.query.status]) as string[] : undefined,
+                providerName: req.query.providerName as string | undefined,
+                dateFrom: req.query.dateFrom as string | undefined,
+                dateTo: req.query.dateTo as string | undefined,
+                paymentStatus: req.query.paymentStatus as string | undefined,
+            };
+
+            // Check if summary is requested
+            const includeSummary = req.query.include === 'summary';
+
+            const orders = await storage.getFilteredServiceOrders(filters);
+
+            if (includeSummary) {
+                // Calculate analytics
+                const summary = {
+                    totalOrders: orders.length,
+                    grossVolume: orders.reduce((sum, o) => sum + parseFloat(o.totalAmount || '0'), 0),
+                    platformCommission: orders.reduce((sum, o) => sum + parseFloat(o.platformFeeAmount || '0'), 0),
+                    providerPayouts: orders.reduce((sum, o) => sum + parseFloat(o.providerAmount || '0'), 0),
+                    refundsCount: orders.filter(o => o.paymentStatus === 'refunded').length,
+                    pendingCount: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
+                    completedCount: orders.filter(o => o.status === 'completed').length,
+                    cancelledCount: orders.filter(o => o.status === 'cancelled').length,
+                };
+                res.json({ orders, summary });
+            } else {
+                res.json(orders);
+            }
         } catch (error) {
             console.error("Error fetching admin service orders:", error);
             res.status(500).json({ message: "Failed to fetch service orders" });
