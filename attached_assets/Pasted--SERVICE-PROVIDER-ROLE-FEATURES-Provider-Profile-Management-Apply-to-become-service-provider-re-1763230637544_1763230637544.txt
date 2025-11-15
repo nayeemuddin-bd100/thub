@@ -1,0 +1,73 @@
+🟣 SERVICE PROVIDER ROLE FEATURES
+Provider Profile Management
+✅ Apply to become service provider (requires approval)
+✅ Choose service category (Chef, Maid, Tours, etc.)
+✅ Set business name
+✅ Write business description
+✅ Set hourly rate or fixed rate
+✅ Upload profile photo
+✅ Upload portfolio images (multiple)
+✅ Upload video introduction
+✅ Add certifications
+✅ Set years of experience
+✅ Add languages spoken
+✅ Add awards/recognitions
+✅ Set service location and radius
+✅ Add WhatsApp number
+✅ View approval status (pending/approved/rejected)
+✅ View rejection reason (if rejected)
+✅ View profile verification status
+Service Configuration
+For Chefs:
+✅ Create menus (Breakfast, Lunch, Dinner, etc.)
+✅ Add menu items with descriptions and prices
+✅ Upload food images
+✅ Set dietary restrictions
+✅ Specify preparation time
+✅ Activate/deactivate menu items
+✅ Edit/delete menus and items
+For Maids:
+✅ View available cleaning tasks
+✅ Select which tasks to offer
+✅ Set pricing per task
+✅ Mark tasks as completed
+✅ Add completion notes
+✅ Track task completion time
+For Tours/Guides:
+✅ Create tour packages
+✅ Add materials/itineraries
+✅ Set package descriptions and pricing
+✅ Upload tour images
+✅ Specify duration and locations
+Order Management
+✅ View all service orders assigned to me
+✅ Track order status
+✅ View order details (date, time, items, total)
+✅ View client information
+✅ View special instructions from clients
+✅ Receive payment automatically (no manual confirmation needed)
+✅ View order items breakdown
+✅ Update order status (in_progress/completed)
+Availability Management
+✅ Set available dates
+✅ Set available time slots
+✅ Block unavailable dates
+✅ Update availability calendar
+Pricing Management
+✅ Set base hourly rate
+✅ Set fixed rate (for specific services)
+✅ Update pricing anytime
+Reviews & Ratings
+✅ View my ratings and reviews
+✅ Track average rating
+✅ View review count
+✅ View detailed client feedback
+Communication
+✅ Receive messages from clients
+✅ Send messages to clients
+✅ WhatsApp integration (receive WhatsApp contacts)
+Notifications
+✅ Job assignment notifications
+✅ Order confirmation notifications
+✅ Payment received notifications
+✅ Message notifications

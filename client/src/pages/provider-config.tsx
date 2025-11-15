@@ -21,7 +21,10 @@ import {
   Edit,
   Save,
   X,
-  Home
+  Home,
+  Upload,
+  Image as ImageIcon,
+  User
 } from "lucide-react";
 import type { 
   ServiceProvider, 
@@ -76,10 +79,10 @@ export default function ProviderConfig() {
     );
   }
 
-  const isChef = provider.category.name.toLowerCase().includes("chef") || 
-                 provider.category.name.toLowerCase().includes("cook");
-  const isMaid = provider.category.name.toLowerCase().includes("maid") || 
-                 provider.category.name.toLowerCase().includes("clean");
+  const isChef = provider.category?.name?.toLowerCase().includes("chef") || 
+                 provider.category?.name?.toLowerCase().includes("cook");
+  const isMaid = provider.category?.name?.toLowerCase().includes("maid") || 
+                 provider.category?.name?.toLowerCase().includes("clean");
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -476,7 +479,309 @@ function OverviewTab({ provider }: { provider: ServiceProvider & { category: { n
         </div>
       </div>
 
+      <ProfilePhotoSection provider={provider} />
+      <PortfolioImagesSection provider={provider} />
       <VideoUploadSection provider={provider} />
+    </Card>
+  );
+}
+
+function ProfilePhotoSection({ provider }: { provider: ServiceProvider }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState(provider.profilePhotoUrl || "");
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch('/api/provider/upload-profile-photo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setPhotoUrl(data.photoUrl);
+      
+      toast({ 
+        title: "Success", 
+        description: "Profile photo uploaded successfully" 
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload profile photo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removePhoto = async () => {
+    try {
+      await apiRequest("PATCH", `/api/provider/profile`, { profilePhotoUrl: null });
+      setPhotoUrl("");
+      toast({ title: "Profile photo removed" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove profile photo",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card className="p-6 mt-6">
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <User className="w-5 h-5" />
+        Profile Photo
+      </h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Upload a professional profile photo (max 10MB)
+      </p>
+
+      {photoUrl ? (
+        <div className="space-y-4">
+          <img 
+            src={photoUrl} 
+            alt="Profile" 
+            className="w-32 h-32 rounded-full object-cover border-4 border-primary"
+          />
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => document.getElementById('profile-photo-input')?.click()}
+              disabled={uploading}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Change Photo
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={removePhoto}
+              disabled={uploading}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Remove
+            </Button>
+          </div>
+          <Input
+            id="profile-photo-input"
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            disabled={uploading}
+            className="hidden"
+          />
+        </div>
+      ) : (
+        <div>
+          <Input
+            type="file"
+            accept="image/*"
+            onChange={handlePhotoUpload}
+            disabled={uploading}
+            className="max-w-md"
+          />
+          {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function PortfolioImagesSection({ provider }: { provider: ServiceProvider }) {
+  const { toast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const [images, setImages] = useState<string[]>(
+    Array.isArray(provider.photoUrls) ? provider.photoUrls : []
+  );
+
+  const handleImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (files.length > 10) {
+      toast({
+        title: "Too many files",
+        description: "You can upload up to 10 images at once",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is larger than 10MB`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not an image file`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await fetch('/api/provider/upload-portfolio', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      setImages(data.allImageUrls);
+      
+      if (data.rejectedFiles && data.rejectedFiles.length > 0) {
+        toast({ 
+          title: "Partial Upload", 
+          description: `${data.imageUrls.length} image(s) uploaded. ${data.rejectedFiles.length} file(s) rejected (invalid format).`,
+          variant: "default"
+        });
+      } else {
+        toast({ 
+          title: "Success", 
+          description: `${data.imageUrls.length} image(s) uploaded successfully` 
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+      
+      // Reset file input
+      e.target.value = '';
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to upload images. Please try again.";
+      toast({
+        title: "Upload failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = async (imageUrl: string) => {
+    try {
+      const response = await fetch('/api/provider/portfolio-image', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      if (!response.ok) throw new Error('Delete failed');
+
+      const data = await response.json();
+      setImages(data.photoUrls);
+      toast({ title: "Image removed successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/profile"] });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove image",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <Card className="p-6 mt-6">
+      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        <ImageIcon className="w-5 h-5" />
+        Portfolio Images
+      </h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Upload images showcasing your work (max 10MB each, up to 10 images at once)
+      </p>
+
+      <div className="space-y-4">
+        <div>
+          <Input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImagesUpload}
+            disabled={uploading}
+            className="max-w-md"
+          />
+          {uploading && <p className="text-sm text-muted-foreground mt-2">Uploading...</p>}
+        </div>
+
+        {images.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-6">
+            {images.map((imageUrl, index) => (
+              <div key={index} className="relative group">
+                <img 
+                  src={imageUrl} 
+                  alt={`Portfolio ${index + 1}`} 
+                  className="w-full h-48 object-cover rounded-lg border"
+                />
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removeImage(imageUrl)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {images.length === 0 && (
+          <div className="text-center py-8 border-2 border-dashed rounded-lg">
+            <ImageIcon className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">No portfolio images yet</p>
+            <p className="text-sm text-muted-foreground">Upload images to showcase your work</p>
+          </div>
+        )}
+      </div>
     </Card>
   );
 }

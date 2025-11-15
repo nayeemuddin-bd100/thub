@@ -2240,6 +2240,257 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Image upload endpoint
+    const allowedImageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+    const imageUpload = multer({
+        storage: multer.memoryStorage(),
+        limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit per image
+        fileFilter: (req, file, cb) => {
+            const ext = path.extname(file.originalname).toLowerCase();
+            if (!allowedImageExtensions.includes(ext)) {
+                return cb(new Error('Only image files are allowed (jpg, jpeg, png, webp, gif)'));
+            }
+            if (!file.mimetype.startsWith('image/')) {
+                return cb(new Error('Invalid file type'));
+            }
+            cb(null, true);
+        },
+    });
+
+    // Upload portfolio images (multiple)
+    app.post("/api/provider/upload-portfolio", requireAuth, imageUpload.array('images', 10), async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const provider = await storage.getServiceProviderByUserId(userId);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider profile not found" });
+            }
+
+            if (!req.files || req.files.length === 0) {
+                return res.status(400).json({ message: "No image files uploaded" });
+            }
+
+            // Security: Validate actual file content using magic bytes
+            const allowedMimeTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/webp',
+                'image/gif'
+            ];
+
+            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            await fs.mkdir(publicDir, { recursive: true });
+
+            const uploadedUrls: string[] = [];
+            const rejectedFiles: string[] = [];
+
+            for (const file of req.files) {
+                // Validate file type
+                const fileType = await fileTypeFromBuffer(file.buffer);
+                if (!fileType || !allowedMimeTypes.includes(fileType.mime)) {
+                    rejectedFiles.push(file.originalname);
+                    continue; // Skip invalid files
+                }
+
+                const filename = `provider-portfolio-${provider.id}-${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
+                const filepath = path.join(publicDir, filename);
+                
+                await fs.writeFile(filepath, file.buffer);
+                uploadedUrls.push(`/images/${filename}`);
+            }
+
+            // If no files were uploaded successfully, return error
+            if (uploadedUrls.length === 0) {
+                return res.status(400).json({ 
+                    message: "No valid image files were uploaded. All files failed validation.",
+                    rejectedFiles
+                });
+            }
+
+            // Update provider's photoUrls array
+            const currentPhotoUrls = Array.isArray(provider.photoUrls) ? provider.photoUrls : [];
+            const updatedPhotoUrls = [...currentPhotoUrls, ...uploadedUrls];
+
+            await storage.updateServiceProvider(provider.id, {
+                photoUrls: updatedPhotoUrls
+            });
+
+            res.json({ 
+                imageUrls: uploadedUrls, 
+                allImageUrls: updatedPhotoUrls,
+                rejectedFiles: rejectedFiles.length > 0 ? rejectedFiles : undefined
+            });
+        } catch (error) {
+            console.error("Error uploading portfolio images:", error);
+            res.status(500).json({ message: "Failed to upload portfolio images" });
+        }
+    });
+
+    // Upload profile photo (single)
+    app.post("/api/provider/upload-profile-photo", requireAuth, imageUpload.single('image'), async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const provider = await storage.getServiceProviderByUserId(userId);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider profile not found" });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({ message: "No image file uploaded" });
+            }
+
+            // Security: Validate actual file content using magic bytes
+            const fileType = await fileTypeFromBuffer(req.file.buffer);
+            const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            
+            if (!fileType || !allowedMimeTypes.includes(fileType.mime)) {
+                return res.status(400).json({ 
+                    message: "Invalid file type. Only image files are allowed." 
+                });
+            }
+
+            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            await fs.mkdir(publicDir, { recursive: true });
+            
+            // Delete old profile photo if it exists
+            if (provider.profilePhotoUrl) {
+                try {
+                    const oldFilename = path.basename(provider.profilePhotoUrl);
+                    if (oldFilename.startsWith('provider-profile-')) {
+                        const oldFilepath = path.join(publicDir, oldFilename);
+                        await fs.unlink(oldFilepath).catch(() => {});
+                    }
+                } catch (error) {
+                    console.error("Error deleting old profile photo:", error);
+                }
+            }
+            
+            const filename = `provider-profile-${provider.id}-${Date.now()}${path.extname(req.file.originalname)}`;
+            const filepath = path.join(publicDir, filename);
+            
+            await fs.writeFile(filepath, req.file.buffer);
+            
+            const photoUrl = `/images/${filename}`;
+            
+            // Update provider's profilePhotoUrl
+            await storage.updateServiceProvider(provider.id, {
+                profilePhotoUrl: photoUrl
+            });
+            
+            res.json({ photoUrl });
+        } catch (error) {
+            console.error("Error uploading profile photo:", error);
+            res.status(500).json({ message: "Failed to upload profile photo" });
+        }
+    });
+
+    // Delete portfolio image
+    app.delete("/api/provider/portfolio-image", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const provider = await storage.getServiceProviderByUserId(userId);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider profile not found" });
+            }
+
+            const { imageUrl } = req.body;
+            if (!imageUrl) {
+                return res.status(400).json({ message: "Image URL is required" });
+            }
+
+            const currentPhotoUrls = Array.isArray(provider.photoUrls) ? provider.photoUrls : [];
+            
+            // Remove the image URL from the array
+            const updatedPhotoUrls = currentPhotoUrls.filter((url: string) => url !== imageUrl);
+
+            // Delete the physical file
+            try {
+                const filename = path.basename(imageUrl);
+                if (filename.startsWith('provider-portfolio-')) {
+                    const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+                    const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+                    const filepath = path.join(publicDir, filename);
+                    await fs.unlink(filepath).catch(() => {});
+                }
+            } catch (error) {
+                console.error("Error deleting image file:", error);
+            }
+
+            // Update database
+            await storage.updateServiceProvider(provider.id, {
+                photoUrls: updatedPhotoUrls
+            });
+
+            res.json({ message: "Image deleted successfully", photoUrls: updatedPhotoUrls });
+        } catch (error) {
+            console.error("Error deleting portfolio image:", error);
+            res.status(500).json({ message: "Failed to delete portfolio image" });
+        }
+    });
+
+    // Serve uploaded images
+    app.get("/images/:filename", async (req, res) => {
+        try {
+            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
+            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            
+            // Security: Use basename to prevent path traversal attacks
+            const safeFilename = path.basename(req.params.filename);
+            
+            // Only allow files with expected prefix
+            if (!safeFilename.startsWith('provider-portfolio-') && !safeFilename.startsWith('provider-profile-')) {
+                return res.status(404).json({ message: "Image not found" });
+            }
+            
+            // Security: Validate file extension to prevent XSS
+            const ext = path.extname(safeFilename).toLowerCase();
+            const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+            if (!allowedExts.includes(ext)) {
+                return res.status(403).json({ message: "Access denied" });
+            }
+            
+            const filepath = path.join(publicDir, safeFilename);
+            
+            // Verify the resolved path is still within the public directory
+            const resolvedPath = path.resolve(filepath);
+            const resolvedPublicDir = path.resolve(publicDir);
+            if (!resolvedPath.startsWith(resolvedPublicDir)) {
+                return res.status(403).json({ message: "Access denied" });
+            }
+            
+            // Check if file exists
+            try {
+                await fs.access(filepath);
+            } catch {
+                return res.status(404).json({ message: "Image not found" });
+            }
+            
+            // Set proper Content-Type header to prevent browsers from executing files
+            const mimeTypes: Record<string, string> = {
+                '.jpg': 'image/jpeg',
+                '.jpeg': 'image/jpeg',
+                '.png': 'image/png',
+                '.webp': 'image/webp',
+                '.gif': 'image/gif'
+            };
+            
+            res.setHeader('Content-Type', mimeTypes[ext] || 'image/jpeg');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+            
+            // Serve the image file
+            res.sendFile(filepath);
+        } catch (error) {
+            console.error("Error serving image:", error);
+            res.status(500).json({ message: "Failed to serve image" });
+        }
+    });
+
     // Provider Menus
     app.get(
         "/api/provider/menus/:providerId",
