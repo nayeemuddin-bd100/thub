@@ -13,7 +13,7 @@ import {
 import { and, desc, eq } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { format } from "date-fns";
-import type { Express } from "express";
+import express, { type Express } from "express";
 import session from "express-session";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
