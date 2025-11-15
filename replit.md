@@ -54,9 +54,17 @@ Preferred communication style: Simple, everyday language.
   - **Operation Dashboard** (`/operation-dashboard`): User management with search, system stats, activity monitoring
   - **Marketing Dashboard** (`/marketing-dashboard`): Promotional codes, campaign management, analytics, featured property management
   - **City Manager Dashboard** (`/city-manager-dashboard`): Provider applications, host recruitment, city-level property and service management
+- **Two-Tier Approval System**: Complete provider onboarding and service approval workflow:
+  - **Provider Application**: Users apply to become service providers with business details, location, rates, and certifications
+  - **Provider Approval**: City managers, country managers, or admins review and approve provider applications (updates user role to service_provider)
+  - **Service Creation**: Approved providers create services with automatic pending status
+  - **Service Approval**: Each service requires approval by city manager, country manager, or admin before going live
+  - **Real-time Notifications**: Approval notifications sent to providers with details about their applications and services
+  - **Status Tracking**: Visual badges (Pending, Approved, Rejected) show approval status in "My Services" dashboard
+  - **User Feedback**: Clear toast messages and helper text guide users through approval process and set expectations
 - **Granular Task Management**: Predefined maid service tasks with client selection and real-time completion tracking.
 - **Job Assignment Workflow**: Country managers assign service providers to jobs with automated acceptance/rejection.
-- **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, and task completions.
+- **Real-time Notifications**: System-wide notifications for job assignments, acceptances, rejections, task completions, and approval workflows.
 - **Live Chat System**: Real-time messaging between users with WebSocket-powered instant delivery, conversation management, unread message tracking, and automatic message read receipts.
 - **WhatsApp Integration**: Direct WhatsApp contact for service providers with click-to-chat buttons and system notification capabilities via Twilio.
 - **Stripe Payment Integration**: Complete payment flow with secure intent creation, UI, and status updates.
