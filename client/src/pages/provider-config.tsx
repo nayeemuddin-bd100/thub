@@ -1252,22 +1252,280 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
 
 function AvailabilityManagement({ provider }: { provider: ServiceProvider }) {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [showAddSlot, setShowAddSlot] = useState(false);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
+  const [maxBookings, setMaxBookings] = useState(1);
+  const [notes, setNotes] = useState("");
+  const [editingSlot, setEditingSlot] = useState<any>(null);
+
+  const { data: availabilitySlots = [], isLoading } = useQuery({
+    queryKey: ["/api/provider/availability", provider.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/provider/availability/${provider.id}`);
+      if (!response.ok) throw new Error("Failed to fetch availability");
+      return response.json();
+    },
+  });
+
+  const createSlotMutation = useMutation({
+    mutationFn: async (slotData: any) => {
+      const response = await fetch("/api/provider/availability", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(slotData),
+      });
+      if (!response.ok) throw new Error("Failed to create availability slot");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Availability slot added" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/availability", provider.id] });
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add availability slot", variant: "destructive" });
+    },
+  });
+
+  const updateSlotMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/provider/availability/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error("Failed to update availability slot");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Availability slot updated" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/availability", provider.id] });
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update availability slot", variant: "destructive" });
+    },
+  });
+
+  const deleteSlotMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/provider/availability/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete availability slot");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Availability slot deleted" });
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/availability", provider.id] });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete availability slot", variant: "destructive" });
+    },
+  });
+
+  const resetForm = () => {
+    setShowAddSlot(false);
+    setEditingSlot(null);
+    setStartTime("09:00");
+    setEndTime("17:00");
+    setMaxBookings(1);
+    setNotes("");
+  };
+
+  const handleAddSlot = () => {
+    if (!selectedDate) {
+      toast({ title: "Error", description: "Please select a date", variant: "destructive" });
+      return;
+    }
+
+    if (startTime >= endTime) {
+      toast({ title: "Error", description: "End time must be after start time", variant: "destructive" });
+      return;
+    }
+
+    // Format date in local timezone to avoid timezone shifts
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    const localDateString = `${year}-${month}-${day}`;
+
+    const slotData = {
+      date: localDateString,
+      startTime,
+      endTime,
+      maxBookings,
+      notes: notes || undefined,
+      isAvailable: true,
+    };
+
+    if (editingSlot) {
+      updateSlotMutation.mutate({ id: editingSlot.id, data: slotData });
+    } else {
+      createSlotMutation.mutate(slotData);
+    }
+  };
+
+  const handleEditSlot = (slot: any) => {
+    setEditingSlot(slot);
+    // Parse date in local timezone to avoid UTC shift
+    const [year, month, day] = slot.date.split('-').map(Number);
+    setSelectedDate(new Date(year, month - 1, day));
+    setStartTime(slot.startTime);
+    setEndTime(slot.endTime);
+    setMaxBookings(slot.maxBookings || 1);
+    setNotes(slot.notes || "");
+    setShowAddSlot(true);
+  };
+
+  const selectedDateSlots = availabilitySlots.filter((slot: any) => {
+    if (!selectedDate) return false;
+    // Parse slot date in local timezone to avoid UTC shift
+    const [year, month, day] = slot.date.split('-').map(Number);
+    const slotDate = new Date(year, month - 1, day);
+    return slotDate.toDateString() === selectedDate.toDateString();
+  });
+
+  const datesWithAvailability = availabilitySlots.map((slot: any) => new Date(slot.date));
+
   return (
     <Card className="p-6">
-      <h2 className="text-2xl font-semibold mb-4">{t('provider_dashboard.calendar')}</h2>
-      <p className="text-muted-foreground mb-6">
-        {t('provider_dashboard.availability_settings')}
-      </p>
-
-      <div className="text-center py-12">
-        <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-        <p className="text-muted-foreground mb-4">
-          {t('common.loading')}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t('provider_dashboard.availability_settings')}
-        </p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-semibold">{t('provider_dashboard.calendar')}</h2>
+          <p className="text-muted-foreground">
+            {t('provider_dashboard.availability_settings')}
+          </p>
+        </div>
+        <Button onClick={() => setShowAddSlot(!showAddSlot)}>
+          {showAddSlot ? <X className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+          {showAddSlot ? "Cancel" : "Add Availability"}
+        </Button>
       </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Select Date</h3>
+          <div className="border rounded-lg p-4">
+            <input
+              type="date"
+              className="w-full p-2 border rounded"
+              value={selectedDate ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  // Parse date in local timezone
+                  const [year, month, day] = e.target.value.split('-').map(Number);
+                  setSelectedDate(new Date(year, month - 1, day));
+                }
+              }}
+            />
+          </div>
+
+          {selectedDate && (
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">
+                Availability for {selectedDate.toLocaleDateString()}
+              </h3>
+              {selectedDateSlots.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No availability slots set for this date</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedDateSlots.map((slot: any) => (
+                    <div key={slot.id} className="border rounded-lg p-3 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{slot.startTime} - {slot.endTime}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Max bookings: {slot.maxBookings || 1}
+                          {slot.notes && ` • ${slot.notes}`}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" onClick={() => handleEditSlot(slot)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          onClick={() => deleteSlotMutation.mutate(slot.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {showAddSlot && (
+          <div>
+            <h3 className="text-lg font-semibold mb-4">
+              {editingSlot ? "Edit" : "Add"} Availability Slot
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <Label>Start Time</Label>
+                <Input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>End Time</Label>
+                <Input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Max Bookings</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={maxBookings}
+                  onChange={(e) => setMaxBookings(parseInt(e.target.value))}
+                />
+              </div>
+              <div>
+                <Label>Notes (Optional)</Label>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any special notes about this time slot"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAddSlot} className="flex-1">
+                  <Save className="w-4 h-4 mr-2" />
+                  {editingSlot ? "Update" : "Add"} Slot
+                </Button>
+                {editingSlot && (
+                  <Button variant="outline" onClick={resetForm}>
+                    Cancel Edit
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {availabilitySlots.length === 0 && !isLoading && (
+        <div className="text-center py-12 mt-6 border-2 border-dashed rounded-lg">
+          <Calendar className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground mb-2">No availability slots set</p>
+          <p className="text-sm text-muted-foreground">
+            Click "Add Availability" to start setting your available times
+          </p>
+        </div>
+      )}
     </Card>
   );
 }
