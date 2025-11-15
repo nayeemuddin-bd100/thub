@@ -28,7 +28,7 @@ export const sessions = pgTable(
 
 // User storage table
 export const users = pgTable("users", {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: varchar("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
     email: varchar("email").unique().notNull(),
     password: varchar("password").notNull(),
     firstName: varchar("first_name"),
@@ -56,7 +56,7 @@ export const users = pgTable("users", {
 
 // Role change requests table
 export const roleChangeRequests = pgTable("role_change_requests", {
-    id: varchar("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    id: uuid("id").defaultRandom().primaryKey(),
     userId: varchar("user_id")
         .references(() => users.id)
         .notNull(),
@@ -78,8 +78,7 @@ export const roleChangeRequests = pgTable("role_change_requests", {
 // Properties table
 export const properties = pgTable("properties", {
     id: uuid("id").defaultRandom().primaryKey(),
-    ownerId: uuid("owner_id")
-        .references(() => users.id)
+    ownerId: uuid("owner_id").references(() => users.id)
         .notNull(),
     title: varchar("title").notNull(),
     description: text("description"),
@@ -115,11 +114,9 @@ export const serviceCategories = pgTable("service_categories", {
 // Service providers table
 export const serviceProviders = pgTable("service_providers", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: uuid("user_id").references(() => users.id)
         .notNull(),
-    categoryId: uuid("category_id")
-        .references(() => serviceCategories.id)
+    categoryId: uuid("category_id").references(() => serviceCategories.id)
         .notNull(),
     businessName: varchar("business_name").notNull(),
     description: text("description"),
@@ -154,11 +151,9 @@ export const serviceProviders = pgTable("service_providers", {
 // Bookings table
 export const bookings = pgTable("bookings", {
     id: uuid("id").defaultRandom().primaryKey(),
-    clientId: uuid("client_id")
-        .references(() => users.id)
+    clientId: uuid("client_id").references(() => users.id)
         .notNull(),
-    propertyId: uuid("property_id")
-        .references(() => properties.id)
+    propertyId: uuid("property_id").references(() => properties.id)
         .notNull(),
     bookingCode: varchar("booking_code").unique().notNull(),
     checkIn: timestamp("check_in").notNull(),
@@ -196,8 +191,7 @@ export const bookings = pgTable("bookings", {
 // Service bookings table
 export const serviceBookings = pgTable("service_bookings", {
     id: uuid("id").defaultRandom().primaryKey(),
-    bookingId: uuid("booking_id")
-        .references(() => bookings.id)
+    bookingId: uuid("booking_id").references(() => bookings.id)
         .notNull(),
     serviceProviderId: uuid("service_provider_id").references(
         () => serviceProviders.id
@@ -225,8 +219,7 @@ export const serviceBookings = pgTable("service_bookings", {
 // Reviews table
 export const reviews = pgTable("reviews", {
     id: uuid("id").defaultRandom().primaryKey(),
-    reviewerId: uuid("reviewer_id")
-        .references(() => users.id)
+    reviewerId: uuid("reviewer_id").references(() => users.id)
         .notNull(),
     revieweeId: uuid("reviewee_id").references(() => users.id),
     propertyId: uuid("property_id").references(() => properties.id),
@@ -246,11 +239,9 @@ export const reviews = pgTable("reviews", {
 // Messages table
 export const messages = pgTable("messages", {
     id: uuid("id").defaultRandom().primaryKey(),
-    senderId: uuid("sender_id")
-        .references(() => users.id)
+    senderId: uuid("sender_id").references(() => users.id)
         .notNull(),
-    receiverId: uuid("receiver_id")
-        .references(() => users.id)
+    receiverId: uuid("receiver_id").references(() => users.id)
         .notNull(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     content: text("content").notNull(),
@@ -264,11 +255,9 @@ export const messages = pgTable("messages", {
 // Property-Service Provider associations
 export const propertyServices = pgTable("property_services", {
     id: uuid("id").defaultRandom().primaryKey(),
-    propertyId: uuid("property_id")
-        .references(() => properties.id)
+    propertyId: uuid("property_id").references(() => properties.id)
         .notNull(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     isRecommended: boolean("is_recommended").default(false),
     createdAt: timestamp("created_at").defaultNow(),
@@ -277,8 +266,7 @@ export const propertyServices = pgTable("property_services", {
 // Service task templates (maid tasks, transport tasks, etc.)
 export const serviceTasks = pgTable("service_tasks", {
     id: uuid("id").defaultRandom().primaryKey(),
-    categoryId: uuid("category_id")
-        .references(() => serviceCategories.id)
+    categoryId: uuid("category_id").references(() => serviceCategories.id)
         .notNull(),
     taskCode: varchar("task_code").notNull(),
     taskName: varchar("task_name").notNull(),
@@ -292,11 +280,9 @@ export const serviceTasks = pgTable("service_tasks", {
 // Service task assignments for bookings
 export const serviceTaskAssignments = pgTable("service_task_assignments", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceBookingId: uuid("service_booking_id")
-        .references(() => serviceBookings.id)
+    serviceBookingId: uuid("service_booking_id").references(() => serviceBookings.id)
         .notNull(),
-    taskId: uuid("task_id")
-        .references(() => serviceTasks.id)
+    taskId: uuid("task_id").references(() => serviceTasks.id)
         .notNull(),
     isCompleted: boolean("is_completed").default(false),
     completedAt: timestamp("completed_at"),
@@ -309,14 +295,11 @@ export const serviceTaskAssignments = pgTable("service_task_assignments", {
 // Job assignments (country manager assigns providers to clients)
 export const jobAssignments = pgTable("job_assignments", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceBookingId: uuid("service_booking_id")
-        .references(() => serviceBookings.id)
+    serviceBookingId: uuid("service_booking_id").references(() => serviceBookings.id)
         .notNull(),
-    assignedBy: uuid("assigned_by")
-        .references(() => users.id)
+    assignedBy: uuid("assigned_by").references(() => users.id)
         .notNull(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     status: varchar("status", {
         enum: ["pending", "accepted", "rejected", "cancelled"],
@@ -330,8 +313,7 @@ export const jobAssignments = pgTable("job_assignments", {
 // Notifications table
 export const notifications = pgTable("notifications", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: uuid("user_id").references(() => users.id)
         .notNull(),
     type: varchar("type", {
         enum: [
@@ -354,7 +336,7 @@ export const notifications = pgTable("notifications", {
     }).notNull(),
     title: varchar("title").notNull(),
     message: text("message").notNull(),
-    relatedId: uuid("related_id"),
+    relatedId: varchar("related_id"),
     isRead: boolean("is_read").default(false),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -362,8 +344,7 @@ export const notifications = pgTable("notifications", {
 // Payment records table
 export const payments = pgTable("payments", {
     id: uuid("id").defaultRandom().primaryKey(),
-    bookingId: uuid("booking_id")
-        .references(() => bookings.id)
+    bookingId: uuid("booking_id").references(() => bookings.id)
         .notNull(),
     stripePaymentIntentId: varchar("stripe_payment_intent_id").unique(),
     amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -383,8 +364,7 @@ export const payments = pgTable("payments", {
 // Provider menus table (for chef services)
 export const providerMenus = pgTable("provider_menus", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     categoryName: varchar("category_name").notNull(),
     description: text("description"),
@@ -397,8 +377,7 @@ export const providerMenus = pgTable("provider_menus", {
 // Menu items table (for chef services)
 export const menuItems = pgTable("menu_items", {
     id: uuid("id").defaultRandom().primaryKey(),
-    menuId: uuid("menu_id")
-        .references(() => providerMenus.id)
+    menuId: uuid("menu_id").references(() => providerMenus.id)
         .notNull(),
     dishName: varchar("dish_name").notNull(),
     description: text("description"),
@@ -416,11 +395,9 @@ export const menuItems = pgTable("menu_items", {
 // Provider task configurations (maid can enable/disable and price tasks)
 export const providerTaskConfigs = pgTable("provider_task_configs", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
-    taskId: uuid("task_id")
-        .references(() => serviceTasks.id)
+    taskId: uuid("task_id").references(() => serviceTasks.id)
         .notNull(),
     isEnabled: boolean("is_enabled").default(true),
     customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
@@ -433,8 +410,7 @@ export const providerTaskConfigs = pgTable("provider_task_configs", {
 // Provider materials/supplies (what materials provider offers or requires)
 export const providerMaterials = pgTable("provider_materials", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     materialName: varchar("material_name").notNull(),
     materialType: varchar("material_type", {
@@ -455,8 +431,7 @@ export const providerMaterials = pgTable("provider_materials", {
 // Provider availability calendar
 export const providerAvailability = pgTable("provider_availability", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     date: date("date").notNull(),
     startTime: varchar("start_time").notNull(),
@@ -471,8 +446,7 @@ export const providerAvailability = pgTable("provider_availability", {
 // Provider pricing configuration
 export const providerPricing = pgTable("provider_pricing", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .unique()
         .notNull(),
     minimumOrder: decimal("minimum_order", { precision: 10, scale: 2 }).default(
@@ -518,11 +492,9 @@ export const providerPricing = pgTable("provider_pricing", {
 export const serviceOrders = pgTable("service_orders", {
     id: uuid("id").defaultRandom().primaryKey(),
     bookingId: uuid("booking_id").references(() => bookings.id),
-    clientId: uuid("client_id")
-        .references(() => users.id)
+    clientId: uuid("client_id").references(() => users.id)
         .notNull(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     orderCode: varchar("order_code").unique().notNull(),
     serviceDate: date("service_date").notNull(),
@@ -557,6 +529,8 @@ export const serviceOrders = pgTable("service_orders", {
     providerNotes: text("provider_notes"),
     cancellationReason: text("cancellation_reason"),
     rejectionReason: text("rejection_reason"),
+    serviceLocation: varchar("service_location"), // City where service is provided
+    serviceCountry: varchar("service_country"), // Country where service is provided
     acceptedAt: timestamp("accepted_at"),
     completedAt: timestamp("completed_at"),
     cancelledAt: timestamp("cancelled_at"),
@@ -567,8 +541,7 @@ export const serviceOrders = pgTable("service_orders", {
 // Service order items (selected menu items or tasks)
 export const serviceOrderItems = pgTable("service_order_items", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceOrderId: uuid("service_order_id")
-        .references(() => serviceOrders.id)
+    serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id)
         .notNull(),
     itemType: varchar("item_type", {
         enum: ["menu_item", "task", "custom"],
@@ -585,11 +558,57 @@ export const serviceOrderItems = pgTable("service_order_items", {
     createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Shopping cart items (for service booking cart)
+export const cartItems = pgTable("cart_items", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: varchar("user_id").references(() => users.id)
+        .notNull(),
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
+        .notNull(),
+    serviceDate: date("service_date").notNull(),
+    startTime: varchar("start_time").notNull(),
+    endTime: varchar("end_time"),
+    duration: integer("duration"),
+    items: jsonb("items").notNull().default([]), // Array of {itemType, itemId, itemName, quantity, unitPrice, totalPrice}
+    subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
+    specialInstructions: text("special_instructions"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Booking events audit log (track all status changes and actions)
+export const bookingEvents = pgTable("booking_events", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookingId: uuid("booking_id").references(() => bookings.id),
+    serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
+    eventType: varchar("event_type", {
+        enum: [
+            "created",
+            "status_changed",
+            "payment_received",
+            "payment_refunded",
+            "provider_assigned",
+            "provider_accepted",
+            "provider_rejected",
+            "started",
+            "completed",
+            "cancelled",
+            "admin_override",
+        ],
+    }).notNull(),
+    oldStatus: varchar("old_status"),
+    newStatus: varchar("new_status"),
+    performedBy: varchar("performed_by").references(() => users.id),
+    performedByRole: varchar("performed_by_role"),
+    notes: text("notes"),
+    metadata: jsonb("metadata").default({}),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Favorites (clients save favorite properties and service providers)
 export const favorites = pgTable("favorites", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
     favoriteType: varchar("favorite_type", {
         enum: ["property", "service_provider"],
@@ -631,11 +650,9 @@ export const promotionalCodes = pgTable("promotional_codes", {
 // Promotional code usage tracking
 export const promoCodeUsage = pgTable("promo_code_usage", {
     id: uuid("id").defaultRandom().primaryKey(),
-    promoCodeId: uuid("promo_code_id")
-        .references(() => promotionalCodes.id)
+    promoCodeId: uuid("promo_code_id").references(() => promotionalCodes.id)
         .notNull(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
@@ -649,8 +666,7 @@ export const promoCodeUsage = pgTable("promo_code_usage", {
 // Loyalty points
 export const loyaltyPoints = pgTable("loyalty_points", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: uuid("user_id").references(() => users.id)
         .notNull(),
     points: integer("points").default(0),
     lifetimePoints: integer("lifetime_points").default(0),
@@ -666,8 +682,7 @@ export const loyaltyPointsTransactions = pgTable(
     "loyalty_points_transactions",
     {
         id: uuid("id").defaultRandom().primaryKey(),
-        userId: uuid("user_id")
-            .references(() => users.id)
+        userId: uuid("user_id").references(() => users.id)
             .notNull(),
         points: integer("points").notNull(),
         transactionType: varchar("transaction_type", {
@@ -686,11 +701,9 @@ export const loyaltyPointsTransactions = pgTable(
 // Booking cancellations and refunds
 export const bookingCancellations = pgTable("booking_cancellations", {
     id: uuid("id").defaultRandom().primaryKey(),
-    bookingId: uuid("booking_id")
-        .references(() => bookings.id)
+    bookingId: uuid("booking_id").references(() => bookings.id)
         .notNull(),
-    requestedBy: uuid("requested_by")
-        .references(() => users.id)
+    requestedBy: uuid("requested_by").references(() => users.id)
         .notNull(),
     reason: text("reason").notNull(),
     cancellationFee: decimal("cancellation_fee", {
@@ -714,8 +727,7 @@ export const bookingCancellations = pgTable("booking_cancellations", {
 // Trip plans / Itineraries
 export const tripPlans = pgTable("trip_plans", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id")
-        .references(() => users.id)
+    userId: uuid("user_id").references(() => users.id)
         .notNull(),
     title: varchar("title").notNull(),
     description: text("description"),
@@ -733,8 +745,7 @@ export const tripPlans = pgTable("trip_plans", {
 // Trip plan items (activities, bookings, notes)
 export const tripPlanItems = pgTable("trip_plan_items", {
     id: uuid("id").defaultRandom().primaryKey(),
-    tripPlanId: uuid("trip_plan_id")
-        .references(() => tripPlans.id)
+    tripPlanId: uuid("trip_plan_id").references(() => tripPlans.id)
         .notNull(),
     itemType: varchar("item_type", {
         enum: ["booking", "activity", "note", "reminder"],
@@ -756,8 +767,7 @@ export const tripPlanItems = pgTable("trip_plan_items", {
 // Property seasonal pricing
 export const propertySeasonalPricing = pgTable("property_seasonal_pricing", {
     id: uuid("id").defaultRandom().primaryKey(),
-    propertyId: uuid("property_id")
-        .references(() => properties.id)
+    propertyId: uuid("property_id").references(() => properties.id)
         .notNull(),
     name: varchar("name").notNull(),
     startDate: date("start_date").notNull(),
@@ -775,8 +785,7 @@ export const propertySeasonalPricing = pgTable("property_seasonal_pricing", {
 // Service packages / bundles
 export const servicePackages = pgTable("service_packages", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     packageName: varchar("package_name").notNull(),
     description: text("description"),
@@ -801,8 +810,7 @@ export const servicePackages = pgTable("service_packages", {
 // Provider earnings / payouts
 export const providerEarnings = pgTable("provider_earnings", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     month: varchar("month").notNull(),
     year: integer("year").notNull(),
@@ -829,8 +837,7 @@ export const providerEarnings = pgTable("provider_earnings", {
 // Provider payouts
 export const providerPayouts = pgTable("provider_payouts", {
     id: uuid("id").defaultRandom().primaryKey(),
-    serviceProviderId: uuid("service_provider_id")
-        .references(() => serviceProviders.id)
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
     amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
     payoutMethod: varchar("payout_method", {
@@ -894,8 +901,7 @@ export const disputes = pgTable("disputes", {
     id: uuid("id").defaultRandom().primaryKey(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
-    raisedBy: uuid("raised_by")
-        .references(() => users.id)
+    raisedBy: uuid("raised_by").references(() => users.id)
         .notNull(),
     againstUser: uuid("against_user").references(() => users.id),
     category: varchar("category", {
@@ -924,11 +930,9 @@ export const disputes = pgTable("disputes", {
 // Dispute messages
 export const disputeMessages = pgTable("dispute_messages", {
     id: uuid("id").defaultRandom().primaryKey(),
-    disputeId: uuid("dispute_id")
-        .references(() => disputes.id)
+    disputeId: uuid("dispute_id").references(() => disputes.id)
         .notNull(),
-    senderId: uuid("sender_id")
-        .references(() => users.id)
+    senderId: uuid("sender_id").references(() => users.id)
         .notNull(),
     message: text("message").notNull(),
     attachments: jsonb("attachments").default([]),
@@ -951,8 +955,7 @@ export const territories = pgTable("territories", {
 // Regional analytics
 export const regionalAnalytics = pgTable("regional_analytics", {
     id: uuid("id").defaultRandom().primaryKey(),
-    territoryId: uuid("territory_id")
-        .references(() => territories.id)
+    territoryId: uuid("territory_id").references(() => territories.id)
         .notNull(),
     month: varchar("month").notNull(),
     year: integer("year").notNull(),
@@ -1001,8 +1004,7 @@ export const jobPostings = pgTable("job_postings", {
     status: varchar("status", { enum: ["draft", "active", "closed"] }).default(
         "draft"
     ),
-    postedBy: uuid("posted_by")
-        .references(() => users.id)
+    postedBy: uuid("posted_by").references(() => users.id)
         .notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -1011,8 +1013,7 @@ export const jobPostings = pgTable("job_postings", {
 // Job applications
 export const jobApplications = pgTable("job_applications", {
     id: uuid("id").defaultRandom().primaryKey(),
-    jobPostingId: uuid("job_posting_id")
-        .references(() => jobPostings.id)
+    jobPostingId: uuid("job_posting_id").references(() => jobPostings.id)
         .notNull(),
     applicantName: varchar("applicant_name").notNull(),
     email: varchar("email").notNull(),
@@ -1035,8 +1036,7 @@ export const blogPosts = pgTable("blog_posts", {
     excerpt: text("excerpt"),
     content: text("content").notNull(),
     featuredImage: varchar("featured_image"),
-    authorId: uuid("author_id")
-        .references(() => users.id)
+    authorId: uuid("author_id").references(() => users.id)
         .notNull(),
     category: varchar("category").notNull(),
     tags: text("tags").array().default([]),
@@ -1334,6 +1334,22 @@ export const insertServiceOrderItemSchema = createInsertSchema(
 export type InsertServiceOrderItem = z.infer<
     typeof insertServiceOrderItemSchema
 >;
+
+// Cart and audit log types
+export type CartItem = typeof cartItems.$inferSelect;
+export const insertCartItemSchema = createInsertSchema(cartItems).omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+});
+export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
+
+export type BookingEvent = typeof bookingEvents.$inferSelect;
+export const insertBookingEventSchema = createInsertSchema(bookingEvents).omit({
+    id: true,
+    createdAt: true,
+});
+export type InsertBookingEvent = z.infer<typeof insertBookingEventSchema>;
 
 // New feature types
 export type Favorite = typeof favorites.$inferSelect;

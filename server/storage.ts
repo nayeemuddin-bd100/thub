@@ -700,11 +700,44 @@ export class DatabaseStorage implements IStorage {
     async getServiceProviderByUserId(
         userId: string
     ): Promise<ServiceProvider | undefined> {
-        const [provider] = await db
-            .select()
+        const [result] = await db
+            .select({
+                id: serviceProviders.id,
+                userId: serviceProviders.userId,
+                categoryId: serviceProviders.categoryId,
+                businessName: serviceProviders.businessName,
+                description: serviceProviders.description,
+                location: serviceProviders.location,
+                whatsappNumber: serviceProviders.whatsappNumber,
+                approvalStatus: serviceProviders.approvalStatus,
+                rejectionReason: serviceProviders.rejectionReason,
+                hourlyRate: serviceProviders.hourlyRate,
+                fixedRate: serviceProviders.fixedRate,
+                certifications: serviceProviders.certifications,
+                rating: serviceProviders.rating,
+                reviewCount: serviceProviders.reviewCount,
+                yearsExperience: serviceProviders.yearsExperience,
+                languages: serviceProviders.languages,
+                photoUrls: serviceProviders.photoUrls,
+                profilePhotoUrl: serviceProviders.profilePhotoUrl,
+                videoUrl: serviceProviders.videoUrl,
+                awards: serviceProviders.awards,
+                createdAt: serviceProviders.createdAt,
+                updatedAt: serviceProviders.updatedAt,
+                category: {
+                    id: serviceCategories.id,
+                    name: serviceCategories.name,
+                    description: serviceCategories.description,
+                    icon: serviceCategories.icon,
+                },
+            })
             .from(serviceProviders)
+            .leftJoin(
+                serviceCategories,
+                eq(serviceProviders.categoryId, serviceCategories.id)
+            )
             .where(eq(serviceProviders.userId, userId));
-        return provider;
+        return result as any;
     }
 
     async createServiceProvider(
