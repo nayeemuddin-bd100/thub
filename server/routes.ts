@@ -4862,6 +4862,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Admin: Update multiple settings (bulk update)
+    app.post("/api/admin/settings", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Unauthorized" });
+            }
+
+            // Map camelCase form field names to snake_case database keys
+            const keyMapping: Record<string, string> = {
+                commissionRate: 'service_commission_rate',
+                platformFee: 'platform_fee',
+                minBookingAmount: 'min_booking_amount',
+            };
+
+            const settingsData = req.body;
+            const updatedSettings: any[] = [];
+            const errors: string[] = [];
+
+            // Update each setting that was provided
+            for (const [key, value] of Object.entries(settingsData)) {
+                if (value !== undefined && value !== null && value !== "") {
+                    const dbKey = keyMapping[key] || key;
+                    try {
+                        const updated = await storage.updateSetting(
+                            dbKey,
+                            value as string,
+                            userId
+                        );
+                        if (updated) {
+                            updatedSettings.push(updated);
+                        } else {
+                            errors.push(`Setting ${key} not found`);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to update setting ${key}:`, error);
+                        errors.push(`Failed to update ${key}: ${error}`);
+                    }
+                }
+            }
+
+            res.json({
+                message: "Settings update complete",
+                updated: updatedSettings,
+                errors: errors.length > 0 ? errors : undefined,
+            });
+        } catch (error) {
+            console.error("Error updating settings:", error);
+            res.status(500).json({ message: "Failed to update settings" });
+        }
+    });
+
     // Admin: Update setting
     app.put("/api/admin/settings/:key", requireAuth, async (req: any, res) => {
         try {

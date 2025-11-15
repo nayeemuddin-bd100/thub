@@ -25,8 +25,10 @@ const settingsSchema = z.object({
 
 type PlatformSetting = {
   id: string;
-  key: string;
-  value: string;
+  settingKey: string;
+  settingValue: string;
+  settingType?: string;
+  category?: string;
 };
 
 export default function PlatformSettings() {
@@ -48,13 +50,13 @@ export default function PlatformSettings() {
   useEffect(() => {
     if (platformSettings.length > 0) {
       const settingsMap = platformSettings.reduce((acc, setting) => {
-        acc[setting.key] = setting.value;
+        acc[setting.settingKey] = setting.settingValue;
         return acc;
       }, {} as any);
       form.reset({
-        commissionRate: settingsMap.commissionRate || "",
-        platformFee: settingsMap.platformFee || "",
-        minBookingAmount: settingsMap.minBookingAmount || "",
+        commissionRate: settingsMap.commissionRate || settingsMap.service_commission_rate || "",
+        platformFee: settingsMap.platformFee || settingsMap.platform_fee || "",
+        minBookingAmount: settingsMap.minBookingAmount || settingsMap.min_booking_amount || "",
       });
     }
   }, [platformSettings, form]);
