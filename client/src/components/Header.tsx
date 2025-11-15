@@ -302,7 +302,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   )}
                   {user.role === 'country_manager' && (
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard">Country Manager Dashboard</Link>
+                      <Link href="/country-manager-dashboard">Country Manager Dashboard</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>

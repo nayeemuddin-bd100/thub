@@ -1241,6 +1241,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Country Manager Dashboard routes
+    app.get("/api/country-manager/stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager role required" });
+            }
+
+            const allProviders = await storage.getServiceProviders();
+            const allOrders = await storage.getAllServiceOrders();
+
+            res.json({
+                totalProviders: allProviders.filter((p: any) => p.approvalStatus === "approved").length,
+                totalBookings: allOrders.length,
+                pendingAssignments: allOrders.filter((o: any) => o.status === "pending").length,
+                completedAssignments: allOrders.filter((o: any) => o.status === "completed").length,
+            });
+        } catch (error) {
+            console.error("Error fetching country manager stats:", error);
+            res.status(500).json({ message: "Failed to fetch country manager stats" });
+        }
+    });
+
+    app.get("/api/country-manager/providers", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager role required" });
+            }
+
+            const providers = await storage.getServiceProviders();
+            const providersWithUsers = await Promise.all(
+                providers.map(async (provider: any) => {
+                    const providerUser = await storage.getUser(provider.userId);
+                    return {
+                        ...provider,
+                        user: providerUser
+                            ? {
+                                  firstName: providerUser.firstName,
+                                  lastName: providerUser.lastName,
+                                  email: providerUser.email,
+                              }
+                            : {
+                                  firstName: "Unknown",
+                                  lastName: "",
+                                  email: "",
+                              },
+                    };
+                })
+            );
+            res.json(providersWithUsers);
+        } catch (error) {
+            console.error("Error fetching country manager providers:", error);
+            res.status(500).json({ message: "Failed to fetch providers" });
+        }
+    });
+
+    app.get("/api/country-manager/bookings", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager role required" });
+            }
+
+            const allOrders = await storage.getAllServiceOrders();
+            const bookingsWithClients = await Promise.all(
+                allOrders.map(async (order: any) => {
+                    const client = await storage.getUser(order.clientId);
+                    return {
+                        id: order.id,
+                        status: order.status,
+                        createdAt: order.createdAt,
+                        scheduledDate: order.scheduledDate,
+                        totalAmount: order.totalAmount.toString(),
+                        client: client
+                            ? {
+                                  firstName: client.firstName,
+                                  lastName: client.lastName,
+                              }
+                            : {
+                                  firstName: "Unknown",
+                                  lastName: "",
+                              },
+                    };
+                })
+            );
+            res.json(bookingsWithClients);
+        } catch (error) {
+            console.error("Error fetching country manager bookings:", error);
+            res.status(500).json({ message: "Failed to fetch bookings" });
+        }
+    });
+
     // Property routes
     app.get("/api/properties", async (req, res) => {
         try {

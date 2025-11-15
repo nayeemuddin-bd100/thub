@@ -235,7 +235,7 @@ async function seed() {
             },
             {
                 id: countryManagerId,
-                email: "manager@test.com",
+                email: "country_manager@test.com",
                 password: hashedPassword,
                 firstName: "James",
                 lastName: "Wilson",
@@ -243,7 +243,7 @@ async function seed() {
             },
             {
                 id: cityManagerId,
-                email: "citymanager@test.com",
+                email: "city_manager@test.com",
                 password: hashedPassword,
                 firstName: "City",
                 lastName: "Chief",
@@ -251,7 +251,7 @@ async function seed() {
             },
             {
                 id: operationSupportId,
-                email: "support@test.com",
+                email: "operation_support@test.com",
                 password: hashedPassword,
                 firstName: "Support",
                 lastName: "Team",
@@ -1073,45 +1073,47 @@ async function seed() {
         console.log("\n🔐 Sample Credentials:");
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         console.log("ADMIN ROLES:");
-        console.log("  Admin:          admin@test.com / password123");
-        console.log("  Billing:        billing@test.com / password123");
-        console.log("  Operation:      operation@test.com / password123");
-        console.log("  Marketing:      marketing@test.com / password123");
+        console.log("  Admin:           admin@test.com / password123");
+        console.log("  Billing:         billing@test.com / password123");
+        console.log("  Operation:       operation@test.com / password123");
+        console.log("  Marketing:       marketing@test.com / password123");
         console.log("\nMANAGERS:");
-        console.log("  Country Manager: manager@test.com / password123");
-        console.log("  City Manager:    citymanager@test.com / password123");
+        console.log("  Country Manager: country_manager@test.com / password123");
+        console.log("  City Manager:    city_manager@test.com / password123");
         console.log("\nUSERS:");
         console.log("  Clients:         client1@test.com / password123");
         console.log("                   client2@test.com / password123");
         console.log("                   client3@test.com / password123");
-        console.log("  Property Owners: owner1@test.com / password123");
-        console.log("                   owner2@test.com / password123");
-        console.log("                   owner3@test.com / password123");
+        console.log("  Property Owners: host1@test.com / password123");
+        console.log("                   host2@test.com / password123");
+        console.log("                   host3@test.com / password123");
         console.log("  Providers:       provider1@test.com / password123");
         console.log("                   provider2@test.com / password123");
         console.log("                   provider3@test.com / password123");
         console.log("\nSUPPORT:");
-        console.log("  Operation Support: support@test.com / password123");
+        console.log("  Operation Support: operation_support@test.com / password123");
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         console.log("\n📊 Data Created:");
         console.log("  ✓ 16 users with different roles");
-        console.log("  ✓ 5 properties in various locations");
-        console.log("  ✓ 6 service providers across categories");
-        console.log("  ✓ 3 bookings (past and future)");
-        console.log("  ✓ 3 reviews");
+        console.log("  ✓ 15 properties across international locations");
+        console.log("  ✓ 10 service categories");
+        console.log("  ✓ Multiple bookings and reviews");
         console.log("  ✓ 3 promotional codes");
-        console.log("  ✓ 8 messages between users");
-        console.log("  ✓ 3 payments");
-        console.log("  ✓ 4 notifications");
+        console.log("  ✓ Messages between users");
+        console.log("  ✓ Payment records");
+        console.log("  ✓ Notifications");
         console.log("\n💬 Role-Based Messaging:");
         console.log("  - Login with any account and go to /messages");
         console.log("  - Click 'New Message' to see role-based recipient options");
-        console.log("  - Each role can only message specific other roles");
+        console.log("  - Admin can message ALL 10 roles");
         console.log("\n📱 Test Dashboards:");
-        console.log("  - Billing:    /billing-dashboard");
-        console.log("  - Operation:  /operation-dashboard");
-        console.log("  - Marketing:  /marketing-dashboard");
-        console.log("  - City Manager: /city-manager-dashboard");
+        console.log("  - Admin:          /admin");
+        console.log("  - Billing:        /billing-dashboard");
+        console.log("  - Operation:      /operation-dashboard");
+        console.log("  - Marketing:      /marketing-dashboard");
+        console.log("  - City Manager:   /city-manager-dashboard");
+        console.log("  - Country Manager: /country-manager-dashboard");
+        console.log("  - Support:        /support-dashboard");
     } catch (error) {
         console.error("❌ Error seeding database:", error);
         throw error;

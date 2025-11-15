@@ -49,6 +49,7 @@ import BillingDashboard from "@/pages/billing-dashboard";
 import OperationDashboard from "@/pages/operation-dashboard";
 import MarketingDashboard from "@/pages/marketing-dashboard";
 import CityManagerDashboard from "@/pages/city-manager-dashboard";
+import CountryManagerDashboard from "@/pages/country-manager-dashboard";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -106,6 +107,7 @@ function Router() {
           <Route path="/operation-dashboard" component={OperationDashboard} />
           <Route path="/marketing-dashboard" component={MarketingDashboard} />
           <Route path="/city-manager-dashboard" component={CityManagerDashboard} />
+          <Route path="/country-manager-dashboard" component={CountryManagerDashboard} />
           <Route path="/provider-config" component={ProviderConfig} />
           <Route path="/provider-orders" component={ProviderOrders} />
           <Route path="/my-service-orders" component={MyServiceOrders} />
