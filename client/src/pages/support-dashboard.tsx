@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { MessageSquare, Search, Send, User } from "lucide-react";
+import { MessageSquare, Search, Send, User, Home } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
@@ -157,9 +157,15 @@ export default function SupportDashboard() {
             <Header onToggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
 
             <div className="container mx-auto px-4 py-8 flex-1">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-foreground mb-2">Support Dashboard</h1>
-                    <p className="text-muted-foreground">Manage and respond to support requests</p>
+                <div className="mb-6 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-foreground mb-2">Support Dashboard</h1>
+                        <p className="text-muted-foreground">Manage and respond to support requests</p>
+                    </div>
+                    <Button variant="outline" onClick={() => setLocation('/')}>
+                        <Home className="w-4 h-4 mr-2" />
+                        Home
+                    </Button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-250px)]">

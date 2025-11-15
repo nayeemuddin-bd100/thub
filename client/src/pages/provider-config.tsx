@@ -20,7 +20,8 @@ import {
   Trash2,
   Edit,
   Save,
-  X
+  X,
+  Home
 } from "lucide-react";
 import type { 
   ServiceProvider, 
@@ -83,13 +84,19 @@ export default function ProviderConfig() {
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            {t('provider_dashboard.settings')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('dashboard.subtitle')}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {t('provider_dashboard.settings')}
+            </h1>
+            <p className="text-muted-foreground">
+              {t('dashboard.subtitle')}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => window.location.href = '/'}>
+            <Home className="w-4 h-4 mr-2" />
+            Home
+          </Button>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
