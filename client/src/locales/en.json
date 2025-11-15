@@ -429,6 +429,7 @@
         "description_required": "Description *",
         "description_placeholder": "Describe your services, experience, and what makes you unique...",
         "hourly_rate_usd": "Hourly Rate ($)",
+        "per_hour": "per hour",
         "fixed_rate_usd": "Fixed Rate ($)",
         "location_required": "Location *",
         "location_placeholder": "City, State or Region",

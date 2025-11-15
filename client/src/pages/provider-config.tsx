@@ -1217,7 +1217,7 @@ function PricingManagement({ provider }: { provider: ServiceProvider }) {
               onChange={(e) => setHourlyRate(e.target.value)}
               placeholder="0.00"
             />
-            <span className="text-muted-foreground">{t('book_service.hours')}</span>
+            <span className="text-muted-foreground">{t('dashboard.per_hour')}</span>
           </div>
         </div>
 

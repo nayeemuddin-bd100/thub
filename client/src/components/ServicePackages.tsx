@@ -56,7 +56,9 @@ export default function ServicePackages({ providerId }: { providerId: string }) 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...data,
+          packageName: data.name,
+          description: data.description,
+          price: data.price,
           recurrenceInterval: data.recurrenceInterval === "none" ? null : data.recurrenceInterval,
         }),
         credentials: "include",

@@ -363,7 +363,8 @@
         "analytics": "Analíticas",
         "notifications": "Notificaciones",
         "account": "Cuenta",
-        "service_categories": "Categorías de Servicios"
+        "service_categories": "Categorías de Servicios",
+        "per_hour": "por hora"
     },
     "admin": {
         "title": "Panel de administración",

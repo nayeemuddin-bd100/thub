@@ -54,6 +54,16 @@ interface TaskData {
   defaultDuration: number | null;
 }
 
+interface PackageData {
+  id: string;
+  packageName: string;
+  description: string | null;
+  price: string;
+  duration: number | null;
+  maxGuests: number | null;
+  isActive: boolean;
+}
+
 export default function ServiceProviderDetailsPage() {
   const { t } = useTranslation();
   const params = useParams();
@@ -62,6 +72,7 @@ export default function ServiceProviderDetailsPage() {
   
   const [selectedMenuItems, setSelectedMenuItems] = useState<Set<string>>(new Set());
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [selectedPackages, setSelectedPackages] = useState<Set<string>>(new Set());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [clientProvidedMaterials, setClientProvidedMaterials] = useState<Set<string>>(new Set());
 
@@ -77,6 +88,11 @@ export default function ServiceProviderDetailsPage() {
 
   const { data: tasks, isLoading: tasksLoading } = useQuery<TaskData[]>({
     queryKey: ['/api/public/provider', providerId, 'tasks'],
+    enabled: !!providerId,
+  });
+
+  const { data: packages, isLoading: packagesLoading } = useQuery<PackageData[]>({
+    queryKey: ['/api/public/provider', providerId, 'packages'],
     enabled: !!providerId,
   });
 
@@ -135,6 +151,16 @@ export default function ServiceProviderDetailsPage() {
     setSelectedTasks(newSelection);
   };
 
+  const togglePackage = (packageId: string) => {
+    const newSelection = new Set(selectedPackages);
+    if (newSelection.has(packageId)) {
+      newSelection.delete(packageId);
+    } else {
+      newSelection.add(packageId);
+    }
+    setSelectedPackages(newSelection);
+  };
+
   const calculateTotal = () => {
     let total = 0;
     
@@ -154,6 +180,15 @@ export default function ServiceProviderDetailsPage() {
       tasks.forEach(task => {
         if (selectedTasks.has(task.id)) {
           total += parseFloat(task.effectivePrice);
+        }
+      });
+    }
+    
+    // Add packages
+    if (packages) {
+      packages.forEach(pkg => {
+        if (selectedPackages.has(pkg.id)) {
+          total += parseFloat(pkg.price || '0');
         }
       });
     }
@@ -225,7 +260,7 @@ export default function ServiceProviderDetailsPage() {
     );
   }
 
-  const totalSelected = selectedMenuItems.size + selectedTasks.size;
+  const totalSelected = selectedMenuItems.size + selectedTasks.size + selectedPackages.size;
   const totalPrice = calculateTotal();
 
   return (
@@ -688,59 +723,121 @@ export default function ServiceProviderDetailsPage() {
         )}
 
         <TabsContent value="tasks" className="space-y-4">
-          {tasksLoading ? (
+          {tasksLoading || packagesLoading ? (
             <p className="text-center text-gray-500 dark:text-gray-400" data-testid="loading-tasks">{t('common.loading')}</p>
-          ) : tasks && tasks.length > 0 ? (
-            <Card data-testid="card-available-tasks">
-              <CardHeader>
-                <CardTitle>{t('service_provider.available_services', 'Available Services')}</CardTitle>
-                <CardDescription>{t('service_provider.select_services_needed', 'Select the services you need')}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {tasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-                      onClick={() => toggleTask(task.id)}
-                      data-testid={`card-task-${task.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox
-                          checked={selectedTasks.has(task.id)}
-                          onCheckedChange={() => toggleTask(task.id)}
-                          data-testid={`checkbox-task-${task.id}`}
-                        />
-                        <div>
-                          <p className="font-medium" data-testid={`text-task-name-${task.id}`}>{task.taskName}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`text-task-description-${task.id}`}>
-                            {task.description}
-                          </p>
-                          {task.defaultDuration && (
-                            <div className="flex items-center gap-2 mt-1">
-                              <Clock className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-task-duration-${task.id}`}>
-                                ~{task.defaultDuration} min
-                              </span>
+          ) : (tasks && tasks.length > 0) || (packages && packages.length > 0) ? (
+            <>
+              {tasks && tasks.length > 0 && (
+                <Card data-testid="card-available-tasks">
+                  <CardHeader>
+                    <CardTitle>{t('service_provider.available_services', 'Available Services')}</CardTitle>
+                    <CardDescription>{t('service_provider.select_services_needed', 'Select the services you need')}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {tasks.map((task) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                          onClick={() => toggleTask(task.id)}
+                          data-testid={`card-task-${task.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedTasks.has(task.id)}
+                              onCheckedChange={() => toggleTask(task.id)}
+                              data-testid={`checkbox-task-${task.id}`}
+                            />
+                            <div>
+                              <p className="font-medium" data-testid={`text-task-name-${task.id}`}>{task.taskName}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`text-task-description-${task.id}`}>
+                                {task.description}
+                              </p>
+                              {task.defaultDuration && (
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Clock className="h-3 w-3 text-gray-400" />
+                                  <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-task-duration-${task.id}`}>
+                                    ~{task.defaultDuration} min
+                                  </span>
+                                </div>
+                              )}
                             </div>
-                          )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold" data-testid={`text-task-price-${task.id}`}>
+                              ${parseFloat(task.effectivePrice).toFixed(2)}
+                            </p>
+                            {task.customPrice && (
+                              <p className="text-xs text-green-600 dark:text-green-400" data-testid={`text-custom-price-${task.id}`}>
+                                {t('service_provider.provider_pricing', 'Provider pricing')}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold" data-testid={`text-task-price-${task.id}`}>
-                          ${parseFloat(task.effectivePrice).toFixed(2)}
-                        </p>
-                        {task.customPrice && (
-                          <p className="text-xs text-green-600 dark:text-green-400" data-testid={`text-custom-price-${task.id}`}>
-                            {t('service_provider.provider_pricing', 'Provider pricing')}
-                          </p>
-                        )}
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {packages && packages.length > 0 && (
+                <Card data-testid="card-available-packages">
+                  <CardHeader>
+                    <CardTitle>{t('service_provider.service_packages', 'Service Packages')}</CardTitle>
+                    <CardDescription>{t('service_provider.select_packages', 'Select the packages you need')}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {packages.map((pkg) => (
+                        <div
+                          key={pkg.id}
+                          className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                          onClick={() => togglePackage(pkg.id)}
+                          data-testid={`card-package-${pkg.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox
+                              checked={selectedPackages.has(pkg.id)}
+                              onCheckedChange={() => togglePackage(pkg.id)}
+                              data-testid={`checkbox-package-${pkg.id}`}
+                            />
+                            <div>
+                              <p className="font-medium" data-testid={`text-package-name-${pkg.id}`}>{pkg.packageName}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400" data-testid={`text-package-description-${pkg.id}`}>
+                                {pkg.description}
+                              </p>
+                              <div className="flex items-center gap-4 mt-1">
+                                {pkg.duration && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 text-gray-400" />
+                                    <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-package-duration-${pkg.id}`}>
+                                      ~{pkg.duration} min
+                                    </span>
+                                  </div>
+                                )}
+                                {pkg.maxGuests && (
+                                  <div className="flex items-center gap-1">
+                                    <Package className="h-3 w-3 text-gray-400" />
+                                    <span className="text-xs text-gray-500 dark:text-gray-500" data-testid={`text-package-guests-${pkg.id}`}>
+                                      Up to {pkg.maxGuests} guests
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold" data-testid={`text-package-price-${pkg.id}`}>
+                              ${parseFloat(pkg.price).toFixed(2)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           ) : (
             <Card data-testid="no-tasks-available">
               <CardContent className="py-8">

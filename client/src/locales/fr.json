@@ -363,7 +363,8 @@
         "analytics": "Analytiques",
         "notifications": "Notifications",
         "account": "Compte",
-        "service_categories": "Catégories de Services"
+        "service_categories": "Catégories de Services",
+        "per_hour": "par heure"
     },
     "admin": {
         "title": "Tableau de bord administrateur",

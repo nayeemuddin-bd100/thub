@@ -782,7 +782,7 @@ async function seed() {
                 {
                     id: serviceProvider6Id,
                     categoryId: conciergeCategory?.id || "",
-                    userId: provider2Id,
+                    userId: provider3Id,
                     businessName: "24/7 Concierge Plus",
                     description:
                         "Full-service concierge for all your needs. Restaurant reservations, event tickets, and more.",
@@ -983,6 +983,148 @@ async function seed() {
                 ];
 
                 await db.insert(menuItems).values(menuItemsList).onConflictDoNothing();
+            }
+
+            // Create concierge service packages for "24/7 Concierge Plus"
+            console.log("Creating concierge service packages...");
+            const conciergeProviderId = sampleProviders.find(p => p.businessName.includes("24/7 Concierge Plus"))?.id;
+            
+            if (conciergeProviderId) {
+                const conciergePackages = [
+                    {
+                        serviceProviderId: conciergeProviderId,
+                        packageName: "Restaurant Reservation Assistance",
+                        description: "We'll secure reservations at top restaurants, handle special requests, and arrange transportation",
+                        duration: 60,
+                        price: "50.00",
+                        maxGuests: 8,
+                        isActive: true,
+                        sortOrder: 1,
+                    },
+                    {
+                        serviceProviderId: conciergeProviderId,
+                        packageName: "Event & Entertainment Booking",
+                        description: "VIP tickets to concerts, shows, sports events, and exclusive experiences",
+                        duration: 90,
+                        price: "75.00",
+                        maxGuests: 6,
+                        isActive: true,
+                        sortOrder: 2,
+                    },
+                    {
+                        serviceProviderId: conciergeProviderId,
+                        packageName: "Travel Planning & Itinerary",
+                        description: "Complete travel itinerary planning including flights, hotels, activities, and dining",
+                        duration: 120,
+                        price: "150.00",
+                        maxGuests: 4,
+                        isActive: true,
+                        sortOrder: 3,
+                    },
+                    {
+                        serviceProviderId: conciergeProviderId,
+                        packageName: "Personal Shopping Service",
+                        description: "Personal shopper for gifts, fashion, or special occasion items with delivery coordination",
+                        duration: 90,
+                        price: "85.00",
+                        maxGuests: 2,
+                        isActive: true,
+                        sortOrder: 4,
+                    },
+                    {
+                        serviceProviderId: conciergeProviderId,
+                        packageName: "VIP Experience Package",
+                        description: "Full-day premium concierge service including all arrangements, reservations, and on-call assistance",
+                        duration: 480,
+                        price: "400.00",
+                        maxGuests: 4,
+                        isActive: true,
+                        sortOrder: 5,
+                    },
+                ];
+
+                await db.insert(servicePackages).values(conciergePackages).onConflictDoNothing();
+            }
+
+            // Create transport service packages for transport providers
+            console.log("Creating transport service packages...");
+            const transportProvider1Id = sampleProviders.find(p => p.businessName.includes("Elite Airport Transfer"))?.id;
+            const transportProvider2Id = sampleProviders.find(p => p.businessName.includes("City Ride Limo"))?.id;
+            
+            const transportPackages = [];
+            
+            if (transportProvider1Id) {
+                transportPackages.push(
+                    {
+                        serviceProviderId: transportProvider1Id,
+                        packageName: "Airport Transfer - Luxury Sedan",
+                        description: "One-way airport transfer in luxury sedan with meet & greet service",
+                        duration: 60,
+                        price: "85.00",
+                        maxGuests: 3,
+                        isActive: true,
+                        sortOrder: 1,
+                    },
+                    {
+                        serviceProviderId: transportProvider1Id,
+                        packageName: "Airport Transfer - SUV",
+                        description: "One-way airport transfer in luxury SUV, perfect for families or groups",
+                        duration: 60,
+                        price: "120.00",
+                        maxGuests: 6,
+                        isActive: true,
+                        sortOrder: 2,
+                    },
+                    {
+                        serviceProviderId: transportProvider1Id,
+                        packageName: "Hourly Chauffeur Service",
+                        description: "Professional chauffeur service with luxury vehicle, minimum 3 hours",
+                        duration: 180,
+                        price: "250.00",
+                        maxGuests: 3,
+                        isActive: true,
+                        sortOrder: 3,
+                    }
+                );
+            }
+            
+            if (transportProvider2Id) {
+                transportPackages.push(
+                    {
+                        serviceProviderId: transportProvider2Id,
+                        packageName: "City Tour - Half Day",
+                        description: "4-hour city sightseeing tour with professional driver and commentary",
+                        duration: 240,
+                        price: "180.00",
+                        maxGuests: 4,
+                        isActive: true,
+                        sortOrder: 1,
+                    },
+                    {
+                        serviceProviderId: transportProvider2Id,
+                        packageName: "Point-to-Point Transfer",
+                        description: "Comfortable transfer service within city limits",
+                        duration: 45,
+                        price: "60.00",
+                        maxGuests: 4,
+                        isActive: true,
+                        sortOrder: 2,
+                    },
+                    {
+                        serviceProviderId: transportProvider2Id,
+                        packageName: "Wedding Transportation Package",
+                        description: "Premium limousine service for wedding day, includes 6 hours of service",
+                        duration: 360,
+                        price: "450.00",
+                        maxGuests: 6,
+                        isActive: true,
+                        sortOrder: 3,
+                    }
+                );
+            }
+            
+            if (transportPackages.length > 0) {
+                await db.insert(servicePackages).values(transportPackages).onConflictDoNothing();
             }
         }
 

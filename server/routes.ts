@@ -46,9 +46,39 @@ const resend = process.env.RESEND_API_KEY
     ? new Resend(process.env.RESEND_API_KEY)
     : null;
 
+// Helper function to delete image files from local filesystem
+async function deleteImageFile(imageUrl: string): Promise<boolean> {
+    try {
+        const filename = path.basename(imageUrl);
+        // Only delete files with our expected prefixes for security
+        if (filename.startsWith('provider-portfolio-') || 
+            filename.startsWith('provider-profile-') ||
+            filename.startsWith('blog-')) {
+            const publicDir = path.join(process.cwd(), 'public', 'images');
+            const filepath = path.join(publicDir, filename);
+            await fs.unlink(filepath);
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error(`Failed to delete image file: ${imageUrl}`, error);
+        return false;
+    }
+}
+
+// Helper function to delete multiple image files
+async function deleteImageFiles(imageUrls: string[]): Promise<void> {
+    const deletePromises = imageUrls.map(url => deleteImageFile(url));
+    await Promise.allSettled(deletePromises);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
     // Trust proxy - required for Coolify/Docker deployments behind reverse proxy
     app.set("trust proxy", 1);
+
+    // Serve uploaded images from public/images directory
+    const imagesDir = path.join(process.cwd(), 'public', 'images');
+    app.use('/images', express.static(imagesDir));
 
     // Configure session middleware
     app.use(
@@ -2279,8 +2309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 'image/gif'
             ];
 
-            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
-            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            // Use local filesystem for image storage
+            const publicDir = path.join(process.cwd(), 'public', 'images');
             await fs.mkdir(publicDir, { recursive: true });
 
             const uploadedUrls: string[] = [];
@@ -2352,21 +2382,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
             }
 
-            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
-            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            // Use local filesystem for image storage
+            const publicDir = path.join(process.cwd(), 'public', 'images');
             await fs.mkdir(publicDir, { recursive: true });
             
             // Delete old profile photo if it exists
             if (provider.profilePhotoUrl) {
-                try {
-                    const oldFilename = path.basename(provider.profilePhotoUrl);
-                    if (oldFilename.startsWith('provider-profile-')) {
-                        const oldFilepath = path.join(publicDir, oldFilename);
-                        await fs.unlink(oldFilepath).catch(() => {});
-                    }
-                } catch (error) {
-                    console.error("Error deleting old profile photo:", error);
-                }
+                await deleteImageFile(provider.profilePhotoUrl);
             }
             
             const filename = `provider-profile-${provider.id}-${Date.now()}${path.extname(req.file.originalname)}`;
@@ -2408,18 +2430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Remove the image URL from the array
             const updatedPhotoUrls = currentPhotoUrls.filter((url: string) => url !== imageUrl);
 
-            // Delete the physical file
-            try {
-                const filename = path.basename(imageUrl);
-                if (filename.startsWith('provider-portfolio-')) {
-                    const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
-                    const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
-                    const filepath = path.join(publicDir, filename);
-                    await fs.unlink(filepath).catch(() => {});
-                }
-            } catch (error) {
-                console.error("Error deleting image file:", error);
-            }
+            // Delete the physical file from filesystem
+            await deleteImageFile(imageUrl);
 
             // Update database
             await storage.updateServiceProvider(provider.id, {
@@ -2433,61 +2445,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // Serve uploaded images
-    app.get("/images/:filename", async (req, res) => {
+    // Delete service provider and all associated data
+    app.delete("/api/provider/profile", requireAuth, async (req: any, res) => {
         try {
-            const publicPaths = process.env.PUBLIC_OBJECT_SEARCH_PATHS;
-            const publicDir = publicPaths ? publicPaths.split(',')[0] : '/tmp/public-images';
+            const userId = (req.session as any).userId;
+            const provider = await storage.getServiceProviderByUserId(userId);
             
-            // Security: Use basename to prevent path traversal attacks
-            const safeFilename = path.basename(req.params.filename);
+            if (!provider) {
+                return res.status(404).json({ message: "Provider profile not found" });
+            }
+
+            // Delete all associated images
+            const imagesToDelete: string[] = [];
             
-            // Only allow files with expected prefix
-            if (!safeFilename.startsWith('provider-portfolio-') && !safeFilename.startsWith('provider-profile-')) {
-                return res.status(404).json({ message: "Image not found" });
+            // Add profile photo
+            if (provider.profilePhotoUrl) {
+                imagesToDelete.push(provider.profilePhotoUrl);
             }
             
-            // Security: Validate file extension to prevent XSS
-            const ext = path.extname(safeFilename).toLowerCase();
-            const allowedExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-            if (!allowedExts.includes(ext)) {
-                return res.status(403).json({ message: "Access denied" });
+            // Add portfolio images
+            if (Array.isArray(provider.photoUrls)) {
+                imagesToDelete.push(...provider.photoUrls);
             }
             
-            const filepath = path.join(publicDir, safeFilename);
+            // Delete all images from filesystem
+            await deleteImageFiles(imagesToDelete);
             
-            // Verify the resolved path is still within the public directory
-            const resolvedPath = path.resolve(filepath);
-            const resolvedPublicDir = path.resolve(publicDir);
-            if (!resolvedPath.startsWith(resolvedPublicDir)) {
-                return res.status(403).json({ message: "Access denied" });
+            // Delete video if exists
+            if (provider.videoUrl) {
+                try {
+                    const filename = path.basename(provider.videoUrl);
+                    if (filename.startsWith('provider-video-')) {
+                        const publicDir = path.join(process.cwd(), 'public', 'videos');
+                        const filepath = path.join(publicDir, filename);
+                        await fs.unlink(filepath).catch(() => {});
+                    }
+                } catch (error) {
+                    console.error("Error deleting video file:", error);
+                }
             }
             
-            // Check if file exists
-            try {
-                await fs.access(filepath);
-            } catch {
-                return res.status(404).json({ message: "Image not found" });
-            }
+            // Delete the service provider from database
+            await storage.deleteServiceProvider(provider.id);
             
-            // Set proper Content-Type header to prevent browsers from executing files
-            const mimeTypes: Record<string, string> = {
-                '.jpg': 'image/jpeg',
-                '.jpeg': 'image/jpeg',
-                '.png': 'image/png',
-                '.webp': 'image/webp',
-                '.gif': 'image/gif'
-            };
-            
-            res.setHeader('Content-Type', mimeTypes[ext] || 'image/jpeg');
-            res.setHeader('X-Content-Type-Options', 'nosniff');
-            res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
-            
-            // Serve the image file
-            res.sendFile(filepath);
+            res.json({ message: "Service provider profile and all associated data deleted successfully" });
         } catch (error) {
-            console.error("Error serving image:", error);
-            res.status(500).json({ message: "Failed to serve image" });
+            console.error("Error deleting service provider:", error);
+            res.status(500).json({ message: "Failed to delete service provider profile" });
         }
     });
 
@@ -3054,6 +3058,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error fetching provider tasks:", error);
             res.status(500).json({ message: "Failed to fetch tasks" });
+        }
+    });
+
+    // Get provider service packages (for concierge, transport, etc.)
+    app.get("/api/public/provider/:providerId/packages", async (req, res) => {
+        try {
+            const packages = await storage.getProviderPackages(req.params.providerId);
+            res.json(packages);
+        } catch (error) {
+            console.error("Error fetching provider packages:", error);
+            res.status(500).json({ message: "Failed to fetch packages" });
         }
     });
 
@@ -5914,6 +5929,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .json({ message: "Admin privileges required" });
             }
 
+            // If updating featured image, delete the old one
+            if (req.body.featuredImage) {
+                const existingPost = await storage.getBlogPost(req.params.id);
+                if (existingPost && existingPost.featuredImage && 
+                    existingPost.featuredImage !== req.body.featuredImage) {
+                    await deleteImageFile(existingPost.featuredImage);
+                }
+            }
+
             const post = await storage.updateBlogPost(req.params.id, req.body);
             res.json(post);
         } catch (error) {
@@ -5932,6 +5956,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 return res
                     .status(403)
                     .json({ message: "Admin privileges required" });
+            }
+
+            // Get blog post to access featured image URL before deletion
+            const blogPost = await storage.getBlogPost(req.params.id);
+            
+            // Delete featured image if it exists
+            if (blogPost && blogPost.featuredImage) {
+                await deleteImageFile(blogPost.featuredImage);
             }
 
             await storage.deleteBlogPost(req.params.id);

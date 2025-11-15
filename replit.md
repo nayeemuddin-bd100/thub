@@ -32,6 +32,16 @@ Preferred communication style: Simple, everyday language.
 - Confirmation (`status='confirmed'`) only occurs after successful Stripe payment verification, preventing orphaned orders.
 - Server-side payment intent creation and validation are crucial for security.
 
+### Stripe Webhook Integration
+- **Location**: `server/index.ts` (BEFORE express.json() middleware)
+- **Endpoint**: POST `/api/webhooks/stripe`
+- **Security**: Requires STRIPE_WEBHOOK_SECRET for signature verification; rejects unauthenticated webhooks
+- **Events Handled**:
+  - `payment_intent.succeeded`: Updates payment status to "paid", order status to "confirmed", sends notifications to client and provider
+  - `payment_intent.payment_failed`: Sends failure notification to client
+  - `charge.refunded`: Updates payment status to "refunded", sends refund notification
+- **Critical Implementation**: Uses `express.raw()` middleware for raw body access (required for signature verification)
+
 # External Dependencies
 
 - **Database**: Neon (PostgreSQL serverless).
