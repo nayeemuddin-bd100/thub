@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, TrendingUp, FileText, Download, Home } from 'lucide-react';
+import { DollarSign, TrendingUp, FileText, Download, Home, Percent, RefreshCw, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -13,6 +13,11 @@ interface PaymentStats {
   monthlyRevenue: number;
   totalTransactions: number;
   pendingPayments: number;
+  platformCommission: number;
+  providerPayouts: number;
+  refundsIssued: number;
+  refundCount: number;
+  currentCommissionRate: number;
 }
 
 interface Transaction {
@@ -23,6 +28,13 @@ interface Transaction {
   paymentStatus: string;
   createdAt: string;
   clientName: string;
+}
+
+interface TopService {
+  serviceName: string;
+  orderCount: number;
+  totalRevenue: number;
+  commission: number;
 }
 
 export default function BillingDashboard() {
@@ -53,6 +65,33 @@ export default function BillingDashboard() {
     queryKey: ['/api/billing/transactions'],
   });
 
+  const { data: topServices = [], isLoading: loadingTopServices } = useQuery<TopService[]>({
+    queryKey: ['/api/billing/top-services'],
+  });
+
+  const handleExport = () => {
+    const csv = [
+      ['ID', 'Type', 'Client', 'Amount', 'Status', 'Payment Status', 'Date'].join(','),
+      ...transactions.map(t => [
+        t.id,
+        t.type,
+        t.clientName,
+        t.amount,
+        t.status,
+        t.paymentStatus,
+        format(new Date(t.createdAt), 'yyyy-MM-dd')
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `billing-transactions-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
@@ -71,11 +110,11 @@ export default function BillingDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loadingStats ? '...' : `$${stats?.totalRevenue.toLocaleString() || 0}`}
+              {loadingStats ? '...' : `$${Number(stats?.totalRevenue ?? 0).toLocaleString()}`}
             </div>
           </CardContent>
         </Card>
@@ -83,19 +122,48 @@ export default function BillingDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <TrendingUp className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loadingStats ? '...' : `$${stats?.monthlyRevenue.toLocaleString() || 0}`}
+              {loadingStats ? '...' : `$${Number(stats?.monthlyRevenue ?? 0).toLocaleString()}`}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Platform Commission</CardTitle>
+            <Percent className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingStats ? '...' : `$${Number(stats?.platformCommission ?? 0).toLocaleString()}`}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Rate: {loadingStats ? '...' : `${stats?.currentCommissionRate || 0}%`}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Provider Payouts</CardTitle>
+            <DollarSign className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingStats ? '...' : `$${Number(stats?.providerPayouts ?? 0).toLocaleString()}`}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <FileText className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -115,14 +183,84 @@ export default function BillingDashboard() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Refunds Issued</CardTitle>
+            <RefreshCw className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingStats ? '...' : `$${Number(stats?.refundsIssued ?? 0).toLocaleString()}`}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {loadingStats ? '...' : `${stats?.refundCount || 0} refunds`}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Commission Rate</CardTitle>
+            <Percent className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              {loadingStats ? '...' : `${stats?.currentCommissionRate || 0}%`}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Current platform rate</p>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Top Services */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Top Performing Services</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingTopServices ? (
+            <p className="text-center text-muted-foreground">Loading...</p>
+          ) : topServices.length === 0 ? (
+            <p className="text-center text-muted-foreground">No service data available</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Service Name</TableHead>
+                  <TableHead className="text-center">Orders</TableHead>
+                  <TableHead className="text-right">Total Revenue</TableHead>
+                  <TableHead className="text-right">Commission</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {topServices.map((service, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                        {service.serviceName}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">{service.orderCount}</TableCell>
+                    <TableCell className="text-right">${Number(service.totalRevenue).toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-green-600 font-medium">
+                      ${Number(service.commission).toLocaleString()}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Transactions Table */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Recent Transactions</CardTitle>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExport} disabled={transactions.length === 0}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>

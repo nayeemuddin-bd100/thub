@@ -1019,7 +1019,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const totalRevenue = [...allBookings, ...allOrders].reduce(
                 (sum, item) =>
                     sum +
-                    (item.paymentStatus === "paid"
+                    (item.paymentStatus === "paid" && 
+                     item.status !== "cancelled" && 
+                     item.status !== "refunded"
                         ? parseFloat(item.totalAmount.toString())
                         : 0),
                 0
@@ -1034,7 +1036,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     return (
                         itemDate.getMonth() === currentMonth &&
                         itemDate.getFullYear() === currentYear &&
-                        item.paymentStatus === "paid"
+                        item.paymentStatus === "paid" &&
+                        item.status !== "cancelled" &&
+                        item.status !== "refunded"
                     );
                 })
                 .reduce(
@@ -1047,11 +1051,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 (item) => item.paymentStatus === "pending"
             ).length;
 
+            const platformCommission = allOrders
+                .filter((order) => order.paymentStatus === "paid" && order.status === "completed")
+                .reduce((sum, order) => {
+                    const feeAmount = order.platformFeeAmount
+                        ? parseFloat(order.platformFeeAmount.toString())
+                        : 0;
+                    return sum + feeAmount;
+                }, 0);
+
+            const providerPayouts = allOrders
+                .filter((order) => order.paymentStatus === "paid" && order.status === "completed")
+                .reduce((sum, order) => {
+                    const total = parseFloat(order.totalAmount.toString());
+                    const fee = order.platformFeeAmount
+                        ? parseFloat(order.platformFeeAmount.toString())
+                        : 0;
+                    return sum + (total - fee);
+                }, 0);
+
+            const refundedItems = [...allBookings, ...allOrders].filter(
+                (item) => item.paymentStatus === "refunded"
+            );
+            
+            const refundsIssued = refundedItems.reduce(
+                (sum, item) => sum + parseFloat(item.totalAmount.toString()),
+                0
+            );
+            
+            const refundCount = refundedItems.length;
+
+            const currentCommissionRate = await storage
+                .getPlatformSetting("commission_rate")
+                .then((setting) => (setting ? parseFloat(setting.toString()) : 10));
+
             res.json({
                 totalRevenue,
                 monthlyRevenue,
                 totalTransactions,
                 pendingPayments,
+                platformCommission,
+                providerPayouts,
+                refundsIssued,
+                refundCount,
+                currentCommissionRate,
             });
         } catch (error) {
             console.error("Error fetching billing stats:", error);
@@ -1119,6 +1162,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({
                 message: "Failed to fetch billing transactions",
             });
+        }
+    });
+
+    app.get("/api/billing/top-services", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "billing") {
+                return res
+                    .status(403)
+                    .json({ message: "Billing role required" });
+            }
+
+            const allOrders = await storage.getAllServiceOrders();
+            const serviceMap = new Map<
+                string,
+                {
+                    serviceName: string;
+                    orderCount: number;
+                    totalRevenue: number;
+                    commission: number;
+                }
+            >();
+
+            for (const order of allOrders) {
+                if (order.paymentStatus !== "paid" || order.status !== "completed") continue;
+
+                const service = await storage.getServiceProvider(
+                    order.serviceProviderId
+                );
+                const serviceName = service?.serviceName || "Unknown Service";
+                const revenue = parseFloat(order.totalAmount.toString());
+                const commission = order.platformFeeAmount
+                    ? parseFloat(order.platformFeeAmount.toString())
+                    : 0;
+
+                if (serviceMap.has(serviceName)) {
+                    const existing = serviceMap.get(serviceName)!;
+                    serviceMap.set(serviceName, {
+                        serviceName,
+                        orderCount: existing.orderCount + 1,
+                        totalRevenue: existing.totalRevenue + revenue,
+                        commission: existing.commission + commission,
+                    });
+                } else {
+                    serviceMap.set(serviceName, {
+                        serviceName,
+                        orderCount: 1,
+                        totalRevenue: revenue,
+                        commission,
+                    });
+                }
+            }
+
+            const topServices = Array.from(serviceMap.values())
+                .sort((a, b) => b.totalRevenue - a.totalRevenue)
+                .slice(0, 10);
+
+            res.json(topServices);
+        } catch (error) {
+            console.error("Error fetching top services:", error);
+            res.status(500).json({ message: "Failed to fetch top services" });
         }
     });
 
