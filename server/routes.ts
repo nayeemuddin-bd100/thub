@@ -7,6 +7,8 @@ import {
     serviceProviders,
     serviceCategories,
     users,
+    platformSettings,
+    serviceOrders,
 } from "@shared/schema";
 import { and, desc, eq } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -2717,6 +2719,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const taxAmount = subtotal * 0.1; // 10% tax
             const totalAmount = subtotal + taxAmount;
 
+            // Fetch platform commission rate from settings
+            const commissionSetting = await db
+                .select()
+                .from(platformSettings)
+                .where(eq(platformSettings.settingKey, 'service_commission_rate'))
+                .limit(1);
+            
+            const commissionRate = commissionSetting.length > 0 
+                ? parseFloat(commissionSetting[0].settingValue || "15.00")
+                : 15.00; // Default to 15% if not found
+
+            // Calculate commission amounts
+            const platformFeeAmount = (totalAmount * commissionRate) / 100;
+            const providerAmount = totalAmount - platformFeeAmount;
+
             const orderData = {
                 clientId: userId,
                 serviceProviderId,
@@ -2730,6 +2747,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 subtotal: subtotal.toString(),
                 taxAmount: taxAmount.toString(),
                 totalAmount: totalAmount.toString(),
+                platformFeePercentage: commissionRate.toString(),
+                platformFeeAmount: platformFeeAmount.toFixed(2),
+                providerAmount: providerAmount.toFixed(2),
                 paymentStatus: "pending" as const,
                 specialInstructions: specialInstructions || null,
             };
@@ -3033,6 +3053,303 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch (error) {
                 console.error("Error confirming payment:", error);
                 res.status(500).json({ message: "Failed to confirm payment" });
+            }
+        }
+    );
+
+    // Provider accept service order
+    app.put(
+        "/api/service-orders/:id/accept",
+        requireAuth,
+        async (req: any, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const order = await storage.getServiceOrder(req.params.id);
+
+                if (!order) {
+                    return res
+                        .status(404)
+                        .json({ message: "Service order not found" });
+                }
+
+                // Verify provider owns this order
+                const provider = await storage.getServiceProviderByUserId(userId);
+                if (!provider || order.serviceProviderId !== provider.id) {
+                    return res.status(403).json({
+                        message: "Not authorized to accept this order",
+                    });
+                }
+
+                // Only allow acceptance if order is confirmed (paid)
+                if (order.status !== "confirmed") {
+                    return res.status(400).json({
+                        message: "Order must be confirmed (paid) before acceptance",
+                    });
+                }
+
+                // Update order status to accepted and record timestamp
+                await storage.updateServiceOrderStatus(req.params.id, "accepted");
+                await db
+                    .update(serviceOrders)
+                    .set({ acceptedAt: new Date() })
+                    .where(eq(serviceOrders.id, req.params.id));
+
+                // Send notification to client
+                const client = await storage.getUser(order.clientId);
+                await storage.createNotification({
+                    userId: order.clientId,
+                    type: 'booking',
+                    title: 'Service Booking Accepted',
+                    message: `${provider.businessName} has accepted your service booking for ${format(new Date(order.serviceDate), 'MMM dd, yyyy')}. Order code: ${order.orderCode}`,
+                    isRead: false
+                });
+
+                res.json({ 
+                    success: true, 
+                    message: "Service order accepted successfully" 
+                });
+            } catch (error) {
+                console.error("Error accepting service order:", error);
+                res.status(500).json({ message: "Failed to accept service order" });
+            }
+        }
+    );
+
+    // Provider reject service order
+    app.put(
+        "/api/service-orders/:id/reject",
+        requireAuth,
+        async (req: any, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const { rejectionReason } = req.body;
+                const order = await storage.getServiceOrder(req.params.id);
+
+                if (!order) {
+                    return res
+                        .status(404)
+                        .json({ message: "Service order not found" });
+                }
+
+                // Verify provider owns this order
+                const provider = await storage.getServiceProviderByUserId(userId);
+                if (!provider || order.serviceProviderId !== provider.id) {
+                    return res.status(403).json({
+                        message: "Not authorized to reject this order",
+                    });
+                }
+
+                // Only allow rejection if order is confirmed (paid) or pending acceptance
+                if (order.status !== "confirmed" && order.status !== "pending_acceptance") {
+                    return res.status(400).json({
+                        message: "Order can only be rejected when confirmed or pending acceptance",
+                    });
+                }
+
+                // Update order status to rejected and store reason
+                await storage.updateServiceOrderStatus(req.params.id, "rejected");
+                await db
+                    .update(serviceOrders)
+                    .set({ rejectionReason: rejectionReason || 'No reason provided' })
+                    .where(eq(serviceOrders.id, req.params.id));
+
+                // Process refund if payment was made
+                if (order.paymentStatus === "paid" && order.paymentIntentId) {
+                    try {
+                        const refund = await stripe.refunds.create({
+                            payment_intent: order.paymentIntentId,
+                        });
+
+                        // Update payment status and store refund ID
+                        await storage.updateServiceOrderPaymentStatus(
+                            req.params.id,
+                            "refunded"
+                        );
+                        await db
+                            .update(serviceOrders)
+                            .set({ stripeRefundId: refund.id })
+                            .where(eq(serviceOrders.id, req.params.id));
+                    } catch (refundError) {
+                        console.error("Error processing refund:", refundError);
+                    }
+                }
+
+                // Send notification to client
+                await storage.createNotification({
+                    userId: order.clientId,
+                    type: 'rejection',
+                    title: 'Service Booking Rejected',
+                    message: `${provider.businessName} has declined your service booking. Reason: ${rejectionReason || 'Not specified'}. ${order.paymentStatus === 'paid' ? 'A full refund has been processed.' : ''}`,
+                    isRead: false
+                });
+
+                res.json({ 
+                    success: true, 
+                    message: "Service order rejected successfully",
+                    refundProcessed: order.paymentStatus === "paid"
+                });
+            } catch (error) {
+                console.error("Error rejecting service order:", error);
+                res.status(500).json({ message: "Failed to reject service order" });
+            }
+        }
+    );
+
+    // Provider mark service order as complete
+    app.put(
+        "/api/service-orders/:id/complete",
+        requireAuth,
+        async (req: any, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const { providerNotes } = req.body;
+                const order = await storage.getServiceOrder(req.params.id);
+
+                if (!order) {
+                    return res
+                        .status(404)
+                        .json({ message: "Service order not found" });
+                }
+
+                // Verify provider owns this order
+                const provider = await storage.getServiceProviderByUserId(userId);
+                if (!provider || order.serviceProviderId !== provider.id) {
+                    return res.status(403).json({
+                        message: "Not authorized to complete this order",
+                    });
+                }
+
+                // Only allow completion if order is accepted or in progress
+                if (order.status !== "accepted" && order.status !== "in_progress") {
+                    return res.status(400).json({
+                        message: "Order must be accepted or in progress to mark as complete",
+                    });
+                }
+
+                // Update order status to completed
+                await storage.updateServiceOrderStatus(req.params.id, "completed");
+                
+                // Record completion timestamp and notes
+                await db
+                    .update(serviceOrders)
+                    .set({ 
+                        completedAt: new Date(),
+                        providerNotes: providerNotes || null
+                    })
+                    .where(eq(serviceOrders.id, req.params.id));
+
+                // Send notification to client
+                await storage.createNotification({
+                    userId: order.clientId,
+                    type: 'booking',
+                    title: 'Service Completed',
+                    message: `${provider.businessName} has marked your service as completed. Order code: ${order.orderCode}. Please leave a review!`,
+                    isRead: false
+                });
+
+                res.json({ 
+                    success: true, 
+                    message: "Service order marked as complete" 
+                });
+            } catch (error) {
+                console.error("Error completing service order:", error);
+                res.status(500).json({ message: "Failed to complete service order" });
+            }
+        }
+    );
+
+    // Client cancel service order with refund
+    app.post(
+        "/api/service-orders/:id/cancel",
+        requireAuth,
+        async (req: any, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const { cancellationReason } = req.body;
+                const order = await storage.getServiceOrder(req.params.id);
+
+                if (!order) {
+                    return res
+                        .status(404)
+                        .json({ message: "Service order not found" });
+                }
+
+                // Verify client owns this order
+                if (order.clientId !== userId) {
+                    return res.status(403).json({
+                        message: "Not authorized to cancel this order",
+                    });
+                }
+
+                // Only allow cancellation if order is confirmed but not yet accepted
+                if (order.status !== "confirmed" && order.status !== "pending_acceptance") {
+                    return res.status(400).json({
+                        message: "Order can only be cancelled before provider acceptance",
+                    });
+                }
+
+                // If already accepted, don't allow cancellation
+                if (order.acceptedAt) {
+                    return res.status(400).json({
+                        message: "Cannot cancel order after provider has accepted it",
+                    });
+                }
+
+                // Update order status to cancelled
+                await storage.updateServiceOrderStatus(req.params.id, "cancelled");
+                
+                // Record cancellation details
+                await db
+                    .update(serviceOrders)
+                    .set({ 
+                        cancelledAt: new Date(),
+                        cancellationReason: cancellationReason || 'Client cancellation'
+                    })
+                    .where(eq(serviceOrders.id, req.params.id));
+
+                // Process refund if payment was made
+                let refundProcessed = false;
+                if (order.paymentStatus === "paid" && order.paymentIntentId) {
+                    try {
+                        const refund = await stripe.refunds.create({
+                            payment_intent: order.paymentIntentId,
+                        });
+
+                        // Update payment status and store refund ID
+                        await storage.updateServiceOrderPaymentStatus(
+                            req.params.id,
+                            "refunded"
+                        );
+                        await db
+                            .update(serviceOrders)
+                            .set({ stripeRefundId: refund.id })
+                            .where(eq(serviceOrders.id, req.params.id));
+                        refundProcessed = true;
+                    } catch (refundError) {
+                        console.error("Error processing refund:", refundError);
+                    }
+                }
+
+                // Send notification to provider
+                const provider = await storage.getServiceProvider(order.serviceProviderId);
+                if (provider) {
+                    await storage.createNotification({
+                        userId: provider.userId,
+                        type: 'cancellation',
+                        title: 'Service Booking Cancelled',
+                        message: `A client has cancelled their service booking. Order code: ${order.orderCode}`,
+                        isRead: false
+                    });
+                }
+
+                res.json({ 
+                    success: true, 
+                    message: "Service order cancelled successfully",
+                    refundProcessed
+                });
+            } catch (error) {
+                console.error("Error cancelling service order:", error);
+                res.status(500).json({ message: "Failed to cancel service order" });
             }
         }
     );
@@ -3658,6 +3975,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error fetching service provider reviews:", error);
             res.status(500).json({ message: "Failed to fetch reviews" });
+        }
+    });
+
+    app.get("/api/service-providers/:id/stats", async (req, res) => {
+        try {
+            const reviews = await storage.getServiceProviderReviews(
+                req.params.id
+            );
+            
+            if (reviews.length === 0) {
+                return res.json({
+                    averageRating: 0,
+                    totalReviews: 0
+                });
+            }
+
+            const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+            const averageRating = totalRating / reviews.length;
+
+            res.json({
+                averageRating: parseFloat(averageRating.toFixed(2)),
+                totalReviews: reviews.length
+            });
+        } catch (error) {
+            console.error("Error fetching service provider stats:", error);
+            res.status(500).json({ message: "Failed to fetch stats" });
+        }
+    });
+
+    // Admin Settings API
+    app.get("/api/admin/settings", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Admin access required" });
+            }
+
+            const settings = await db
+                .select()
+                .from(platformSettings);
+
+            res.json(settings);
+        } catch (error) {
+            console.error("Error fetching settings:", error);
+            res.status(500).json({ message: "Failed to fetch settings" });
+        }
+    });
+
+    app.put("/api/admin/settings/commission", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Admin access required" });
+            }
+
+            const { commissionRate } = req.body;
+            
+            if (!commissionRate || commissionRate < 0 || commissionRate > 100) {
+                return res.status(400).json({ 
+                    message: "Invalid commission rate. Must be between 0 and 100." 
+                });
+            }
+
+            // Update or insert commission rate setting
+            const existingSetting = await db
+                .select()
+                .from(platformSettings)
+                .where(eq(platformSettings.settingKey, 'service_commission_rate'))
+                .limit(1);
+
+            if (existingSetting.length > 0) {
+                await db
+                    .update(platformSettings)
+                    .set({ 
+                        settingValue: commissionRate.toString(),
+                        updatedBy: userId,
+                        updatedAt: new Date()
+                    })
+                    .where(eq(platformSettings.settingKey, 'service_commission_rate'));
+            } else {
+                await db
+                    .insert(platformSettings)
+                    .values({
+                        settingKey: 'service_commission_rate',
+                        settingValue: commissionRate.toString(),
+                        settingType: 'number',
+                        category: 'service',
+                        description: 'Platform commission rate for service bookings',
+                        isPublic: false,
+                        updatedAt: new Date()
+                    });
+            }
+
+            res.json({ 
+                message: "Commission rate updated successfully",
+                commissionRate 
+            });
+        } catch (error) {
+            console.error("Error updating commission rate:", error);
+            res.status(500).json({ message: "Failed to update commission rate" });
         }
     });
 
