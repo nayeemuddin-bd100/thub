@@ -1739,10 +1739,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const providerData = {
                 ...req.body,
                 userId,
+                approvalStatus: "pending",
             };
 
             const provider = await storage.createServiceProvider(providerData);
-            res.status(201).json(provider);
+            
+            res.status(201).json({
+                message: "Service application submitted! A city or country manager will review it soon.",
+                provider,
+                requiresApproval: true
+            });
         } catch (error) {
             console.error("Error creating service provider:", error);
             res.status(500).json({

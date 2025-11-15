@@ -45,6 +45,7 @@ import {
     DollarSign,
     Gift,
     Map,
+    MapPin,
     Search,
     UserCheck,
     Users,
@@ -209,6 +210,12 @@ export default function Dashboard() {
     // Service categories query
     const { data: serviceCategories } = useQuery<ServiceCategory[]>({
         queryKey: ["/api/service-categories"],
+        enabled: isAuthenticated,
+    });
+
+    // Service providers query
+    const { data: serviceProviders, isLoading: serviceProvidersLoading } = useQuery<any[]>({
+        queryKey: ["/api/service-providers"],
         enabled: isAuthenticated,
     });
 
@@ -466,21 +473,22 @@ export default function Dashboard() {
     // Service creation mutation
     const createServiceMutation = useMutation({
         mutationFn: async (formData: ServiceFormValues) => {
-            return await apiRequest("POST", "/api/service-providers", {
+            const response = await apiRequest("POST", "/api/service-providers", {
                 categoryId: formData.categoryId,
                 businessName: formData.businessName,
                 description: formData.description,
                 hourlyRate: formData.hourlyRate,
                 location: formData.location || "",
             });
+            return await response.json();
         },
-        onSuccess: () => {
+        onSuccess: (data) => {
             queryClient.invalidateQueries({ queryKey: ["/api/service-providers"] });
             setServiceDialogOpen(false);
             serviceForm.reset();
             toast({
-                title: "Success!",
-                description: "Your service has been added successfully.",
+                title: "Service Submitted!",
+                description: data.message || "Your service application has been submitted for approval. A city or country manager will review it soon.",
             });
         },
         onError: (error: any) => {
@@ -1778,27 +1786,118 @@ export default function Dashboard() {
 
                         {user?.role === "service_provider" ||
                         user?.role === "admin" ? (
-                            <div className="text-center py-12">
-                                <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                <h3
-                                    className="text-lg font-semibold text-foreground mb-2"
-                                    data-testid="text-no-services-title"
-                                >
-                                    {t("dashboard.no_services_listed")}
-                                </h3>
-                                <p
-                                    className="text-muted-foreground mb-6"
-                                    data-testid="text-no-services-description"
-                                >
-                                    {t("dashboard.start_earning_service")}
-                                </p>
-                                <Button 
-                                    data-testid="button-list-first-service"
-                                    onClick={() => setServiceDialogOpen(true)}
-                                >
-                                    {t("dashboard.list_first_service")}
-                                </Button>
-                            </div>
+                            <>
+                                {serviceProvidersLoading ? (
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map((i) => (
+                                            <div
+                                                key={i}
+                                                className="h-32 bg-muted rounded-lg animate-pulse"
+                                            ></div>
+                                        ))}
+                                    </div>
+                                ) : (() => {
+                                    const myServices = serviceProviders?.filter(
+                                        (sp: any) => sp.userId === user?.id
+                                    ) || [];
+                                    return myServices.length > 0 ? (
+                                        <div className="space-y-4">
+                                            {myServices.map((service: any) => (
+                                                <Card key={service.id} className="p-6">
+                                                    <div className="flex items-start justify-between">
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-3 mb-3">
+                                                                <h3 className="text-lg font-semibold text-foreground">
+                                                                    {service.businessName}
+                                                                </h3>
+                                                                <Badge
+                                                                    variant={
+                                                                        service.approvalStatus === "approved"
+                                                                            ? "default"
+                                                                            : service.approvalStatus === "pending"
+                                                                            ? "secondary"
+                                                                            : "destructive"
+                                                                    }
+                                                                >
+                                                                    {service.approvalStatus === "pending" 
+                                                                        ? "⏳ Pending Approval" 
+                                                                        : service.approvalStatus === "approved" 
+                                                                        ? "✓ Approved" 
+                                                                        : "✗ Rejected"}
+                                                                </Badge>
+                                                            </div>
+                                                            <p className="text-muted-foreground text-sm mb-3">
+                                                                {service.description}
+                                                            </p>
+                                                            <div className="flex flex-wrap gap-4 text-sm">
+                                                                {service.category && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <span className="font-medium">Category:</span>
+                                                                        <span className="text-muted-foreground">{service.category.name}</span>
+                                                                    </div>
+                                                                )}
+                                                                {service.hourlyRate && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <DollarSign className="w-4 h-4" />
+                                                                        <span className="text-muted-foreground">
+                                                                            ${parseFloat(service.hourlyRate).toFixed(2)}/hour
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {service.location && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        <MapPin className="w-4 h-4" />
+                                                                        <span className="text-muted-foreground">{service.location}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {service.approvalStatus === "pending" && (
+                                                                <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                                                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                                                                        🕐 Your service is awaiting approval from a city or country manager. You'll be notified once it's reviewed.
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                            {service.approvalStatus === "rejected" && service.rejectionReason && (
+                                                                <div className="mt-3 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg">
+                                                                    <p className="text-sm font-medium text-red-700 dark:text-red-300 mb-1">
+                                                                        Rejection Reason:
+                                                                    </p>
+                                                                    <p className="text-sm text-red-600 dark:text-red-400">
+                                                                        {service.rejectionReason}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                            <h3
+                                                className="text-lg font-semibold text-foreground mb-2"
+                                                data-testid="text-no-services-title"
+                                            >
+                                                {t("dashboard.no_services_listed")}
+                                            </h3>
+                                            <p
+                                                className="text-muted-foreground mb-6"
+                                                data-testid="text-no-services-description"
+                                            >
+                                                {t("dashboard.start_earning_service")}
+                                            </p>
+                                            <Button 
+                                                data-testid="button-list-first-service"
+                                                onClick={() => setServiceDialogOpen(true)}
+                                            >
+                                                {t("dashboard.list_first_service")}
+                                            </Button>
+                                        </div>
+                                    );
+                                })()}
+                            </>
                         ) : (
                             <Card className="p-8 text-center">
                                 <UserCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -2510,7 +2609,7 @@ export default function Dashboard() {
                     <DialogHeader>
                         <DialogTitle>Add New Service</DialogTitle>
                         <DialogDescription>
-                            List your service to start earning. Fill in the basic details below.
+                            Submit your service application. Once approved by a city or country manager, your service will be visible to clients.
                         </DialogDescription>
                     </DialogHeader>
 
