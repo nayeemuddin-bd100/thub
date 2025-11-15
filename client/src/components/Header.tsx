@@ -6,7 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight, HeadsetIcon } from "lucide-react";
+import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
@@ -152,16 +152,6 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                     <MessageSquare className="w-5 h-5" />
                   </Button>
                 </Link>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  data-testid="button-contact-support-header" 
-                  className="relative" 
-                  title="Contact Support"
-                  onClick={() => window.location.href = '/dashboard?contactSupport=true'}
-                >
-                  <HeadsetIcon className="w-5 h-5" />
-                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" data-testid="button-notifications" className="relative">
@@ -264,20 +254,22 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                     <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" data-testid="link-dashboard">{t('header.dashboard')}</Link>
-                  </DropdownMenuItem>
+                  {user.role !== 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" data-testid="link-dashboard">{t('header.dashboard')}</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" data-testid="link-admin">{t('header.admin_panel')}</Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link href="/favorites" data-testid="link-favorites">{t('header.favorites')}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/messages" data-testid="link-messages">{t('header.messages')}</Link>
                   </DropdownMenuItem>
-                  {user.role === 'admin' && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" data-testid="link-admin">{t('header.admin_panel')}</Link>
-                    </DropdownMenuItem>
-                  )}
                   {user.role === 'billing' && (
                     <DropdownMenuItem asChild>
                       <Link href="/billing-dashboard">Billing Dashboard</Link>
@@ -296,6 +288,21 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   {user.role === 'city_manager' && (
                     <DropdownMenuItem asChild>
                       <Link href="/city-manager-dashboard">City Manager Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'operation_support' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/support-dashboard">Support Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'service_provider' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/provider-config">Provider Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'country_manager' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard">Country Manager Dashboard</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>

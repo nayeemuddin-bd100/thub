@@ -1004,6 +1004,19 @@ export default function AdminDashboard() {
                     </button>
 
                     <button
+                        onClick={() => setActiveSection("role-requests")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "role-requests"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-role-requests"
+                    >
+                        <UserCheck className="w-5 h-5" />
+                        <span className="text-sm">Role Requests</span>
+                    </button>
+
+                    <button
                         onClick={() => setActiveSection("properties")}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                             activeSection === "properties"
@@ -1277,17 +1290,32 @@ export default function AdminDashboard() {
                                         <SelectItem value="admin">
                                             Admin
                                         </SelectItem>
+                                        <SelectItem value="billing">
+                                            Billing
+                                        </SelectItem>
+                                        <SelectItem value="operation">
+                                            Operation
+                                        </SelectItem>
+                                        <SelectItem value="marketing">
+                                            Marketing
+                                        </SelectItem>
+                                        <SelectItem value="client">
+                                            Client
+                                        </SelectItem>
                                         <SelectItem value="property_owner">
                                             Property Owner
                                         </SelectItem>
                                         <SelectItem value="service_provider">
                                             Service Provider
                                         </SelectItem>
-                                        <SelectItem value="client">
-                                            Client
-                                        </SelectItem>
                                         <SelectItem value="country_manager">
                                             Country Manager
+                                        </SelectItem>
+                                        <SelectItem value="city_manager">
+                                            City Manager
+                                        </SelectItem>
+                                        <SelectItem value="operation_support">
+                                            Operation Support
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -1386,6 +1414,18 @@ export default function AdminDashboard() {
                                                             <SelectValue />
                                                         </SelectTrigger>
                                                         <SelectContent>
+                                                            <SelectItem value="admin">
+                                                                Admin
+                                                            </SelectItem>
+                                                            <SelectItem value="billing">
+                                                                Billing
+                                                            </SelectItem>
+                                                            <SelectItem value="operation">
+                                                                Operation
+                                                            </SelectItem>
+                                                            <SelectItem value="marketing">
+                                                                Marketing
+                                                            </SelectItem>
                                                             <SelectItem value="client">
                                                                 Client
                                                             </SelectItem>
@@ -1398,8 +1438,11 @@ export default function AdminDashboard() {
                                                             <SelectItem value="country_manager">
                                                                 Country Manager
                                                             </SelectItem>
-                                                            <SelectItem value="admin">
-                                                                Admin
+                                                            <SelectItem value="city_manager">
+                                                                City Manager
+                                                            </SelectItem>
+                                                            <SelectItem value="operation_support">
+                                                                Operation Support
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>

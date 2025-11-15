@@ -48,6 +48,7 @@ import {
     emailTemplates,
     blogPosts,
     sessions,
+    roleChangeRequests,
 } from "../shared/schema";
 import { db } from "./db";
 
@@ -102,6 +103,7 @@ async function seed() {
         await db.delete(emailTemplates);
         await db.delete(blogPosts);
         await db.delete(sessions);
+        await db.delete(roleChangeRequests);
         await db.delete(users);
         console.log("✓ Existing data cleaned");
 
@@ -266,6 +268,16 @@ async function seed() {
         const prop3Id = randomUUID();
         const prop4Id = randomUUID();
         const prop5Id = randomUUID();
+        const prop6Id = randomUUID();
+        const prop7Id = randomUUID();
+        const prop8Id = randomUUID();
+        const prop9Id = randomUUID();
+        const prop10Id = randomUUID();
+        const prop11Id = randomUUID();
+        const prop12Id = randomUUID();
+        const prop13Id = randomUUID();
+        const prop14Id = randomUUID();
+        const prop15Id = randomUUID();
 
         // Create sample properties
         const sampleProperties = [
@@ -397,12 +409,273 @@ async function seed() {
                 rating: "5.0",
                 isActive: true,
             },
+            {
+                id: prop6Id,
+                ownerId: owner2Id,
+                title: "Parisian Luxury Penthouse",
+                description:
+                    "Stunning penthouse overlooking the Eiffel Tower. Elegant French design with modern amenities.",
+                location: "Paris, France",
+                pricePerNight: "850",
+                maxGuests: 6,
+                bedrooms: 3,
+                bathrooms: 2,
+                amenities: ["WiFi", "Balcony", "Eiffel Tower View", "Air Conditioning", "Kitchen", "Wine Cellar"],
+                images: [
+                    "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800",
+                    "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=800",
+                ],
+                rating: "4.9",
+                isActive: true,
+            },
+            {
+                id: prop7Id,
+                ownerId: owner3Id,
+                title: "Tokyo Modern Studio",
+                description:
+                    "Minimalist studio in Shibuya district. Perfect location for exploring Tokyo's vibrant culture.",
+                location: "Tokyo, Japan",
+                pricePerNight: "180",
+                maxGuests: 2,
+                bedrooms: 1,
+                bathrooms: 1,
+                amenities: ["WiFi", "Metro Access", "Air Conditioning", "Mini Kitchen", "Washer"],
+                images: [
+                    "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800",
+                    "https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=800",
+                ],
+                rating: "4.7",
+                isActive: true,
+            },
+            {
+                id: prop8Id,
+                ownerId: owner2Id,
+                title: "Dubai Marina Skyscraper",
+                description:
+                    "Luxurious high-rise apartment with breathtaking marina views. World-class amenities and service.",
+                location: "Dubai, UAE",
+                pricePerNight: "650",
+                maxGuests: 8,
+                bedrooms: 4,
+                bathrooms: 3,
+                amenities: ["WiFi", "Pool", "Gym", "Concierge", "Parking", "Marina View", "Smart Home"],
+                images: [
+                    "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800",
+                    "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800",
+                ],
+                rating: "4.8",
+                isActive: true,
+            },
+            {
+                id: prop9Id,
+                ownerId: owner3Id,
+                title: "Barcelona Gothic Quarter Apartment",
+                description:
+                    "Charming apartment in the heart of Barcelona's historic quarter. Walking distance to major attractions.",
+                location: "Barcelona, Spain",
+                pricePerNight: "220",
+                maxGuests: 4,
+                bedrooms: 2,
+                bathrooms: 1,
+                amenities: ["WiFi", "Air Conditioning", "Balcony", "Kitchen", "Historic Building"],
+                images: [
+                    "https://images.unsplash.com/photo-1562883676-8c7feb83f09b?w=800",
+                    "https://images.unsplash.com/photo-1583066292338-91e1dca6cffc?w=800",
+                ],
+                rating: "4.6",
+                isActive: true,
+            },
+            {
+                id: prop10Id,
+                ownerId: owner1Id,
+                title: "Bali Infinity Pool Villa",
+                description:
+                    "Private villa with infinity pool overlooking rice terraces. Ultimate tropical relaxation.",
+                location: "Ubud, Bali",
+                pricePerNight: "380",
+                maxGuests: 6,
+                bedrooms: 3,
+                bathrooms: 2,
+                amenities: ["WiFi", "Infinity Pool", "Rice Terrace View", "Kitchen", "Garden", "Yoga Deck"],
+                images: [
+                    "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800",
+                    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800",
+                ],
+                rating: "5.0",
+                isActive: true,
+            },
+            {
+                id: prop11Id,
+                ownerId: owner2Id,
+                title: "London Thames Loft",
+                description:
+                    "Industrial-chic loft along the River Thames. Contemporary design meets historic charm.",
+                location: "London, UK",
+                pricePerNight: "420",
+                maxGuests: 5,
+                bedrooms: 2,
+                bathrooms: 2,
+                amenities: ["WiFi", "River View", "Exposed Brick", "Kitchen", "Workspace", "Parking"],
+                images: [
+                    "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800",
+                    "https://images.unsplash.com/photo-1567428485548-95eaa89258c5?w=800",
+                ],
+                rating: "4.7",
+                isActive: true,
+            },
+            {
+                id: prop12Id,
+                ownerId: owner3Id,
+                title: "Swiss Alps Chalet",
+                description:
+                    "Cozy mountain chalet with spectacular alpine views. Perfect for skiing and hiking enthusiasts.",
+                location: "Zermatt, Switzerland",
+                pricePerNight: "580",
+                maxGuests: 8,
+                bedrooms: 4,
+                bathrooms: 3,
+                amenities: ["WiFi", "Fireplace", "Mountain View", "Ski Storage", "Kitchen", "Sauna", "Balcony"],
+                images: [
+                    "https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=800",
+                    "https://images.unsplash.com/photo-1607400201889-565b1ee75f8e?w=800",
+                ],
+                rating: "4.9",
+                isActive: true,
+            },
+            {
+                id: prop13Id,
+                ownerId: owner1Id,
+                title: "Santorini Cave House",
+                description:
+                    "Traditional cave house with iconic white-washed walls and caldera views. Authentic Greek island experience.",
+                location: "Santorini, Greece",
+                pricePerNight: "480",
+                maxGuests: 4,
+                bedrooms: 2,
+                bathrooms: 2,
+                amenities: ["WiFi", "Caldera View", "Private Terrace", "Kitchen", "Outdoor Jacuzzi"],
+                images: [
+                    "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800",
+                    "https://images.unsplash.com/photo-1613395877344-13d4a8e0d49e?w=800",
+                ],
+                rating: "5.0",
+                isActive: true,
+            },
+            {
+                id: prop14Id,
+                ownerId: owner2Id,
+                title: "Rome Colosseum View Apartment",
+                description:
+                    "Historic apartment with direct views of the Colosseum. Immerse yourself in ancient Roman history.",
+                location: "Rome, Italy",
+                pricePerNight: "390",
+                maxGuests: 5,
+                bedrooms: 2,
+                bathrooms: 2,
+                amenities: ["WiFi", "Colosseum View", "Air Conditioning", "Kitchen", "Historic Building", "Balcony"],
+                images: [
+                    "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=800",
+                    "https://images.unsplash.com/photo-1531572753322-ad063cecc140?w=800",
+                ],
+                rating: "4.8",
+                isActive: true,
+            },
+            {
+                id: prop15Id,
+                ownerId: owner3Id,
+                title: "Phuket Beachfront Resort Villa",
+                description:
+                    "Luxurious resort villa with direct beach access. Private pool and stunning Andaman Sea views.",
+                location: "Phuket, Thailand",
+                pricePerNight: "720",
+                maxGuests: 10,
+                bedrooms: 5,
+                bathrooms: 4,
+                amenities: ["WiFi", "Beach Access", "Private Pool", "Garden", "Kitchen", "Staff Service", "BBQ Area"],
+                images: [
+                    "https://images.unsplash.com/photo-1573790387438-4da905039392?w=800",
+                    "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800",
+                ],
+                rating: "5.0",
+                isActive: true,
+            },
         ];
 
         console.log("Creating properties...");
         await db
             .insert(properties)
             .values(sampleProperties)
+            .onConflictDoNothing();
+
+        // Create service categories
+        console.log("Creating service categories...");
+        const serviceCategoryIds = {
+            maid: randomUUID(),
+            transport: randomUUID(),
+            dining: randomUUID(),
+            concierge: randomUUID(),
+            tour: randomUUID(),
+            spa: randomUUID(),
+            photography: randomUUID(),
+            chef: randomUUID(),
+            massage: randomUUID(),
+            laundry: randomUUID(),
+        };
+
+        await db
+            .insert(serviceCategories)
+            .values([
+                {
+                    id: serviceCategoryIds.maid,
+                    name: "Maid Service",
+                    description: "Professional cleaning and housekeeping services",
+                },
+                {
+                    id: serviceCategoryIds.transport,
+                    name: "Transport",
+                    description: "Airport transfers, car rentals, and transportation",
+                },
+                {
+                    id: serviceCategoryIds.dining,
+                    name: "Private Dining",
+                    description: "Private chef and catering services",
+                },
+                {
+                    id: serviceCategoryIds.concierge,
+                    name: "Concierge",
+                    description: "Personal assistant and concierge services",
+                },
+                {
+                    id: serviceCategoryIds.tour,
+                    name: "Tour Guide",
+                    description: "Local tour guides and travel experiences",
+                },
+                {
+                    id: serviceCategoryIds.spa,
+                    name: "Spa & Wellness",
+                    description: "Spa treatments and wellness services",
+                },
+                {
+                    id: serviceCategoryIds.photography,
+                    name: "Photography",
+                    description: "Professional photography and videography",
+                },
+                {
+                    id: serviceCategoryIds.chef,
+                    name: "Personal Chef",
+                    description: "In-home chef and meal preparation",
+                },
+                {
+                    id: serviceCategoryIds.massage,
+                    name: "Massage Therapy",
+                    description: "Professional massage and therapeutic services",
+                },
+                {
+                    id: serviceCategoryIds.laundry,
+                    name: "Laundry Service",
+                    description: "Laundry and dry cleaning services",
+                },
+            ])
             .onConflictDoNothing();
 
         // Get service categories

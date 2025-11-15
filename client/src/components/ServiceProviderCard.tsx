@@ -23,6 +23,12 @@ interface ServiceProviderCardProps {
       lastName: string;
       profileImageUrl?: string;
     };
+    category?: {
+      id: string;
+      name: string;
+      description?: string;
+      icon?: string;
+    };
   };
 }
 
@@ -36,7 +42,7 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
     `$${parseFloat(provider.hourlyRate).toLocaleString()}/hour` :
     `$${parseFloat(provider.fixedRate || '0').toLocaleString()}/service`;
 
-  const { data: favorites = [] } = useQuery({
+  const { data: favorites = [] } = useQuery<any[]>({
     queryKey: ['/api/favorites'],
     enabled: isAuthenticated,
   });
@@ -113,7 +119,7 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
           className="w-16 h-16 rounded-xl object-cover"
         />
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-1">
             <h3 className="font-semibold text-foreground" data-testid={`text-provider-name-${provider.id}`}>
               {provider.user?.firstName} {provider.user?.lastName}
             </h3>
@@ -124,6 +130,12 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
               </span>
             </div>
           </div>
+          
+          {provider.category && (
+            <p className="text-xs text-primary font-medium mb-2" data-testid={`text-provider-category-${provider.id}`}>
+              {provider.category.name}
+            </p>
+          )}
           
           <p className="text-muted-foreground text-sm mb-3" data-testid={`text-provider-description-${provider.id}`}>
             {provider.description}

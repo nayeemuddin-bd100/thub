@@ -968,18 +968,34 @@ export default function Dashboard() {
                                             {t("dashboard.all_roles")}
                                         </SelectItem>
                                         <SelectItem value="admin">
-                                            {t("dashboard.admin")}
+                                            Admin
+                                        </SelectItem>
+                                        <SelectItem value="billing">
+                                            Billing
+                                        </SelectItem>
+                                        <SelectItem value="operation">
+                                            Operation
+                                        </SelectItem>
+                                        <SelectItem value="marketing">
+                                            Marketing
+                                        </SelectItem>
+                                        <SelectItem value="country_manager">
+                                            Country Manager
+                                        </SelectItem>
+                                        <SelectItem value="city_manager">
+                                            City Manager
+                                        </SelectItem>
+                                        <SelectItem value="operation_support">
+                                            Operation Support
                                         </SelectItem>
                                         <SelectItem value="property_owner">
-                                            {t("dashboard.property_owner")}
+                                            Property Owner
                                         </SelectItem>
                                         <SelectItem value="service_provider">
-                                            {t(
-                                                "dashboard.service_provider_role"
-                                            )}
+                                            Service Provider
                                         </SelectItem>
                                         <SelectItem value="client">
-                                            {t("dashboard.client")}
+                                            Client
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -1087,25 +1103,35 @@ export default function Dashboard() {
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                             <SelectContent>
-                                                                <SelectItem value="client">
-                                                                    {t(
-                                                                        "dashboard.client"
-                                                                    )}
+                                                                <SelectItem value="admin">
+                                                                    Admin
+                                                                </SelectItem>
+                                                                <SelectItem value="billing">
+                                                                    Billing
+                                                                </SelectItem>
+                                                                <SelectItem value="operation">
+                                                                    Operation
+                                                                </SelectItem>
+                                                                <SelectItem value="marketing">
+                                                                    Marketing
+                                                                </SelectItem>
+                                                                <SelectItem value="country_manager">
+                                                                    Country Manager
+                                                                </SelectItem>
+                                                                <SelectItem value="city_manager">
+                                                                    City Manager
+                                                                </SelectItem>
+                                                                <SelectItem value="operation_support">
+                                                                    Operation Support
                                                                 </SelectItem>
                                                                 <SelectItem value="property_owner">
-                                                                    {t(
-                                                                        "dashboard.property_owner"
-                                                                    )}
+                                                                    Property Owner
                                                                 </SelectItem>
                                                                 <SelectItem value="service_provider">
-                                                                    {t(
-                                                                        "dashboard.service_provider_role"
-                                                                    )}
+                                                                    Service Provider
                                                                 </SelectItem>
-                                                                <SelectItem value="admin">
-                                                                    {t(
-                                                                        "dashboard.admin"
-                                                                    )}
+                                                                <SelectItem value="client">
+                                                                    Client
                                                                 </SelectItem>
                                                             </SelectContent>
                                                         </Select>
@@ -1721,18 +1747,11 @@ export default function Dashboard() {
                                         "dashboard.property_owner_access_required"
                                     )}
                                 </h3>
-                                <p className="text-muted-foreground mb-6">
+                                <p className="text-muted-foreground">
                                     {t(
                                         "dashboard.property_owner_upgrade_message"
                                     )}
                                 </p>
-                                <Button
-                                    variant="outline"
-                                    data-testid="button-contact-support"
-                                    onClick={() => setContactSupportDialogOpen(true)}
-                                >
-                                    {t("dashboard.contact_support")}
-                                </Button>
                             </Card>
                         )}
                     </TabsContent>
@@ -1746,20 +1765,13 @@ export default function Dashboard() {
                             >
                                 {t("dashboard.my_services")}
                             </h2>
-                            {user?.role === "service_provider" ||
-                            user?.role === "admin" ? (
+                            {(user?.role === "service_provider" ||
+                            user?.role === "admin") && (
                                 <Button 
                                     data-testid="button-add-service"
                                     onClick={() => setServiceDialogOpen(true)}
                                 >
                                     {t("dashboard.add_service")}
-                                </Button>
-                            ) : (
-                                <Button
-                                    data-testid="button-become-provider"
-                                    onClick={() => setProviderDialogOpen(true)}
-                                >
-                                    {t("footer.become_provider")}
                                 </Button>
                             )}
                         </div>
@@ -1798,18 +1810,11 @@ export default function Dashboard() {
                                         "dashboard.service_provider_access_required"
                                     )}
                                 </h3>
-                                <p className="text-muted-foreground mb-6">
+                                <p className="text-muted-foreground">
                                     {t(
                                         "dashboard.service_provider_upgrade_message"
                                     )}
                                 </p>
-                                <Button
-                                    variant="outline"
-                                    data-testid="button-contact-support-services"
-                                    onClick={() => setContactSupportDialogOpen(true)}
-                                >
-                                    {t("dashboard.contact_support")}
-                                </Button>
                             </Card>
                         )}
                     </TabsContent>

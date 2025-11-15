@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, ArrowLeft, Plus } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Plus, Home } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -229,7 +229,18 @@ export default function MessagesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2" data-testid="heading-messages">{t('messages.title')}</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold" data-testid="heading-messages">{t('messages.title')}</h1>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.href = '/'}
+            className="gap-2"
+          >
+            <Home className="w-4 h-4" />
+            Home
+          </Button>
+        </div>
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
           <span className="text-sm text-muted-foreground" data-testid="status-connection">
