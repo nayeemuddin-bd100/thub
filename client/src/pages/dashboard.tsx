@@ -1909,11 +1909,17 @@ export default function Dashboard() {
                                         "dashboard.service_provider_access_required"
                                     )}
                                 </h3>
-                                <p className="text-muted-foreground">
+                                <p className="text-muted-foreground mb-6">
                                     {t(
                                         "dashboard.service_provider_upgrade_message"
                                     )}
                                 </p>
+                                <Button
+                                    data-testid="button-become-provider"
+                                    onClick={() => setProviderDialogOpen(true)}
+                                >
+                                    {t("footer.become_provider")}
+                                </Button>
                             </Card>
                         )}
                     </TabsContent>
