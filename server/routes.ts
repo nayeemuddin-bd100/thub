@@ -2232,6 +2232,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    app.get("/api/properties/owner", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const properties = await storage.getPropertiesByOwner(userId);
+            res.json(properties);
+        } catch (error) {
+            console.error("Error fetching owner properties:", error);
+            res.status(500).json({ message: "Failed to fetch owner properties" });
+        }
+    });
+
     // Service routes
     app.get("/api/service-categories", async (req, res) => {
         try {

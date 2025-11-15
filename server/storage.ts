@@ -131,6 +131,7 @@ export interface IStorage {
         updates: Partial<InsertProperty>
     ): Promise<Property>;
     deleteProperty(id: string): Promise<void>;
+    getPropertiesByOwner(ownerId: string): Promise<Property[]>;
 
     // Service operations
     getServiceCategories(): Promise<ServiceCategory[]>;
@@ -607,6 +608,14 @@ export class DatabaseStorage implements IStorage {
 
     async deleteProperty(id: string): Promise<void> {
         await db.delete(properties).where(eq(properties.id, id));
+    }
+
+    async getPropertiesByOwner(ownerId: string): Promise<Property[]> {
+        return await db
+            .select()
+            .from(properties)
+            .where(eq(properties.ownerId, ownerId))
+            .orderBy(desc(properties.createdAt));
     }
 
     // Service operations

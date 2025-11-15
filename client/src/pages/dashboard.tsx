@@ -489,10 +489,17 @@ export default function Dashboard() {
                 maxGuests: formData.maxGuests,
                 bedrooms: formData.bedrooms,
                 bathrooms: formData.bathrooms,
+                latitude: formData.latitude,
+                longitude: formData.longitude,
+                amenities: formData.amenities || [],
+                images: formData.images || [],
+                videos: formData.videos || [],
+                isActive: formData.isActive ?? true,
             });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/properties/owner"] });
             setPropertyDialogOpen(false);
             propertyForm.reset();
             toast({
@@ -504,6 +511,32 @@ export default function Dashboard() {
             toast({
                 title: t("common.error"),
                 description: error.message || "Failed to add property",
+                variant: "destructive",
+            });
+        },
+    });
+
+    // Property queries and mutations
+    const { data: ownerProperties = [] } = useQuery({
+        queryKey: ["/api/properties/owner"],
+        enabled: user?.role === "property_owner" || user?.role === "admin",
+    });
+
+    const deletePropertyMutation = useMutation({
+        mutationFn: async (propertyId: string) => {
+            return await apiRequest("DELETE", `/api/properties/${propertyId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/properties/owner"] });
+            toast({
+                title: "Property deleted",
+                description: "Your property has been deleted successfully.",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to delete property",
                 variant: "destructive",
             });
         },
@@ -1773,27 +1806,75 @@ export default function Dashboard() {
 
                         {user?.role === "property_owner" ||
                         user?.role === "admin" ? (
-                            <div className="text-center py-12">
-                                <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                <h3
-                                    className="text-lg font-semibold text-foreground mb-2"
-                                    data-testid="text-no-properties-title"
-                                >
-                                    {t("dashboard.no_properties_listed")}
-                                </h3>
-                                <p
-                                    className="text-muted-foreground mb-6"
-                                    data-testid="text-no-properties-description"
-                                >
-                                    {t("dashboard.start_earning_property")}
-                                </p>
-                                <Button 
-                                    data-testid="button-list-first-property"
-                                    onClick={() => setPropertyDialogOpen(true)}
-                                >
-                                    {t("dashboard.list_first_property")}
-                                </Button>
-                            </div>
+                            ownerProperties.length > 0 ? (
+                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                    {ownerProperties.map((property: any) => (
+                                        <Card key={property.id} className="overflow-hidden">
+                                            <div className="aspect-video bg-muted relative">
+                                                {property.images && property.images.length > 0 ? (
+                                                    <img
+                                                        src={property.images[0]}
+                                                        alt={property.title}
+                                                        className="object-cover w-full h-full"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full">
+                                                        <Building className="w-12 h-12 text-muted-foreground" />
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-2 right-2">
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            if (confirm("Are you sure you want to delete this property?")) {
+                                                                deletePropertyMutation.mutate(property.id);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <CardContent className="p-4">
+                                                <h3 className="font-semibold text-lg mb-2">{property.title}</h3>
+                                                <p className="text-sm text-muted-foreground mb-2">{property.location}</p>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold text-lg">${property.pricePerNight}/night</span>
+                                                    <span className="text-sm text-muted-foreground">{property.maxGuests} guests</span>
+                                                </div>
+                                                {property.amenities && property.amenities.length > 0 && (
+                                                    <div className="mt-2 text-xs text-muted-foreground">
+                                                        {property.amenities.length} amenities
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                    <h3
+                                        className="text-lg font-semibold text-foreground mb-2"
+                                        data-testid="text-no-properties-title"
+                                    >
+                                        {t("dashboard.no_properties_listed")}
+                                    </h3>
+                                    <p
+                                        className="text-muted-foreground mb-6"
+                                        data-testid="text-no-properties-description"
+                                    >
+                                        {t("dashboard.start_earning_property")}
+                                    </p>
+                                    <Button 
+                                        data-testid="button-list-first-property"
+                                        onClick={() => setPropertyDialogOpen(true)}
+                                    >
+                                        {t("dashboard.list_first_property")}
+                                    </Button>
+                                </div>
+                            )
                         ) : (
                             <Card className="p-8 text-center">
                                 <Building className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
