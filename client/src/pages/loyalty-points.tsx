@@ -78,7 +78,7 @@ export default function LoyaltyPointsPage() {
                 <div className="flex items-center gap-2">
                   <Gift className="w-5 h-5" />
                   <span className="text-3xl font-bold" data-testid="text-available-points">
-                    {loyaltyPoints.availablePoints.toLocaleString()}
+                    {loyaltyPoints?.availablePoints?.toLocaleString() || '0'}
                   </span>
                 </div>
               </CardContent>
@@ -94,7 +94,7 @@ export default function LoyaltyPointsPage() {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-green-600" />
                   <span className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-lifetime-earned">
-                    {loyaltyPoints.lifetimeEarned.toLocaleString()}
+                    {loyaltyPoints?.lifetimeEarned?.toLocaleString() || '0'}
                   </span>
                 </div>
               </CardContent>
@@ -110,7 +110,7 @@ export default function LoyaltyPointsPage() {
                 <div className="flex items-center gap-2">
                   <Award className="w-5 h-5 text-purple-600" />
                   <span className="text-3xl font-bold text-gray-900 dark:text-white" data-testid="text-lifetime-redeemed">
-                    {loyaltyPoints.lifetimeRedeemed.toLocaleString()}
+                    {loyaltyPoints?.lifetimeRedeemed?.toLocaleString() || '0'}
                   </span>
                 </div>
               </CardContent>
@@ -127,7 +127,7 @@ export default function LoyaltyPointsPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-orange-600" />
                     <span className="text-3xl font-bold text-orange-600 dark:text-orange-400" data-testid="text-expiring-points">
-                      {loyaltyPoints.pointsExpiringSoon.toLocaleString()}
+                      {loyaltyPoints?.pointsExpiringSoon?.toLocaleString() || '0'}
                     </span>
                   </div>
                   {loyaltyPoints.expirationDate && (

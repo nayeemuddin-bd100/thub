@@ -319,7 +319,7 @@ export default function CountryManagerDashboard() {
                             <Badge variant="outline">{booking.status}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            Scheduled: {format(new Date(booking.scheduledDate), 'PPp')}
+                            Scheduled: {booking.scheduledDate ? format(new Date(booking.scheduledDate), 'PPp') : 'N/A'}
                           </p>
                           <Button 
                             size="sm" 
@@ -354,7 +354,7 @@ export default function CountryManagerDashboard() {
                             <Badge>{booking.status}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Scheduled: {format(new Date(booking.scheduledDate), 'PPp')}
+                            Scheduled: {booking.scheduledDate ? format(new Date(booking.scheduledDate), 'PPp') : 'N/A'}
                           </p>
                         </div>
                       ))
@@ -379,7 +379,7 @@ export default function CountryManagerDashboard() {
                             <Badge variant="secondary">{booking.status}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Completed: {format(new Date(booking.createdAt), 'PPp')}
+                            Completed: {booking.createdAt ? format(new Date(booking.createdAt), 'PPp') : 'N/A'}
                           </p>
                         </div>
                       ))
@@ -562,7 +562,7 @@ export default function CountryManagerDashboard() {
                           {order.provider?.businessName || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                          {order.serviceDate ? format(new Date(order.serviceDate), 'MMM d, yyyy') : 'N/A'}
                         </TableCell>
                         <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
                         <TableCell>
@@ -618,7 +618,7 @@ export default function CountryManagerDashboard() {
                           {order.provider?.businessName || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                          {order.serviceDate ? format(new Date(order.serviceDate), 'MMM d, yyyy') : 'N/A'}
                         </TableCell>
                         <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
                         <TableCell>
@@ -654,7 +654,7 @@ export default function CountryManagerDashboard() {
                           {order.provider?.businessName || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                          {order.serviceDate ? format(new Date(order.serviceDate), 'MMM d, yyyy') : 'N/A'}
                         </TableCell>
                         <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
                         <TableCell className="text-green-600">
@@ -690,7 +690,7 @@ export default function CountryManagerDashboard() {
                           {order.provider?.businessName || 'N/A'}
                         </TableCell>
                         <TableCell>
-                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                          {order.serviceDate ? format(new Date(order.serviceDate), 'MMM d, yyyy') : 'N/A'}
                         </TableCell>
                         <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
                         <TableCell>

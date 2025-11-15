@@ -103,7 +103,7 @@ import {
     type UpsertUser,
     type User,
 } from "@shared/schema";
-import { and, asc, desc, eq, gte, inArray, like, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, inArray, like, lte, or, sql } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -554,7 +554,7 @@ export class DatabaseStorage implements IStorage {
         const conditions = [eq(properties.isActive, true)];
 
         if (filters?.location) {
-            conditions.push(like(properties.location, `%${filters.location}%`));
+            conditions.push(ilike(properties.location, `%${filters.location}%`));
         }
         if (filters?.maxPrice) {
             conditions.push(

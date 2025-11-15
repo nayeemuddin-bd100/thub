@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useTranslation } from 'react-i18next';
@@ -11,7 +11,9 @@ import { useAuth } from "@/hooks/useAuth";
 export default function Properties() {
   const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const [routerLocation] = useLocation();
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const prevSearchRef = useRef(window.location.search);
   const [filters, setFilters] = useState({
     location: '',
     checkIn: '',
@@ -27,8 +29,10 @@ export default function Properties() {
       setIsDarkMode(true);
       document.documentElement.classList.add('dark');
     }
+  }, []);
 
-    // Parse URL parameters
+  useEffect(() => {
+    // Parse URL parameters on mount
     const urlParams = new URLSearchParams(window.location.search);
     setFilters({
       location: urlParams.get('location') || '',
@@ -38,6 +42,29 @@ export default function Properties() {
       minPrice: urlParams.get('minPrice') || '',
       maxPrice: urlParams.get('maxPrice') || '',
     });
+    prevSearchRef.current = window.location.search;
+  }, []);
+
+  useEffect(() => {
+    // Check for URL search parameter changes
+    const checkSearchParams = () => {
+      const currentSearch = window.location.search;
+      if (currentSearch !== prevSearchRef.current) {
+        prevSearchRef.current = currentSearch;
+        const urlParams = new URLSearchParams(currentSearch);
+        setFilters({
+          location: urlParams.get('location') || '',
+          checkIn: urlParams.get('checkIn') || '',
+          checkOut: urlParams.get('checkOut') || '',
+          guests: urlParams.get('guests') || '',
+          minPrice: urlParams.get('minPrice') || '',
+          maxPrice: urlParams.get('maxPrice') || '',
+        });
+      }
+    };
+
+    const interval = setInterval(checkSearchParams, 100);
+    return () => clearInterval(interval);
   }, []);
 
   const toggleDarkMode = () => {

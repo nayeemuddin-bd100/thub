@@ -1050,8 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 (sum, item) =>
                     sum +
                     (item.paymentStatus === "paid" && 
-                     item.status !== "cancelled" && 
-                     item.status !== "refunded"
+                     item.status !== "cancelled"
                         ? parseFloat(item.totalAmount.toString())
                         : 0),
                 0
@@ -1067,8 +1066,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                         itemDate.getMonth() === currentMonth &&
                         itemDate.getFullYear() === currentYear &&
                         item.paymentStatus === "paid" &&
-                        item.status !== "cancelled" &&
-                        item.status !== "refunded"
+                        item.status !== "cancelled"
                     );
                 })
                 .reduce(
@@ -1111,9 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             const refundCount = refundedItems.length;
 
-            const currentCommissionRate = await storage
-                .getPlatformSetting("commission_rate")
-                .then((setting) => (setting ? parseFloat(setting.toString()) : 10));
+            const currentCommissionRate = 10; // Default commission rate
 
             res.json({
                 totalRevenue,
@@ -1223,7 +1219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const service = await storage.getServiceProvider(
                     order.serviceProviderId
                 );
-                const serviceName = service?.serviceName || "Unknown Service";
+                const serviceName = service?.businessName || "Unknown Service";
                 const revenue = parseFloat(order.totalAmount.toString());
                 const commission = order.platformFeeAmount
                     ? parseFloat(order.platformFeeAmount.toString())

@@ -782,7 +782,11 @@ export default function Dashboard() {
                             </TabsTrigger>
                         </TabsList>
                     ) : (
-                        <TabsList className="grid w-full grid-cols-5">
+                        <TabsList className={`grid w-full ${
+                            user?.role === 'client' ? 'grid-cols-3' :
+                            user?.role === 'property_owner' || user?.role === 'service_provider' ? 'grid-cols-4' :
+                            'grid-cols-5'
+                        }`}>
                             <TabsTrigger
                                 value="bookings"
                                 data-testid="tab-bookings"
@@ -790,20 +794,26 @@ export default function Dashboard() {
                                 <Calendar className="w-4 h-4 mr-2" />
                                 {t("dashboard.my_bookings")}
                             </TabsTrigger>
-                            <TabsTrigger
-                                value="properties"
-                                data-testid="tab-properties"
-                            >
-                                <Building className="w-4 h-4 mr-2" />
-                                {t("dashboard.my_properties")}
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="services"
-                                data-testid="tab-services"
-                            >
-                                <UserCheck className="w-4 h-4 mr-2" />
-                                {t("dashboard.my_services")}
-                            </TabsTrigger>
+                            {/* Show Properties tab only for property_owner */}
+                            {user?.role === 'property_owner' && (
+                                <TabsTrigger
+                                    value="properties"
+                                    data-testid="tab-properties"
+                                >
+                                    <Building className="w-4 h-4 mr-2" />
+                                    {t("dashboard.my_properties")}
+                                </TabsTrigger>
+                            )}
+                            {/* Show Services tab only for service_provider */}
+                            {user?.role === 'service_provider' && (
+                                <TabsTrigger
+                                    value="services"
+                                    data-testid="tab-services"
+                                >
+                                    <UserCheck className="w-4 h-4 mr-2" />
+                                    {t("dashboard.my_services")}
+                                </TabsTrigger>
+                            )}
                             <TabsTrigger
                                 value="notifications"
                                 data-testid="tab-notifications"
@@ -1685,7 +1695,8 @@ export default function Dashboard() {
                         )}
                     </TabsContent>
 
-                    {/* My Properties */}
+                    {/* My Properties - Only for property_owner */}
+                    {user?.role === 'property_owner' && (<>
                     <TabsContent value="properties" className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h2
@@ -1763,8 +1774,10 @@ export default function Dashboard() {
                             </Card>
                         )}
                     </TabsContent>
+                    </>)}
 
-                    {/* My Services */}
+                    {/* My Services - Only for service_provider */}
+                    {user?.role === 'service_provider' && (<>
                     <TabsContent value="services" className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h2
@@ -1923,6 +1936,7 @@ export default function Dashboard() {
                             </Card>
                         )}
                     </TabsContent>
+                    </>)}
 
                     {/* Notifications */}
                     <TabsContent value="notifications" className="space-y-6">
