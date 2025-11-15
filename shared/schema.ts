@@ -54,6 +54,27 @@ export const users = pgTable("users", {
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Role change requests table
+export const roleChangeRequests = pgTable("role_change_requests", {
+    id: varchar("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: varchar("user_id")
+        .references(() => users.id)
+        .notNull(),
+    requestedRole: varchar("requested_role", {
+        enum: ["client", "property_owner", "service_provider"],
+    }).notNull(),
+    status: varchar("status", {
+        enum: ["pending", "approved", "rejected"],
+    })
+        .notNull()
+        .default("pending"),
+    requestNote: text("request_note"),
+    adminNote: text("admin_note"),
+    requestedAt: timestamp("requested_at").defaultNow().notNull(),
+    reviewedAt: timestamp("reviewed_at"),
+    reviewedBy: varchar("reviewed_by").references(() => users.id),
+});
+
 // Properties table
 export const properties = pgTable("properties", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -1442,3 +1463,11 @@ export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
     updatedAt: true,
 });
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
+
+export type RoleChangeRequest = typeof roleChangeRequests.$inferSelect;
+export const insertRoleChangeRequestSchema = createInsertSchema(roleChangeRequests).omit({
+    id: true,
+    requestedAt: true,
+    reviewedAt: true,
+});
+export type InsertRoleChangeRequest = z.infer<typeof insertRoleChangeRequestSchema>;
