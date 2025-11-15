@@ -71,16 +71,60 @@ This document lists all demo/test accounts available after running the database 
 
 ---
 
-### 5. Country Manager Account
+### 5. Billing Account
+- **Email**: `billing@test.com`
+- **Password**: `password123`
+- **Name**: Bill Finance
+- **Role**: Billing
+- **Access**: Billing dashboard, financial reports, revenue stats, payment management
+- **Dashboard**: `/billing-dashboard`
+- **Features**: View all transactions, revenue analytics, payment status tracking
+
+---
+
+### 6. Operation Account
+- **Email**: `operation@test.com`
+- **Password**: `password123`
+- **Name**: Ops Manager
+- **Role**: Operation
+- **Access**: Operation dashboard, user management, system monitoring
+- **Dashboard**: `/operation-dashboard`
+- **Features**: User search, system stats, activity monitoring, user role management
+
+---
+
+### 7. Marketing Account
+- **Email**: `marketing@test.com`
+- **Password**: `password123`
+- **Name**: Mark Campaign
+- **Role**: Marketing
+- **Access**: Marketing dashboard, promotional codes, campaigns
+- **Dashboard**: `/marketing-dashboard`
+- **Features**: Promo code management, campaign analytics, featured property management
+
+---
+
+### 8. Country Manager Account
 - **Email**: `manager@test.com`
 - **Password**: `password123`
 - **Name**: James Wilson
 - **Role**: Country Manager
-- **Access**: Assign jobs to service providers, manage regional operations
+- **Access**: Assign jobs to service providers, manage regional operations, recruit city managers
 
 ---
 
-### 6. Operation Support Account
+### 9. City Manager Account
+- **Email**: `citymanager@test.com`
+- **Password**: `password123`
+- **Name**: City Chief
+- **Role**: City Manager
+- **Access**: City manager dashboard, host/provider recruitment, city-level management
+- **Dashboard**: `/city-manager-dashboard`
+- **Features**: Provider applications, host recruitment, city properties/services
+
+---
+
+### 10. Operation Support Account
 - **Email**: `support@test.com`
 - **Password**: `password123`
 - **Name**: Support Team
@@ -106,12 +150,52 @@ Navigate to the login page and use any of the accounts listed above:
 
 ### 3. Explore Different Roles
 Each role has different dashboards and capabilities:
-- **Admin**: Manage all users, view system analytics
-- **Client**: Browse and book properties, order services
-- **Property Owner**: List and manage properties
-- **Service Provider**: Offer and deliver services
+- **Admin**: Manage all users, view system analytics (`/admin`)
+- **Billing**: Financial reports, revenue tracking, payment management (`/billing-dashboard`)
+- **Operation**: User management, system monitoring (`/operation-dashboard`)
+- **Marketing**: Promotional campaigns, promo codes (`/marketing-dashboard`)
+- **Client**: Browse and book properties, order services (`/dashboard`)
+- **Property Owner**: List and manage properties (`/dashboard`)
+- **Service Provider**: Offer and deliver services (`/provider-config`, `/provider-orders`)
 - **Country Manager**: Assign and manage service jobs
-- **Operation Support**: Manage all support messages, respond to user inquiries
+- **City Manager**: Host/provider recruitment, city management (`/city-manager-dashboard`)
+- **Operation Support**: Manage all support messages (`/support-dashboard`)
+
+---
+
+## 💬 Role-Based Messaging Permissions
+
+The messaging system enforces strict role-based permissions. Each role can only message certain other roles:
+
+### Admin Roles (Admin, Billing, Operation, Marketing)
+**Can message**: Country Manager, City Manager, Property Owner, Service Provider, Client
+**Cannot message**: Other admin roles (e.g., admin cannot message billing)
+
+### Country Manager
+**Can message**: Admin, Billing, Operation, Marketing, other Country Managers, Property Owners, Service Providers
+
+### City Manager
+**Can message**: Admin, Billing, Operation, Marketing, Country Manager, Property Owners, Clients
+
+### Property Owner
+**Can message**: Admin, Billing, Operation, Marketing, City Manager, Clients
+
+### Service Provider
+**Can message**: Admin, Billing, Operation, Marketing, Country Manager, Clients
+
+### Client
+**Can message**: Admin, Billing, Operation, Marketing, Property Owners, Service Providers
+
+### Operation Support
+**Can message**: All roles (unrestricted access for support purposes)
+
+### How to Test Messaging
+1. Login with any account (e.g., `billing@test.com`)
+2. Navigate to Messages page (`/messages`)
+3. Click "New Message" button
+4. You'll see only the roles you're allowed to message in the dropdown
+5. Select a role, then select a user from that role
+6. Start a conversation
 
 ---
 
@@ -130,17 +214,21 @@ Each role has different dashboards and capabilities:
 
 ## 📋 Quick Reference Table
 
-| Email | Password | Name | Role |
-|-------|----------|------|------|
-| admin@test.com | password123 | Admin User | Administrator |
-| client1@test.com | password123 | Sarah Johnson | Client |
-| client2@test.com | password123 | Michael Chen | Client |
-| owner1@test.com | password123 | David Martinez | Property Owner |
-| owner2@test.com | password123 | Emily Thompson | Property Owner |
-| provider1@test.com | password123 | Carlos Rodriguez | Service Provider |
-| provider2@test.com | password123 | Lisa Anderson | Service Provider |
-| manager@test.com | password123 | James Wilson | Country Manager |
-| support@test.com | password123 | Support Team | Operation Support |
+| Email | Password | Name | Role | Dashboard |
+|-------|----------|------|------|-----------|
+| admin@test.com | password123 | Admin User | Administrator | `/admin` |
+| billing@test.com | password123 | Bill Finance | Billing | `/billing-dashboard` |
+| operation@test.com | password123 | Ops Manager | Operation | `/operation-dashboard` |
+| marketing@test.com | password123 | Mark Campaign | Marketing | `/marketing-dashboard` |
+| client1@test.com | password123 | Sarah Johnson | Client | `/dashboard` |
+| client2@test.com | password123 | Michael Chen | Client | `/dashboard` |
+| owner1@test.com | password123 | David Martinez | Property Owner | `/dashboard` |
+| owner2@test.com | password123 | Emily Thompson | Property Owner | `/dashboard` |
+| provider1@test.com | password123 | Carlos Rodriguez | Service Provider | `/provider-config` |
+| provider2@test.com | password123 | Lisa Anderson | Service Provider | `/provider-config` |
+| manager@test.com | password123 | James Wilson | Country Manager | - |
+| citymanager@test.com | password123 | City Chief | City Manager | `/city-manager-dashboard` |
+| support@test.com | password123 | Support Team | Operation Support | `/support-dashboard` |
 
 ---
 

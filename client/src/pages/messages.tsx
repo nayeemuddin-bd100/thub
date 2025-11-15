@@ -50,6 +50,7 @@ export default function MessagesPage() {
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedNewUser, setSelectedNewUser] = useState<string>('');
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   
   // Check for user query parameter to auto-select conversation
   useEffect(() => {
@@ -199,8 +200,18 @@ export default function MessagesPage() {
       setIsNewMessageOpen(false);
       setSelectedRole('');
       setSelectedNewUser('');
+      setUserSearchQuery('');
     }
   };
+
+  // Filter users based on search query
+  const filteredUsers = usersByRole.filter(user => {
+    if (!userSearchQuery.trim()) return true;
+    const searchLower = userSearchQuery.toLowerCase();
+    const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+    const email = user.email.toLowerCase();
+    return fullName.includes(searchLower) || email.includes(searchLower);
+  });
 
   if (!currentUser) {
     return (
@@ -250,6 +261,7 @@ export default function MessagesPage() {
                       <Select value={selectedRole} onValueChange={(value) => {
                         setSelectedRole(value);
                         setSelectedNewUser('');
+                        setUserSearchQuery('');
                       }}>
                         <SelectTrigger>
                           <SelectValue placeholder="Choose a role..." />
@@ -272,18 +284,32 @@ export default function MessagesPage() {
                             No users found with this role
                           </p>
                         ) : (
-                          <Select value={selectedNewUser} onValueChange={setSelectedNewUser}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Choose a user..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {usersByRole.map((user) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.firstName} {user.lastName} ({user.email})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <>
+                            <Input
+                              placeholder="Search by name or email..."
+                              value={userSearchQuery}
+                              onChange={(e) => setUserSearchQuery(e.target.value)}
+                              className="mb-2"
+                            />
+                            {filteredUsers.length === 0 ? (
+                              <p className="text-sm text-muted-foreground">
+                                No users match your search
+                              </p>
+                            ) : (
+                              <Select value={selectedNewUser} onValueChange={setSelectedNewUser}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Choose a user..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {filteredUsers.map((user) => (
+                                    <SelectItem key={user.id} value={user.id}>
+                                      {user.firstName} {user.lastName} ({user.email})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </>
                         )}
                       </div>
                     )}

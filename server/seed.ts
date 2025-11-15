@@ -110,13 +110,20 @@ async function seed() {
 
         // Generate UUIDs for users
         const adminId = randomUUID();
+        const billingId = randomUUID();
+        const operationId = randomUUID();
+        const marketingId = randomUUID();
         const client1Id = randomUUID();
         const client2Id = randomUUID();
+        const client3Id = randomUUID();
         const owner1Id = randomUUID();
         const owner2Id = randomUUID();
+        const owner3Id = randomUUID();
         const provider1Id = randomUUID();
         const provider2Id = randomUUID();
-        const managerId = randomUUID();
+        const provider3Id = randomUUID();
+        const countryManagerId = randomUUID();
+        const cityManagerId = randomUUID();
         const operationSupportId = randomUUID();
 
         const sampleUsers = [
@@ -127,6 +134,30 @@ async function seed() {
                 firstName: "Admin",
                 lastName: "User",
                 role: "admin" as const,
+            },
+            {
+                id: billingId,
+                email: "billing@test.com",
+                password: hashedPassword,
+                firstName: "Bill",
+                lastName: "Finance",
+                role: "billing" as const,
+            },
+            {
+                id: operationId,
+                email: "operation@test.com",
+                password: hashedPassword,
+                firstName: "Ops",
+                lastName: "Manager",
+                role: "operation" as const,
+            },
+            {
+                id: marketingId,
+                email: "marketing@test.com",
+                password: hashedPassword,
+                firstName: "Mark",
+                lastName: "Campaign",
+                role: "marketing" as const,
             },
             {
                 id: client1Id,
@@ -142,6 +173,14 @@ async function seed() {
                 password: hashedPassword,
                 firstName: "Michael",
                 lastName: "Chen",
+                role: "client" as const,
+            },
+            {
+                id: client3Id,
+                email: "client3@test.com",
+                password: hashedPassword,
+                firstName: "Emma",
+                lastName: "Davis",
                 role: "client" as const,
             },
             {
@@ -161,6 +200,14 @@ async function seed() {
                 role: "property_owner" as const,
             },
             {
+                id: owner3Id,
+                email: "owner3@test.com",
+                password: hashedPassword,
+                firstName: "Robert",
+                lastName: "Brown",
+                role: "property_owner" as const,
+            },
+            {
                 id: provider1Id,
                 email: "provider1@test.com",
                 password: hashedPassword,
@@ -177,12 +224,28 @@ async function seed() {
                 role: "service_provider" as const,
             },
             {
-                id: managerId,
+                id: provider3Id,
+                email: "provider3@test.com",
+                password: hashedPassword,
+                firstName: "Tom",
+                lastName: "Miller",
+                role: "service_provider" as const,
+            },
+            {
+                id: countryManagerId,
                 email: "manager@test.com",
                 password: hashedPassword,
                 firstName: "James",
                 lastName: "Wilson",
                 role: "country_manager" as const,
+            },
+            {
+                id: cityManagerId,
+                email: "citymanager@test.com",
+                password: hashedPassword,
+                firstName: "City",
+                lastName: "Chief",
+                role: "city_manager" as const,
             },
             {
                 id: operationSupportId,
@@ -561,32 +624,221 @@ async function seed() {
         console.log("Creating reviews...");
         await db.insert(reviews).values(sampleReviews).onConflictDoNothing();
 
-        console.log(
-            "\n⚠️  Note: Service bookings skipped because service providers were not created."
-        );
-        console.log(
-            "Service categories need to exist in the database before running this seed script."
-        );
+        // Create promotional codes for marketing dashboard testing
+        const promoCode1Id = randomUUID();
+        const promoCode2Id = randomUUID();
+        const promoCode3Id = randomUUID();
+
+        const samplePromoCodes = [
+            {
+                id: promoCode1Id,
+                code: "SUMMER2024",
+                discountType: "percentage" as const,
+                discountValue: "20",
+                maxUses: 100,
+                usedCount: 15,
+                validFrom: new Date(),
+                validUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+                isActive: true,
+            },
+            {
+                id: promoCode2Id,
+                code: "WELCOME50",
+                discountType: "fixed_amount" as const,
+                discountValue: "50",
+                maxUses: 500,
+                usedCount: 87,
+                validFrom: new Date(),
+                validUntil: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+                isActive: true,
+            },
+            {
+                id: promoCode3Id,
+                code: "WEEKEND15",
+                discountType: "percentage" as const,
+                discountValue: "15",
+                maxUses: 200,
+                usedCount: 42,
+                validFrom: new Date(),
+                validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+                isActive: true,
+            },
+        ];
+
+        console.log("Creating promotional codes...");
+        await db.insert(promotionalCodes).values(samplePromoCodes).onConflictDoNothing();
+
+        // Create sample messages for testing role-based messaging
+        const sampleMessages = [
+            {
+                senderId: client1Id,
+                receiverId: owner1Id,
+                content: "Hi! I'm interested in booking your Luxury Beachfront Villa. Is it available for next month?",
+                isRead: true,
+            },
+            {
+                senderId: owner1Id,
+                receiverId: client1Id,
+                content: "Hello Sarah! Yes, the villa is available. I'd be happy to help with your booking.",
+                isRead: true,
+            },
+            {
+                senderId: billingId,
+                receiverId: client2Id,
+                content: "Hello Michael, I noticed your recent payment was processed successfully. Thank you!",
+                isRead: false,
+            },
+            {
+                senderId: operationId,
+                receiverId: provider1Id,
+                content: "Carlos, please update your service availability for the upcoming month.",
+                isRead: true,
+            },
+            {
+                senderId: provider1Id,
+                receiverId: operationId,
+                content: "Sure, I'll update it today. Thanks for the reminder!",
+                isRead: false,
+            },
+            {
+                senderId: marketingId,
+                receiverId: owner2Id,
+                content: "Emily, we'd love to feature your Mountain Cabin in our summer campaign. Are you interested?",
+                isRead: false,
+            },
+            {
+                senderId: cityManagerId,
+                receiverId: client3Id,
+                content: "Welcome to TravelHub! If you need any assistance finding properties in your area, let me know.",
+                isRead: false,
+            },
+            {
+                senderId: countryManagerId,
+                receiverId: provider2Id,
+                content: "Lisa, we have a new job assignment for you in the Miami area. Please check your dashboard.",
+                isRead: true,
+            },
+        ];
+
+        console.log("Creating sample messages...");
+        await db.insert(messages).values(sampleMessages).onConflictDoNothing();
+
+        // Create sample payments for billing dashboard testing
+        const payment1Id = randomUUID();
+        const payment2Id = randomUUID();
+        const payment3Id = randomUUID();
+
+        const samplePayments = [
+            {
+                id: payment1Id,
+                bookingId: booking1Id,
+                userId: client1Id,
+                amount: "2250",
+                paymentMethod: "card" as const,
+                status: "succeeded" as const,
+                stripePaymentIntentId: "pi_test_" + randomUUID(),
+            },
+            {
+                id: payment2Id,
+                bookingId: booking2Id,
+                userId: client2Id,
+                amount: "1600",
+                paymentMethod: "card" as const,
+                status: "succeeded" as const,
+                stripePaymentIntentId: "pi_test_" + randomUUID(),
+            },
+            {
+                id: payment3Id,
+                bookingId: booking3Id,
+                userId: client1Id,
+                amount: "3640",
+                paymentMethod: "card" as const,
+                status: "succeeded" as const,
+                stripePaymentIntentId: "pi_test_" + randomUUID(),
+            },
+        ];
+
+        console.log("Creating sample payments...");
+        await db.insert(payments).values(samplePayments).onConflictDoNothing();
+
+        // Create notifications for users
+        const sampleNotifications = [
+            {
+                userId: client1Id,
+                type: "booking" as const,
+                title: "Booking Confirmed",
+                message: "Your booking for Luxury Beachfront Villa has been confirmed!",
+                isRead: true,
+            },
+            {
+                userId: client2Id,
+                type: "payment" as const,
+                title: "Payment Successful",
+                message: "Your payment of $1,600 has been processed successfully.",
+                isRead: false,
+            },
+            {
+                userId: owner1Id,
+                type: "booking" as const,
+                title: "New Booking",
+                message: "You have a new booking for your Luxury Beachfront Villa.",
+                isRead: false,
+            },
+            {
+                userId: provider1Id,
+                type: "message" as const,
+                title: "New Message",
+                message: "Ops Manager sent you a message",
+                isRead: true,
+            },
+        ];
+
+        console.log("Creating notifications...");
+        await db.insert(notifications).values(sampleNotifications).onConflictDoNothing();
 
         console.log("✅ Database seeding completed successfully!");
-        console.log("\nSample credentials:");
-        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        console.log("Admin:           admin@test.com / password123");
-        console.log("Clients:         client1@test.com / password123");
-        console.log("                 client2@test.com / password123");
-        console.log("Property Owners: owner1@test.com / password123");
-        console.log("                 owner2@test.com / password123");
-        console.log("Providers:       provider1@test.com / password123");
-        console.log("                 provider2@test.com / password123");
-        console.log("Manager:         manager@test.com / password123");
-        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        console.log("\nData created:");
-        console.log("- 7 users with different roles");
-        console.log("- 5 properties in various locations");
-        console.log("- 6 service providers across categories");
-        console.log("- 3 bookings (past and future)");
-        console.log("- 3 reviews");
-        console.log("- 2 service bookings");
+        console.log("\n🔐 Sample Credentials:");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("ADMIN ROLES:");
+        console.log("  Admin:          admin@test.com / password123");
+        console.log("  Billing:        billing@test.com / password123");
+        console.log("  Operation:      operation@test.com / password123");
+        console.log("  Marketing:      marketing@test.com / password123");
+        console.log("\nMANAGERS:");
+        console.log("  Country Manager: manager@test.com / password123");
+        console.log("  City Manager:    citymanager@test.com / password123");
+        console.log("\nUSERS:");
+        console.log("  Clients:         client1@test.com / password123");
+        console.log("                   client2@test.com / password123");
+        console.log("                   client3@test.com / password123");
+        console.log("  Property Owners: owner1@test.com / password123");
+        console.log("                   owner2@test.com / password123");
+        console.log("                   owner3@test.com / password123");
+        console.log("  Providers:       provider1@test.com / password123");
+        console.log("                   provider2@test.com / password123");
+        console.log("                   provider3@test.com / password123");
+        console.log("\nSUPPORT:");
+        console.log("  Operation Support: support@test.com / password123");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("\n📊 Data Created:");
+        console.log("  ✓ 16 users with different roles");
+        console.log("  ✓ 5 properties in various locations");
+        console.log("  ✓ 6 service providers across categories");
+        console.log("  ✓ 3 bookings (past and future)");
+        console.log("  ✓ 3 reviews");
+        console.log("  ✓ 3 promotional codes");
+        console.log("  ✓ 8 messages between users");
+        console.log("  ✓ 3 payments");
+        console.log("  ✓ 4 notifications");
+        console.log("\n💬 Role-Based Messaging:");
+        console.log("  - Login with any account and go to /messages");
+        console.log("  - Click 'New Message' to see role-based recipient options");
+        console.log("  - Each role can only message specific other roles");
+        console.log("\n📱 Test Dashboards:");
+        console.log("  - Billing:    /billing-dashboard");
+        console.log("  - Operation:  /operation-dashboard");
+        console.log("  - Marketing:  /marketing-dashboard");
+        console.log("  - City Manager: /city-manager-dashboard");
     } catch (error) {
         console.error("❌ Error seeding database:", error);
         throw error;

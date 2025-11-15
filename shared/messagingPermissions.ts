@@ -16,11 +16,15 @@ export interface RoleMessagingPermissions {
 
 export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
   admin: [
+    "billing",
+    "operation",
+    "marketing",
     "country_manager",
     "city_manager",
     "property_owner",
     "service_provider",
     "client",
+    "operation_support",
   ],
   billing: [
     "country_manager",
