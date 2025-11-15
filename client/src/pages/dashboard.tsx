@@ -4,6 +4,7 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
     DialogContent,
@@ -64,6 +65,26 @@ interface AdminStats {
     totalServiceProviders: number;
     totalBookings: number;
 }
+
+// Available property amenities
+const AMENITIES = [
+    { id: "wifi", label: "WiFi" },
+    { id: "parking", label: "Free Parking" },
+    { id: "pool", label: "Swimming Pool" },
+    { id: "kitchen", label: "Full Kitchen" },
+    { id: "ac", label: "Air Conditioning" },
+    { id: "heating", label: "Heating" },
+    { id: "tv", label: "TV" },
+    { id: "washer", label: "Washer" },
+    { id: "dryer", label: "Dryer" },
+    { id: "gym", label: "Gym/Fitness Center" },
+    { id: "hottub", label: "Hot Tub" },
+    { id: "balcony", label: "Balcony/Patio" },
+    { id: "workspace", label: "Dedicated Workspace" },
+    { id: "fireplace", label: "Fireplace" },
+    { id: "elevator", label: "Elevator" },
+    { id: "petsAllowed", label: "Pets Allowed" },
+];
 
 export default function Dashboard() {
     const { t } = useTranslation();
@@ -321,6 +342,18 @@ export default function Dashboard() {
         maxGuests: z.coerce.number().int().positive("Max guests must be at least 1"),
         bedrooms: z.coerce.number().int().positive("Bedrooms must be at least 1"),
         bathrooms: z.coerce.number().int().positive("Bathrooms must be at least 1"),
+        latitude: z.preprocess((val) => {
+            if (val === "" || val === null || val === undefined) return undefined;
+            return Number(val);
+        }, z.number().optional()),
+        longitude: z.preprocess((val) => {
+            if (val === "" || val === null || val === undefined) return undefined;
+            return Number(val);
+        }, z.number().optional()),
+        amenities: z.array(z.string()).default([]),
+        images: z.array(z.string()).default([]),
+        videos: z.array(z.string()).default([]),
+        isActive: z.boolean().default(true),
     });
 
     type PropertyFormValues = z.infer<typeof propertyFormSchema>;
@@ -335,6 +368,12 @@ export default function Dashboard() {
             maxGuests: 1,
             bedrooms: 1,
             bathrooms: 1,
+            latitude: undefined,
+            longitude: undefined,
+            amenities: [],
+            images: [],
+            videos: [],
+            isActive: true,
         },
     });
 
@@ -2601,6 +2640,84 @@ export default function Dashboard() {
                                     )}
                                 />
                             </div>
+
+                            {/* GPS Coordinates */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="latitude"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Latitude (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" step="0.000001" placeholder="37.7749" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={propertyForm.control}
+                                    name="longitude"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Longitude (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Input type="number" step="0.000001" placeholder="-122.4194" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            {/* Amenities */}
+                            <FormField
+                                control={propertyForm.control}
+                                name="amenities"
+                                render={() => (
+                                    <FormItem>
+                                        <FormLabel>Amenities</FormLabel>
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-2">
+                                            {AMENITIES.map((amenity) => (
+                                                <FormField
+                                                    key={amenity.id}
+                                                    control={propertyForm.control}
+                                                    name="amenities"
+                                                    render={({ field }) => {
+                                                        return (
+                                                            <FormItem
+                                                                key={amenity.id}
+                                                                className="flex flex-row items-start space-x-2 space-y-0"
+                                                            >
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(amenity.id)}
+                                                                        onCheckedChange={(checked) => {
+                                                                            return checked
+                                                                                ? field.onChange([...field.value, amenity.id])
+                                                                                : field.onChange(
+                                                                                      field.value?.filter(
+                                                                                          (value) => value !== amenity.id
+                                                                                      )
+                                                                                  );
+                                                                        }}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormLabel className="text-sm font-normal cursor-pointer">
+                                                                    {amenity.label}
+                                                                </FormLabel>
+                                                            </FormItem>
+                                                        );
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
 
                             <div className="flex justify-end space-x-2 pt-4">
                                 <Button

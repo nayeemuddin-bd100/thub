@@ -2164,6 +2164,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    app.put("/api/properties/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const property = await storage.getProperty(req.params.id);
+
+            if (!property) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            if (property.ownerId !== userId && user?.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const updatedProperty = await storage.updateProperty(req.params.id, req.body);
+            res.json(updatedProperty);
+        } catch (error) {
+            console.error("Error updating property:", error);
+            res.status(500).json({ message: "Failed to update property" });
+        }
+    });
+
+    app.delete("/api/properties/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const property = await storage.getProperty(req.params.id);
+
+            if (!property) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            if (property.ownerId !== userId && user?.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            await storage.deleteProperty(req.params.id);
+            res.json({ message: "Property deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting property:", error);
+            res.status(500).json({ message: "Failed to delete property" });
+        }
+    });
+
+    app.patch("/api/properties/:id/toggle-active", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const property = await storage.getProperty(req.params.id);
+
+            if (!property) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            if (property.ownerId !== userId && user?.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const updatedProperty = await storage.updateProperty(req.params.id, {
+                isActive: !property.isActive,
+            });
+            res.json(updatedProperty);
+        } catch (error) {
+            console.error("Error toggling property status:", error);
+            res.status(500).json({ message: "Failed to toggle property status" });
+        }
+    });
+
     // Service routes
     app.get("/api/service-categories", async (req, res) => {
         try {
