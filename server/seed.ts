@@ -799,6 +799,191 @@ async function seed() {
                 .insert(serviceProviders)
                 .values(sampleProviders)
                 .onConflictDoNothing();
+
+            // Create service tasks for each category
+            console.log("Creating service tasks...");
+            const sampleServiceTasks = [
+                // Housekeeping/Maid tasks
+                {
+                    id: randomUUID(),
+                    categoryId: maidCategory?.id || "",
+                    taskCode: "CLEAN_KITCHEN",
+                    taskName: "Deep Clean Kitchen",
+                    description: "Complete kitchen deep cleaning including appliances, cabinets, and floors",
+                    defaultDuration: 90,
+                    sortOrder: 1,
+                },
+                {
+                    id: randomUUID(),
+                    categoryId: maidCategory?.id || "",
+                    taskCode: "CLEAN_BATHROOM",
+                    taskName: "Bathroom Cleaning",
+                    description: "Full bathroom sanitization including tiles, fixtures, and mirrors",
+                    defaultDuration: 60,
+                    sortOrder: 2,
+                },
+                {
+                    id: randomUUID(),
+                    categoryId: maidCategory?.id || "",
+                    taskCode: "CLEAN_LIVING",
+                    taskName: "Bedroom & Living Room",
+                    description: "Dusting, vacuuming, and organizing living spaces",
+                    defaultDuration: 75,
+                    sortOrder: 3,
+                },
+                {
+                    id: randomUUID(),
+                    categoryId: maidCategory?.id || "",
+                    taskCode: "LAUNDRY",
+                    taskName: "Laundry Service",
+                    description: "Washing, drying, and folding laundry",
+                    defaultDuration: 120,
+                    sortOrder: 4,
+                },
+                {
+                    id: randomUUID(),
+                    categoryId: maidCategory?.id || "",
+                    taskCode: "CLEAN_WINDOWS",
+                    taskName: "Window Cleaning",
+                    description: "Interior and exterior window cleaning",
+                    defaultDuration: 60,
+                    sortOrder: 5,
+                },
+            ];
+
+            await db.insert(serviceTasks).values(sampleServiceTasks).onConflictDoNothing();
+
+            // Enable tasks for maid providers with pricing
+            console.log("Configuring provider tasks...");
+            const maidProvider1Id = sampleProviders.find(p => p.businessName.includes("Premium Cleaning"))?.id;
+            const maidProvider2Id = sampleProviders.find(p => p.businessName.includes("Sparkle Clean"))?.id;
+
+            if (maidProvider1Id || maidProvider2Id) {
+                const taskConfigs = [];
+                
+                // Configure tasks for first maid provider
+                if (maidProvider1Id) {
+                    sampleServiceTasks.forEach((task, index) => {
+                        taskConfigs.push({
+                            serviceProviderId: maidProvider1Id,
+                            taskId: task.id,
+                            isEnabled: true,
+                            customPrice: (45 + index * 10).toFixed(2), // $45, $55, $65, $75, $85
+                            estimatedDuration: task.defaultDuration,
+                            notes: "Professional grade cleaning",
+                        });
+                    });
+                }
+
+                // Configure tasks for second maid provider with slightly different prices
+                if (maidProvider2Id) {
+                    sampleServiceTasks.forEach((task, index) => {
+                        taskConfigs.push({
+                            serviceProviderId: maidProvider2Id,
+                            taskId: task.id,
+                            isEnabled: true,
+                            customPrice: (40 + index * 10).toFixed(2), // $40, $50, $60, $70, $80
+                            estimatedDuration: task.defaultDuration,
+                            notes: "Eco-friendly products available",
+                        });
+                    });
+                }
+
+                await db.insert(providerTaskConfigs).values(taskConfigs).onConflictDoNothing();
+            }
+
+            // Create menus and menu items for chef provider
+            console.log("Creating chef menus...");
+            const chefProviderId = sampleProviders.find(p => p.businessName.includes("Chef Michael"))?.id;
+            
+            if (chefProviderId) {
+                const dinnerMenuId = randomUUID();
+                const lunchMenuId = randomUUID();
+
+                const menus = [
+                    {
+                        id: dinnerMenuId,
+                        serviceProviderId: chefProviderId,
+                        categoryName: "Gourmet Dinner",
+                        description: "Fine dining experience with French and Italian cuisine",
+                        isActive: true,
+                        sortOrder: 1,
+                    },
+                    {
+                        id: lunchMenuId,
+                        serviceProviderId: chefProviderId,
+                        categoryName: "Executive Lunch",
+                        description: "Professional business lunch options",
+                        isActive: true,
+                        sortOrder: 2,
+                    },
+                ];
+
+                await db.insert(providerMenus).values(menus).onConflictDoNothing();
+
+                // Add menu items
+                console.log("Creating menu items...");
+                const menuItemsList = [
+                    // Dinner menu items
+                    {
+                        menuId: dinnerMenuId,
+                        dishName: "Filet Mignon with Truffle Sauce",
+                        description: "Prime beef tenderloin with black truffle sauce, roasted vegetables",
+                        cuisineType: "French",
+                        preparationTime: 45,
+                        servings: 1,
+                        price: "85.00",
+                    },
+                    {
+                        menuId: dinnerMenuId,
+                        dishName: "Lobster Risotto",
+                        description: "Creamy arborio rice with fresh lobster, saffron, and parmesan",
+                        cuisineType: "Italian",
+                        preparationTime: 40,
+                        servings: 1,
+                        price: "75.00",
+                    },
+                    {
+                        menuId: dinnerMenuId,
+                        dishName: "Duck Confit",
+                        description: "Slow-cooked duck leg with crispy skin, served with potato gratin",
+                        cuisineType: "French",
+                        preparationTime: 50,
+                        servings: 1,
+                        price: "68.00",
+                    },
+                    // Lunch menu items
+                    {
+                        menuId: lunchMenuId,
+                        dishName: "Grilled Salmon Salad",
+                        description: "Fresh Atlantic salmon over mixed greens with citrus vinaigrette",
+                        cuisineType: "Mediterranean",
+                        preparationTime: 25,
+                        servings: 1,
+                        price: "38.00",
+                    },
+                    {
+                        menuId: lunchMenuId,
+                        dishName: "Chicken Caesar Wrap",
+                        description: "Grilled chicken, romaine, parmesan in a spinach tortilla",
+                        cuisineType: "American",
+                        preparationTime: 20,
+                        servings: 1,
+                        price: "28.00",
+                    },
+                    {
+                        menuId: lunchMenuId,
+                        dishName: "Vegetarian Pasta Primavera",
+                        description: "Fresh seasonal vegetables tossed with penne in light cream sauce",
+                        cuisineType: "Italian",
+                        preparationTime: 30,
+                        servings: 1,
+                        price: "32.00",
+                    },
+                ];
+
+                await db.insert(menuItems).values(menuItemsList).onConflictDoNothing();
+            }
         }
 
         // Create sample bookings
