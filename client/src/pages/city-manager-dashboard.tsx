@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Users, CheckCircle, Clock, Check, X, Home } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building, Users, CheckCircle, Clock, Check, X, Home, DollarSign, TrendingUp, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -27,6 +28,35 @@ interface ServiceProvider {
     lastName: string;
     email: string;
   };
+}
+
+interface ServiceOrder {
+  id: string;
+  status: string;
+  totalAmount: string;
+  platformFeeAmount: string;
+  providerAmount: string;
+  paymentStatus: string;
+  serviceDate: string;
+  createdAt: string;
+  provider?: {
+    businessName: string;
+  };
+  client?: {
+    firstName: string;
+    lastName: string;
+  };
+}
+
+interface ServiceOrderSummary {
+  totalOrders: number;
+  grossVolume: number;
+  platformCommission: number;
+  providerPayouts: number;
+  refundsCount: number;
+  pendingCount: number;
+  completedCount: number;
+  cancelledCount: number;
 }
 
 export default function CityManagerDashboard() {
@@ -55,6 +85,18 @@ export default function CityManagerDashboard() {
 
   const { data: providers = [], isLoading: loadingProviders } = useQuery<ServiceProvider[]>({
     queryKey: ['/api/city-manager/providers'],
+  });
+
+  const { data: serviceOrdersData, isLoading: loadingServiceOrders } = useQuery<{
+    orders: ServiceOrder[];
+    summary: ServiceOrderSummary;
+  }>({
+    queryKey: ['/api/city-manager/service-orders', { include: 'summary' }],
+    queryFn: async () => {
+      const response = await fetch('/api/city-manager/service-orders?include=summary');
+      if (!response.ok) throw new Error('Failed to fetch service orders');
+      return response.json();
+    },
   });
 
   const approveMutation = useMutation({
@@ -319,6 +361,297 @@ export default function CityManagerDashboard() {
                         <TableCell>{provider.user.email}</TableCell>
                         <TableCell>
                           {format(new Date(provider.createdAt), 'MMM d, yyyy')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Service Orders</CardTitle>
+            <Package className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingServiceOrders ? '...' : serviceOrdersData?.summary?.totalOrders || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Gross Volume</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${loadingServiceOrders ? '...' : Number(serviceOrdersData?.summary?.grossVolume ?? 0).toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Platform Commission</CardTitle>
+            <TrendingUp className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${loadingServiceOrders ? '...' : Number(serviceOrdersData?.summary?.platformCommission ?? 0).toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Provider Payouts</CardTitle>
+            <DollarSign className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${loadingServiceOrders ? '...' : Number(serviceOrdersData?.summary?.providerPayouts ?? 0).toFixed(2)}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingServiceOrders ? '...' : serviceOrdersData?.summary?.pendingCount || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Completed Orders</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingServiceOrders ? '...' : serviceOrdersData?.summary?.completedCount || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Cancelled Orders</CardTitle>
+            <X className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingServiceOrders ? '...' : serviceOrdersData?.summary?.cancelledCount || 0}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Refunds Issued</CardTitle>
+            <TrendingUp className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {loadingServiceOrders ? '...' : serviceOrdersData?.summary?.refundsCount || 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Service Bookings in City</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="all">
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+              <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Service Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Payment</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loadingServiceOrders ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                    </TableRow>
+                  ) : (serviceOrdersData?.orders || []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No service orders found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    (serviceOrdersData?.orders || []).slice(0, 10).map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          {order.client ? `${order.client.firstName} ${order.client.lastName}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {order.provider?.businessName || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              order.status === 'completed' ? 'default' :
+                              order.status === 'cancelled' ? 'destructive' :
+                              'secondary'
+                            }
+                          >
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              order.paymentStatus === 'paid' ? 'default' :
+                              order.paymentStatus === 'refunded' ? 'destructive' :
+                              'secondary'
+                            }
+                          >
+                            {order.paymentStatus}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="pending" className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Service Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(serviceOrdersData?.orders || [])
+                    .filter((o) => o.status === 'pending' || o.status === 'pending_payment' || o.status === 'pending_acceptance')
+                    .slice(0, 10)
+                    .map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          {order.client ? `${order.client.firstName} ${order.client.lastName}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {order.provider?.businessName || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{order.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="completed" className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Service Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Commission</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(serviceOrdersData?.orders || [])
+                    .filter((o) => o.status === 'completed')
+                    .slice(0, 10)
+                    .map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          {order.client ? `${order.client.firstName} ${order.client.lastName}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {order.provider?.businessName || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
+                        <TableCell className="text-green-600">
+                          ${parseFloat(order.platformFeeAmount).toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+
+            <TabsContent value="cancelled" className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Provider</TableHead>
+                    <TableHead>Service Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(serviceOrdersData?.orders || [])
+                    .filter((o) => o.status === 'cancelled')
+                    .slice(0, 10)
+                    .map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell>
+                          {order.client ? `${order.client.firstName} ${order.client.lastName}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {order.provider?.businessName || 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(order.serviceDate), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>${parseFloat(order.totalAmount).toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Badge variant={order.paymentStatus === 'refunded' ? 'destructive' : 'secondary'}>
+                            {order.paymentStatus}
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}

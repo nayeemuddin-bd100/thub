@@ -1503,6 +1503,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     );
 
+    // City Manager: Get service bookings with analytics
+    // MVP LIMITATION: No jurisdiction validation - shows all bookings
+    // TODO: Add jurisdiction checks in production (filter by city)
+    app.get("/api/city-manager/service-orders", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "city_manager") {
+                return res.status(403).json({ message: "City Manager access required" });
+            }
+
+            const includeSummary = req.query.include === 'summary';
+            
+            // TODO: In production, filter by city jurisdiction
+            // For MVP, show all service orders
+            const filters: any = {};
+            
+            // Apply optional filters from query params
+            if (req.query.status) {
+                const statusArray = Array.isArray(req.query.status) 
+                    ? req.query.status 
+                    : [req.query.status];
+                filters.status = statusArray;
+            }
+            
+            if (req.query.providerName) {
+                filters.providerName = req.query.providerName as string;
+            }
+            
+            if (req.query.dateFrom) {
+                filters.dateFrom = req.query.dateFrom as string;
+            }
+            
+            if (req.query.dateTo) {
+                filters.dateTo = req.query.dateTo as string;
+            }
+            
+            if (req.query.paymentStatus) {
+                filters.paymentStatus = req.query.paymentStatus as string;
+            }
+
+            const orders = await storage.getFilteredServiceOrders(filters);
+
+            if (includeSummary) {
+                const summary = {
+                    totalOrders: orders.length,
+                    grossVolume: orders.reduce((sum, o) => sum + parseFloat(o.totalAmount || '0'), 0),
+                    platformCommission: orders.reduce((sum, o) => sum + parseFloat(o.platformFeeAmount || '0'), 0),
+                    providerPayouts: orders.reduce((sum, o) => sum + parseFloat(o.providerAmount || '0'), 0),
+                    refundsCount: orders.filter(o => o.paymentStatus === 'refunded').length,
+                    pendingCount: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
+                    completedCount: orders.filter(o => o.status === 'completed').length,
+                    cancelledCount: orders.filter(o => o.status === 'cancelled').length,
+                };
+                res.json({ orders, summary });
+            } else {
+                res.json(orders);
+            }
+        } catch (error) {
+            console.error("Error fetching city manager service orders:", error);
+            res.status(500).json({ message: "Failed to fetch service orders" });
+        }
+    });
+
     // Country Manager: Approve provider application
     // MVP LIMITATION: No jurisdiction validation - any country_manager can approve any provider
     // TODO: Add jurisdiction checks in production (verify provider belongs to manager's country)
@@ -1635,6 +1700,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
         }
     );
+
+    // Country Manager: Get service bookings with analytics
+    // MVP LIMITATION: No jurisdiction validation - shows all bookings
+    // TODO: Add jurisdiction checks in production (filter by country)
+    app.get("/api/country-manager/service-orders", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager access required" });
+            }
+
+            const includeSummary = req.query.include === 'summary';
+            
+            // TODO: In production, filter by country jurisdiction
+            // For MVP, show all service orders
+            const filters: any = {};
+            
+            // Apply optional filters from query params
+            if (req.query.status) {
+                const statusArray = Array.isArray(req.query.status) 
+                    ? req.query.status 
+                    : [req.query.status];
+                filters.status = statusArray;
+            }
+            
+            if (req.query.providerName) {
+                filters.providerName = req.query.providerName as string;
+            }
+            
+            if (req.query.dateFrom) {
+                filters.dateFrom = req.query.dateFrom as string;
+            }
+            
+            if (req.query.dateTo) {
+                filters.dateTo = req.query.dateTo as string;
+            }
+            
+            if (req.query.paymentStatus) {
+                filters.paymentStatus = req.query.paymentStatus as string;
+            }
+
+            const orders = await storage.getFilteredServiceOrders(filters);
+
+            if (includeSummary) {
+                const summary = {
+                    totalOrders: orders.length,
+                    grossVolume: orders.reduce((sum, o) => sum + parseFloat(o.totalAmount || '0'), 0),
+                    platformCommission: orders.reduce((sum, o) => sum + parseFloat(o.platformFeeAmount || '0'), 0),
+                    providerPayouts: orders.reduce((sum, o) => sum + parseFloat(o.providerAmount || '0'), 0),
+                    refundsCount: orders.filter(o => o.paymentStatus === 'refunded').length,
+                    pendingCount: orders.filter(o => o.status === 'pending' || o.status === 'pending_payment').length,
+                    completedCount: orders.filter(o => o.status === 'completed').length,
+                    cancelledCount: orders.filter(o => o.status === 'cancelled').length,
+                };
+                res.json({ orders, summary });
+            } else {
+                res.json(orders);
+            }
+        } catch (error) {
+            console.error("Error fetching country manager service orders:", error);
+            res.status(500).json({ message: "Failed to fetch service orders" });
+        }
+    });
 
     // Property routes
     app.get("/api/properties", async (req, res) => {
