@@ -25,6 +25,7 @@ import {
     providerPricing,
     providerTaskConfigs,
     reviews,
+    roleChangeRequests,
     serviceBookings,
     serviceCategories,
     serviceOrderItems,
@@ -60,6 +61,7 @@ import {
     type InsertProviderPricing,
     type InsertProviderTaskConfig,
     type InsertReview,
+    type InsertRoleChangeRequest,
     type InsertServiceOrder,
     type InsertServiceOrderItem,
     type InsertServicePackage,
@@ -85,6 +87,7 @@ import {
     type ProviderPricing,
     type ProviderTaskConfig,
     type Review,
+    type RoleChangeRequest,
     type ServiceBooking,
     type ServiceCategory,
     type ServiceOrder,
@@ -447,6 +450,29 @@ export interface IStorage {
         updates: Partial<InsertBlogPost>
     ): Promise<BlogPost>;
     deleteBlogPost(id: string): Promise<void>;
+
+    // Role Change Requests
+    createRoleChangeRequest(
+        userId: string,
+        requestedRole: string,
+        requestNote?: string
+    ): Promise<RoleChangeRequest>;
+    getPendingRoleChangeRequest(
+        userId: string
+    ): Promise<RoleChangeRequest | undefined>;
+    getAllRoleChangeRequests(
+        status?: string
+    ): Promise<RoleChangeRequest[]>;
+    approveRoleChangeRequest(
+        requestId: string,
+        reviewedBy: string,
+        adminNote?: string
+    ): Promise<RoleChangeRequest>;
+    rejectRoleChangeRequest(
+        requestId: string,
+        reviewedBy: string,
+        adminNote: string
+    ): Promise<RoleChangeRequest>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2212,6 +2238,127 @@ export class DatabaseStorage implements IStorage {
 
     async deleteBlogPost(id: string): Promise<void> {
         await db.delete(blogPosts).where(eq(blogPosts.id, id));
+    }
+
+    // Role Change Requests
+    async createRoleChangeRequest(
+        userId: string,
+        requestedRole: string,
+        requestNote?: string
+    ): Promise<RoleChangeRequest> {
+        const [request] = await db
+            .insert(roleChangeRequests)
+            .values({
+                userId,
+                requestedRole: requestedRole as any,
+                requestNote,
+                status: "pending",
+            })
+            .returning();
+        return request;
+    }
+
+    async getPendingRoleChangeRequest(
+        userId: string
+    ): Promise<RoleChangeRequest | undefined> {
+        const [request] = await db
+            .select()
+            .from(roleChangeRequests)
+            .where(
+                and(
+                    eq(roleChangeRequests.userId, userId),
+                    eq(roleChangeRequests.status, "pending")
+                )
+            )
+            .orderBy(desc(roleChangeRequests.requestedAt))
+            .limit(1);
+        return request;
+    }
+
+    async getAllRoleChangeRequests(
+        status?: string
+    ): Promise<RoleChangeRequest[]> {
+        const conditions = [];
+        if (status) {
+            conditions.push(eq(roleChangeRequests.status, status as any));
+        }
+
+        const query = db
+            .select()
+            .from(roleChangeRequests)
+            .orderBy(desc(roleChangeRequests.requestedAt));
+
+        if (conditions.length > 0) {
+            return await query.where(and(...conditions));
+        }
+        return await query;
+    }
+
+    async approveRoleChangeRequest(
+        requestId: string,
+        reviewedBy: string,
+        adminNote?: string
+    ): Promise<RoleChangeRequest> {
+        return await db.transaction(async (tx) => {
+            const [request] = await tx
+                .select()
+                .from(roleChangeRequests)
+                .where(eq(roleChangeRequests.id, requestId));
+
+            if (!request) {
+                throw new Error("Role change request not found");
+            }
+
+            if (request.status !== "pending") {
+                throw new Error(
+                    "Only pending requests can be approved"
+                );
+            }
+
+            await tx
+                .update(users)
+                .set({
+                    role: request.requestedRole as any,
+                    updatedAt: new Date(),
+                })
+                .where(eq(users.id, request.userId));
+
+            const [updatedRequest] = await tx
+                .update(roleChangeRequests)
+                .set({
+                    status: "approved",
+                    reviewedBy,
+                    reviewedAt: new Date(),
+                    adminNote,
+                })
+                .where(eq(roleChangeRequests.id, requestId))
+                .returning();
+
+            return updatedRequest;
+        });
+    }
+
+    async rejectRoleChangeRequest(
+        requestId: string,
+        reviewedBy: string,
+        adminNote: string
+    ): Promise<RoleChangeRequest> {
+        const [request] = await db
+            .update(roleChangeRequests)
+            .set({
+                status: "rejected",
+                reviewedBy,
+                reviewedAt: new Date(),
+                adminNote,
+            })
+            .where(eq(roleChangeRequests.id, requestId))
+            .returning();
+
+        if (!request) {
+            throw new Error("Role change request not found");
+        }
+
+        return request;
     }
 }
 

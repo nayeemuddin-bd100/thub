@@ -4582,6 +4582,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // POST /api/role-change-request - Submit role change request
+    app.post("/api/role-change-request", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const { requestedRole, requestNote } = req.body;
+
+            const allowedRoles = ["client", "property_owner", "service_provider"];
+            if (!allowedRoles.includes(requestedRole)) {
+                return res.status(400).json({
+                    message: "Invalid role. Valid roles: client, property_owner, service_provider",
+                });
+            }
+
+            if (user.role === requestedRole) {
+                return res.status(400).json({
+                    message: `You already have the ${requestedRole} role`,
+                });
+            }
+
+            const pendingRequest = await storage.getPendingRoleChangeRequest(userId);
+            if (pendingRequest) {
+                return res.status(400).json({
+                    message: "You already have a pending role change request. Please wait for it to be reviewed.",
+                });
+            }
+
+            const request = await storage.createRoleChangeRequest(
+                userId,
+                requestedRole,
+                requestNote
+            );
+
+            res.status(201).json({
+                message: "Role change request submitted successfully",
+                request,
+            });
+        } catch (error) {
+            console.error("Error creating role change request:", error);
+            res.status(500).json({ message: "Failed to submit role change request" });
+        }
+    });
+
+    // GET /api/my-role-change-request - Get user's latest role change request
+    app.get("/api/my-role-change-request", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const request = await storage.getPendingRoleChangeRequest(userId);
+
+            if (!request) {
+                return res.status(404).json({ message: "No pending request found" });
+            }
+
+            res.json(request);
+        } catch (error) {
+            console.error("Error fetching role change request:", error);
+            res.status(500).json({ message: "Failed to fetch role change request" });
+        }
+    });
+
+    // GET /api/admin/role-change-requests - List all role change requests (admin only)
+    app.get("/api/admin/role-change-requests", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            const { status } = req.query;
+            const requests = await storage.getAllRoleChangeRequests(
+                status as string | undefined
+            );
+
+            res.json(requests);
+        } catch (error) {
+            console.error("Error fetching role change requests:", error);
+            res.status(500).json({ message: "Failed to fetch role change requests" });
+        }
+    });
+
+    // PUT /api/admin/role-change-request/:id - Approve or reject role change request (admin only)
+    app.put("/api/admin/role-change-request/:id", requireAuth, async (req: any, res) => {
+        try {
+            const adminUserId = (req.session as any).userId;
+            const adminUser = await storage.getUser(adminUserId);
+
+            if (!adminUser || adminUser.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            const { id } = req.params;
+            const { action, adminNote } = req.body;
+
+            if (!["approve", "reject"].includes(action)) {
+                return res.status(400).json({
+                    message: "Invalid action. Must be 'approve' or 'reject'",
+                });
+            }
+
+            if (action === "reject" && !adminNote) {
+                return res.status(400).json({
+                    message: "Admin note is required when rejecting a request",
+                });
+            }
+
+            let updatedRequest;
+            if (action === "approve") {
+                updatedRequest = await storage.approveRoleChangeRequest(
+                    id,
+                    adminUserId,
+                    adminNote
+                );
+
+                await storage.createNotification({
+                    userId: updatedRequest.userId,
+                    type: "approval",
+                    title: "Role Change Request Approved",
+                    message: `Your request to change your role to ${updatedRequest.requestedRole} has been approved.${adminNote ? ` Admin note: ${adminNote}` : ""}`,
+                    isRead: false,
+                });
+            } else {
+                updatedRequest = await storage.rejectRoleChangeRequest(
+                    id,
+                    adminUserId,
+                    adminNote
+                );
+
+                await storage.createNotification({
+                    userId: updatedRequest.userId,
+                    type: "rejection",
+                    title: "Role Change Request Rejected",
+                    message: `Your request to change your role to ${updatedRequest.requestedRole} has been rejected. Reason: ${adminNote}`,
+                    isRead: false,
+                });
+            }
+
+            res.json({
+                message: `Role change request ${action}ed successfully`,
+                request: updatedRequest,
+            });
+        } catch (error: any) {
+            console.error("Error processing role change request:", error);
+            res.status(500).json({ 
+                message: error.message || "Failed to process role change request" 
+            });
+        }
+    });
+
     const httpServer = createServer(app);
 
     // WebSocket setup for real-time messaging and notifications

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -13,7 +13,9 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { UserCheck, Crown, Home, Briefcase, User } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Textarea } from "@/components/ui/textarea";
+import { UserCheck, Crown, Home, Briefcase, User, Clock, XCircle, AlertCircle } from "lucide-react";
 
 const roleConfig = {
   client: {
@@ -42,43 +44,72 @@ const roleConfig = {
   }
 };
 
+interface RoleChangeRequest {
+  id: string;
+  requestedRole: string;
+  status: "pending" | "approved" | "rejected";
+  requestNote?: string;
+  adminNote?: string;
+  requestedAt: string;
+  reviewedAt?: string;
+}
+
 export default function RoleSwitcher() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedRole, setSelectedRole] = useState((user as any)?.role || "client");
+  const [requestNote, setRequestNote] = useState("");
 
-  const changeRoleMutation = useMutation({
-    mutationFn: async (newRole: string) => {
-      await apiRequest("PUT", "/api/auth/change-role", { role: newRole });
+  // Only show for eligible roles
+  const eligibleRoles = ["client", "property_owner", "service_provider"];
+  const userRole = (user as any)?.role;
+  
+  // Fetch pending/latest role change request
+  const { data: roleChangeRequest, isLoading: loadingRequest } = useQuery<RoleChangeRequest | null>({
+    queryKey: ['/api/my-role-change-request'],
+    enabled: !!user && eligibleRoles.includes(userRole),
+  });
+
+  const submitRequestMutation = useMutation({
+    mutationFn: async (data: { requestedRole: string; requestNote?: string }) => {
+      await apiRequest("POST", "/api/role-change-request", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/my-role-change-request'] });
+      setRequestNote("");
       toast({
-        title: "Role Updated",
-        description: `You are now a ${roleConfig[selectedRole as keyof typeof roleConfig]?.label}`,
+        title: "Request Submitted",
+        description: "Your role change request has been submitted for admin approval.",
       });
     },
-    onError: (error) => {
-      console.error("Role change error:", error);
+    onError: (error: any) => {
+      console.error("Role change request error:", error);
       toast({
         title: "Error",
-        description: "Failed to change role. Please try again.",
+        description: error.message || "Failed to submit role change request. Please try again.",
         variant: "destructive",
       });
     },
   });
 
-  const currentRoleConfig = roleConfig[(user as any)?.role as keyof typeof roleConfig] || roleConfig.client;
+  const currentRoleConfig = roleConfig[userRole as keyof typeof roleConfig] || roleConfig.client;
   const CurrentRoleIcon = currentRoleConfig.icon;
 
-  const handleRoleChange = () => {
-    if (selectedRole !== (user as any)?.role) {
-      changeRoleMutation.mutate(selectedRole);
+  const handleSubmitRequest = () => {
+    if (selectedRole !== userRole) {
+      submitRequestMutation.mutate({
+        requestedRole: selectedRole,
+        requestNote: requestNote.trim() || undefined,
+      });
     }
   };
 
-  if (!user) return null;
+  // Hide component for non-eligible roles
+  if (!user || !eligibleRoles.includes(userRole)) return null;
+
+  const hasPendingRequest = roleChangeRequest?.status === "pending";
+  const hasRejectedRequest = roleChangeRequest?.status === "rejected";
 
   return (
     <Card className="p-6 bg-card border-border" data-testid="card-role-switcher">
@@ -86,12 +117,18 @@ export default function RoleSwitcher() {
         <div className={`p-3 rounded-lg ${currentRoleConfig.color}`}>
           <CurrentRoleIcon className="w-6 h-6" />
         </div>
-        <div>
+        <div className="flex-1">
           <h3 className="font-semibold text-foreground">Current Role</h3>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" data-testid="badge-current-role">
               {currentRoleConfig.label}
             </Badge>
+            {hasPendingRequest && (
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+                <Clock className="w-3 h-3 mr-1" />
+                Request Pending
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             {currentRoleConfig.description}
@@ -99,12 +136,38 @@ export default function RoleSwitcher() {
         </div>
       </div>
 
+      {hasPendingRequest && (
+        <Alert className="mb-4 bg-yellow-50 border-yellow-200">
+          <AlertCircle className="h-4 w-4 text-yellow-700" />
+          <AlertDescription className="text-yellow-800">
+            Your request to become a <strong>{roleConfig[roleChangeRequest?.requestedRole as keyof typeof roleConfig]?.label}</strong> is pending admin approval.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {hasRejectedRequest && (
+        <Alert className="mb-4 bg-red-50 border-red-200">
+          <XCircle className="h-4 w-4 text-red-700" />
+          <AlertDescription className="text-red-800">
+            Your previous role change request was rejected. 
+            {roleChangeRequest?.adminNote && (
+              <p className="mt-1 text-sm"><strong>Reason:</strong> {roleChangeRequest.adminNote}</p>
+            )}
+            You can submit a new request below.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="space-y-4">
         <div>
           <label className="text-sm font-medium text-foreground mb-2 block">
-            Switch to Role:
+            Request Role Change:
           </label>
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <Select 
+            value={selectedRole} 
+            onValueChange={setSelectedRole}
+            disabled={hasPendingRequest}
+          >
             <SelectTrigger data-testid="select-role">
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
@@ -131,14 +194,29 @@ export default function RoleSwitcher() {
           </Select>
         </div>
 
+        {!hasPendingRequest && (
+          <div>
+            <label className="text-sm font-medium text-foreground mb-2 block">
+              Reason for Request (Optional):
+            </label>
+            <Textarea
+              placeholder="Tell us why you want to change your role..."
+              value={requestNote}
+              onChange={(e) => setRequestNote(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+        )}
+
         <Button
-          onClick={handleRoleChange}
-          disabled={selectedRole === (user as any)?.role || changeRoleMutation.isPending}
+          onClick={handleSubmitRequest}
+          disabled={selectedRole === userRole || hasPendingRequest || submitRequestMutation.isPending}
           className="w-full"
           data-testid="button-change-role"
         >
           <UserCheck className="w-4 h-4 mr-2" />
-          {changeRoleMutation.isPending ? "Updating..." : "Update Role"}
+          {submitRequestMutation.isPending ? "Submitting..." : "Submit Request"}
         </Button>
       </div>
 
