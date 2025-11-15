@@ -5,6 +5,7 @@ import PlatformSettings from "@/components/admin/PlatformSettings";
 import PromotionalCodes from "@/components/admin/PromotionalCodes";
 import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
 import TerritoryManagement from "@/components/admin/TerritoryManagement";
+import RoleChangeRequests from "@/components/admin/RoleChangeRequests";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -54,6 +55,7 @@ import {
     Settings,
     Trash2,
     User,
+    UserCheck,
     Users,
     X,
 } from "lucide-react";
@@ -805,6 +807,23 @@ export default function AdminDashboard() {
 
                             <button
                                 onClick={() => {
+                                    setActiveSection("role-requests");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "role-requests"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <UserCheck className="w-5 h-5" />
+                                <span className="text-sm">
+                                    Role Requests
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={() => {
                                     setActiveSection("properties");
                                     setSidebarOpen(false);
                                 }}
@@ -1389,6 +1408,13 @@ export default function AdminDashboard() {
                                         ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Role Change Requests Section */}
+                    {activeSection === "role-requests" && (
+                        <div>
+                            <RoleChangeRequests />
                         </div>
                     )}
 

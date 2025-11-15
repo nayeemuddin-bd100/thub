@@ -68,6 +68,14 @@ export default function RoleSwitcher() {
   // Fetch pending/latest role change request
   const { data: roleChangeRequest, isLoading: loadingRequest } = useQuery<RoleChangeRequest | null>({
     queryKey: ['/api/my-role-change-request'],
+    queryFn: async () => {
+      const response = await fetch('/api/my-role-change-request', { credentials: 'include' });
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error('Failed to fetch role change request');
+      }
+      return response.json();
+    },
     enabled: !!user && eligibleRoles.includes(userRole),
   });
 
