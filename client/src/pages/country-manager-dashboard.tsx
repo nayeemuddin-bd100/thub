@@ -1,13 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Briefcase, CheckCircle, Clock, TrendingUp } from 'lucide-react';
+import { Users, Briefcase, CheckCircle, Clock, TrendingUp, Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface CountryManagerStats {
   totalProviders: number;
@@ -44,6 +46,7 @@ interface ServiceBooking {
 export default function CountryManagerDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   if (!user || user.role !== 'country_manager') {
     return (
@@ -70,6 +73,36 @@ export default function CountryManagerDashboard() {
 
   const { data: bookings = [], isLoading: loadingBookings } = useQuery<ServiceBooking[]>({
     queryKey: ['/api/country-manager/bookings'],
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (providerId: string) => {
+      const response = await apiRequest('POST', `/api/country-manager/providers/${providerId}/approve`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/stats'] });
+      toast({ title: 'Success', description: 'Provider approved successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to approve provider', variant: 'destructive' });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ providerId, reason }: { providerId: string; reason?: string }) => {
+      const response = await apiRequest('POST', `/api/country-manager/providers/${providerId}/reject`, { reason });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/stats'] });
+      toast({ title: 'Success', description: 'Provider rejected' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to reject provider', variant: 'destructive' });
+    },
   });
 
   return (
@@ -147,10 +180,11 @@ export default function CountryManagerDashboard() {
                       <TableHead>Business Name</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Rating</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {providers.slice(0, 5).map((provider) => (
+                    {providers.slice(0, 10).map((provider) => (
                       <TableRow key={provider.id}>
                         <TableCell>
                           <div>
@@ -168,7 +202,31 @@ export default function CountryManagerDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {provider.rating ? `⭐ ${provider.rating.toFixed(1)}` : 'No rating'}
+                          {provider.rating ? `⭐ ${parseFloat(provider.rating.toString()).toFixed(1)}` : 'No rating'}
+                        </TableCell>
+                        <TableCell>
+                          {provider.approvalStatus === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => approveMutation.mutate(provider.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                <Check className="w-3 h-3 mr-1" />
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => rejectMutation.mutate({ providerId: provider.id, reason: 'Not qualified' })}
+                                disabled={rejectMutation.isPending}
+                              >
+                                <X className="w-3 h-3 mr-1" />
+                                Reject
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

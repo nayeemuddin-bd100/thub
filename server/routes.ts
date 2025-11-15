@@ -1340,6 +1340,264 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // City Manager: Approve provider application
+    app.post(
+        "/api/city-manager/providers/:providerId/approve",
+        requireAuth,
+        async (req, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const user = await storage.getUser(userId);
+
+                if (!user || user.role !== "city_manager") {
+                    return res
+                        .status(403)
+                        .json({ message: "City Manager access required" });
+                }
+
+                const { providerId } = req.params;
+                const provider = await storage.getServiceProvider(providerId);
+
+                if (!provider) {
+                    return res
+                        .status(404)
+                        .json({ message: "Provider application not found" });
+                }
+
+                // Verify provider is still pending
+                if (provider.approvalStatus !== "pending") {
+                    return res
+                        .status(400)
+                        .json({ message: `Provider application is already ${provider.approvalStatus}` });
+                }
+
+                // Update provider approval status
+                const updatedProvider =
+                    await storage.updateServiceProviderApproval(
+                        providerId,
+                        "approved",
+                        null
+                    );
+
+                // Update user role to service_provider
+                await storage.updateUserRole(
+                    provider.userId,
+                    "service_provider"
+                );
+
+                // Send approval notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'approval',
+                    title: 'Application Approved!',
+                    message: `Congratulations! Your service provider application for ${provider.businessName} has been approved by the city manager.`,
+                    isRead: false
+                });
+
+                res.json({
+                    message: "Provider application approved successfully",
+                    provider: updatedProvider,
+                });
+            } catch (error) {
+                console.error("Error approving provider:", error);
+                res.status(500).json({
+                    message: "Failed to approve application",
+                });
+            }
+        }
+    );
+
+    // City Manager: Reject provider application
+    app.post(
+        "/api/city-manager/providers/:providerId/reject",
+        requireAuth,
+        async (req, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const user = await storage.getUser(userId);
+
+                if (!user || user.role !== "city_manager") {
+                    return res
+                        .status(403)
+                        .json({ message: "City Manager access required" });
+                }
+
+                const { providerId } = req.params;
+                const { reason } = req.body;
+                const provider = await storage.getServiceProvider(providerId);
+
+                if (!provider) {
+                    return res
+                        .status(404)
+                        .json({ message: "Provider application not found" });
+                }
+
+                // Verify provider is still pending
+                if (provider.approvalStatus !== "pending") {
+                    return res
+                        .status(400)
+                        .json({ message: `Provider application is already ${provider.approvalStatus}` });
+                }
+
+                // Update provider approval status
+                const updatedProvider =
+                    await storage.updateServiceProviderApproval(
+                        providerId,
+                        "rejected",
+                        reason
+                    );
+
+                // Send rejection notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'rejection',
+                    title: 'Application Update',
+                    message: `Your service provider application was not approved by the city manager. Reason: ${reason || 'Not specified'}`,
+                    isRead: false
+                });
+
+                res.json({
+                    message: "Provider application rejected",
+                    provider: updatedProvider,
+                });
+            } catch (error) {
+                console.error("Error rejecting provider:", error);
+                res.status(500).json({
+                    message: "Failed to reject application",
+                });
+            }
+        }
+    );
+
+    // Country Manager: Approve provider application
+    app.post(
+        "/api/country-manager/providers/:providerId/approve",
+        requireAuth,
+        async (req, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const user = await storage.getUser(userId);
+
+                if (!user || user.role !== "country_manager") {
+                    return res
+                        .status(403)
+                        .json({ message: "Country Manager access required" });
+                }
+
+                const { providerId } = req.params;
+                const provider = await storage.getServiceProvider(providerId);
+
+                if (!provider) {
+                    return res
+                        .status(404)
+                        .json({ message: "Provider application not found" });
+                }
+
+                // Verify provider is still pending
+                if (provider.approvalStatus !== "pending") {
+                    return res
+                        .status(400)
+                        .json({ message: `Provider application is already ${provider.approvalStatus}` });
+                }
+
+                // Update provider approval status
+                const updatedProvider =
+                    await storage.updateServiceProviderApproval(
+                        providerId,
+                        "approved",
+                        null
+                    );
+
+                // Update user role to service_provider
+                await storage.updateUserRole(
+                    provider.userId,
+                    "service_provider"
+                );
+
+                // Send approval notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'approval',
+                    title: 'Application Approved!',
+                    message: `Congratulations! Your service provider application for ${provider.businessName} has been approved by the country manager.`,
+                    isRead: false
+                });
+
+                res.json({
+                    message: "Provider application approved successfully",
+                    provider: updatedProvider,
+                });
+            } catch (error) {
+                console.error("Error approving provider:", error);
+                res.status(500).json({
+                    message: "Failed to approve application",
+                });
+            }
+        }
+    );
+
+    // Country Manager: Reject provider application
+    app.post(
+        "/api/country-manager/providers/:providerId/reject",
+        requireAuth,
+        async (req, res) => {
+            try {
+                const userId = (req.session as any).userId;
+                const user = await storage.getUser(userId);
+
+                if (!user || user.role !== "country_manager") {
+                    return res
+                        .status(403)
+                        .json({ message: "Country Manager access required" });
+                }
+
+                const { providerId } = req.params;
+                const { reason } = req.body;
+                const provider = await storage.getServiceProvider(providerId);
+
+                if (!provider) {
+                    return res
+                        .status(404)
+                        .json({ message: "Provider application not found" });
+                }
+
+                // Verify provider is still pending
+                if (provider.approvalStatus !== "pending") {
+                    return res
+                        .status(400)
+                        .json({ message: `Provider application is already ${provider.approvalStatus}` });
+                }
+
+                // Update provider approval status
+                const updatedProvider =
+                    await storage.updateServiceProviderApproval(
+                        providerId,
+                        "rejected",
+                        reason
+                    );
+
+                // Send rejection notification to provider
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'rejection',
+                    title: 'Application Update',
+                    message: `Your service provider application was not approved by the country manager. Reason: ${reason || 'Not specified'}`,
+                    isRead: false
+                });
+
+                res.json({
+                    message: "Provider application rejected",
+                    provider: updatedProvider,
+                });
+            } catch (error) {
+                console.error("Error rejecting provider:", error);
+                res.status(500).json({
+                    message: "Failed to reject application",
+                });
+            }
+        }
+    );
+
     // Property routes
     app.get("/api/properties", async (req, res) => {
         try {

@@ -1,12 +1,14 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building, Users, CheckCircle, Clock } from 'lucide-react';
+import { Building, Users, CheckCircle, Clock, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 interface CityManagerStats {
   totalProperties: number;
@@ -30,6 +32,7 @@ interface ServiceProvider {
 export default function CityManagerDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
 
   if (!user || user.role !== 'city_manager') {
     return (
@@ -52,6 +55,36 @@ export default function CityManagerDashboard() {
 
   const { data: providers = [], isLoading: loadingProviders } = useQuery<ServiceProvider[]>({
     queryKey: ['/api/city-manager/providers'],
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (providerId: string) => {
+      const response = await apiRequest('POST', `/api/city-manager/providers/${providerId}/approve`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/city-manager/providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/city-manager/stats'] });
+      toast({ title: 'Success', description: 'Provider approved successfully' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to approve provider', variant: 'destructive' });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async ({ providerId, reason }: { providerId: string; reason?: string }) => {
+      const response = await apiRequest('POST', `/api/city-manager/providers/${providerId}/reject`, { reason });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/city-manager/providers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/city-manager/stats'] });
+      toast({ title: 'Success', description: 'Provider rejected' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to reject provider', variant: 'destructive' });
+    },
   });
 
   return (
@@ -185,6 +218,7 @@ export default function CityManagerDashboard() {
                     <TableHead>Owner</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Applied</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -199,6 +233,28 @@ export default function CityManagerDashboard() {
                         <TableCell>{provider.user.email}</TableCell>
                         <TableCell>
                           {format(new Date(provider.createdAt), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => approveMutation.mutate(provider.id)}
+                              disabled={approveMutation.isPending}
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => rejectMutation.mutate({ providerId: provider.id, reason: 'Not qualified' })}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Reject
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
