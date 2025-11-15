@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import AssignJobDialog from '@/components/AssignJobDialog';
 
 interface CountryManagerStats {
   totalProviders: number;
@@ -76,6 +78,8 @@ export default function CountryManagerDashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<ServiceBooking | null>(null);
 
   if (!user || user.role !== 'country_manager') {
     return (
@@ -317,7 +321,14 @@ export default function CountryManagerDashboard() {
                           <p className="text-sm text-muted-foreground mb-2">
                             Scheduled: {format(new Date(booking.scheduledDate), 'PPp')}
                           </p>
-                          <Button size="sm" className="w-full">
+                          <Button 
+                            size="sm" 
+                            className="w-full"
+                            onClick={() => {
+                              setSelectedBooking(booking);
+                              setAssignDialogOpen(true);
+                            }}
+                          >
                             Assign Provider
                           </Button>
                         </div>
@@ -695,6 +706,15 @@ export default function CountryManagerDashboard() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {selectedBooking && (
+        <AssignJobDialog
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+          booking={selectedBooking}
+          providers={providers}
+        />
+      )}
     </div>
   );
 }

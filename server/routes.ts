@@ -1419,12 +1419,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const allProviders = await storage.getServiceProviders();
             const allOrders = await storage.getAllServiceOrders();
+            
+            // Get real assignment counts
+            const pendingAssignments = await storage.getPendingJobAssignmentsCount();
+            const completedAssignments = await storage.getCompletedJobAssignmentsCount(userId);
 
             res.json({
                 totalProviders: allProviders.filter((p: any) => p.approvalStatus === "approved").length,
                 totalBookings: allOrders.length,
-                pendingAssignments: allOrders.filter((o: any) => o.status === "pending").length,
-                completedAssignments: allOrders.filter((o: any) => o.status === "completed").length,
+                pendingAssignments,
+                completedAssignments,
             });
         } catch (error) {
             console.error("Error fetching country manager stats:", error);
@@ -1899,6 +1903,195 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error fetching country manager service orders:", error);
             res.status(500).json({ message: "Failed to fetch service orders" });
+        }
+    });
+
+    // Country Manager: Assign job to provider
+    app.post("/api/country-manager/assign-job", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager access required" });
+            }
+
+            const { serviceBookingId, serviceProviderId } = req.body;
+
+            if (!serviceBookingId || !serviceProviderId) {
+                return res.status(400).json({ 
+                    message: "Service booking ID and service provider ID are required" 
+                });
+            }
+
+            // Check if assignment already exists for this booking
+            const existingAssignment = await storage.getJobAssignmentByBooking(serviceBookingId);
+            if (existingAssignment) {
+                return res.status(400).json({ 
+                    message: "This booking is already assigned to a provider" 
+                });
+            }
+
+            // Get provider details for notification
+            const provider = await storage.getServiceProvider(serviceProviderId);
+            if (!provider) {
+                return res.status(404).json({ message: "Service provider not found" });
+            }
+
+            // Create job assignment
+            const assignment = await storage.createJobAssignment({
+                serviceBookingId,
+                serviceProviderId,
+                assignedBy: userId,
+                status: 'pending',
+            });
+
+            // Notify the provider
+            await storage.createNotification({
+                userId: provider.userId,
+                type: 'job_assigned',
+                title: 'New Job Assignment',
+                message: `You have been assigned a new job by the Country Manager. Please review and accept or reject.`,
+                relatedId: assignment.id,
+                isRead: false,
+            });
+
+            res.json({
+                message: "Job assigned successfully",
+                assignment,
+            });
+        } catch (error) {
+            console.error("Error assigning job:", error);
+            res.status(500).json({ message: "Failed to assign job" });
+        }
+    });
+
+    // Provider: Get job assignments
+    app.get("/api/provider/job-assignments", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "service_provider") {
+                return res.status(403).json({ message: "Service Provider access required" });
+            }
+
+            // Get provider profile
+            const provider = await storage.getServiceProviderByUserId(userId);
+            if (!provider) {
+                return res.status(404).json({ message: "Service provider profile not found" });
+            }
+
+            // Get all assignments for this provider
+            const assignments = await storage.getJobAssignmentsByProvider(provider.id);
+
+            res.json(assignments);
+        } catch (error) {
+            console.error("Error fetching job assignments:", error);
+            res.status(500).json({ message: "Failed to fetch job assignments" });
+        }
+    });
+
+    // Provider: Accept job assignment
+    app.post("/api/provider/job-assignments/:id/accept", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "service_provider") {
+                return res.status(403).json({ message: "Service Provider access required" });
+            }
+
+            const { id } = req.params;
+
+            // Get provider profile
+            const provider = await storage.getServiceProviderByUserId(userId);
+            if (!provider) {
+                return res.status(404).json({ message: "Service provider profile not found" });
+            }
+
+            // Get assignment to find who assigned it
+            const assignment = await storage.getJobAssignment(id);
+            if (!assignment) {
+                return res.status(404).json({ message: "Job assignment not found" });
+            }
+
+            // Accept the assignment
+            const updatedAssignment = await storage.acceptJobAssignment(id, provider.id);
+
+            // Notify the country manager who assigned it
+            await storage.createNotification({
+                userId: assignment.assignedBy,
+                type: 'job_accepted',
+                title: 'Job Assignment Accepted',
+                message: `A service provider has accepted the job assignment.`,
+                relatedId: assignment.id,
+                isRead: false,
+            });
+
+            res.json({
+                message: "Job assignment accepted successfully",
+                assignment: updatedAssignment,
+            });
+        } catch (error) {
+            console.error("Error accepting job assignment:", error);
+            res.status(500).json({ 
+                message: error instanceof Error ? error.message : "Failed to accept job assignment" 
+            });
+        }
+    });
+
+    // Provider: Reject job assignment
+    app.post("/api/provider/job-assignments/:id/reject", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "service_provider") {
+                return res.status(403).json({ message: "Service Provider access required" });
+            }
+
+            const { id } = req.params;
+            const { reason } = req.body;
+
+            if (!reason) {
+                return res.status(400).json({ message: "Rejection reason is required" });
+            }
+
+            // Get provider profile
+            const provider = await storage.getServiceProviderByUserId(userId);
+            if (!provider) {
+                return res.status(404).json({ message: "Service provider profile not found" });
+            }
+
+            // Get assignment to find who assigned it
+            const assignment = await storage.getJobAssignment(id);
+            if (!assignment) {
+                return res.status(404).json({ message: "Job assignment not found" });
+            }
+
+            // Reject the assignment
+            const updatedAssignment = await storage.rejectJobAssignment(id, provider.id, reason);
+
+            // Notify the country manager who assigned it
+            await storage.createNotification({
+                userId: assignment.assignedBy,
+                type: 'job_rejected',
+                title: 'Job Assignment Rejected',
+                message: `A service provider has rejected the job assignment. Reason: ${reason}`,
+                relatedId: assignment.id,
+                isRead: false,
+            });
+
+            res.json({
+                message: "Job assignment rejected",
+                assignment: updatedAssignment,
+            });
+        } catch (error) {
+            console.error("Error rejecting job assignment:", error);
+            res.status(500).json({ 
+                message: error instanceof Error ? error.message : "Failed to reject job assignment" 
+            });
         }
     });
 

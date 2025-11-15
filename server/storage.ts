@@ -6,6 +6,7 @@ import {
     disputes,
     favorites,
     jobApplications,
+    jobAssignments,
     jobPostings,
     loyaltyPoints,
     loyaltyPointsTransactions,
@@ -49,6 +50,7 @@ import {
     type InsertDispute,
     type InsertFavorite,
     type InsertJobApplication,
+    type InsertJobAssignment,
     type InsertJobPosting,
     type InsertMenuItem,
     type InsertNotification,
@@ -69,6 +71,7 @@ import {
     type InsertTripPlan,
     type InsertTripPlanItem,
     type JobApplication,
+    type JobAssignment,
     type JobPosting,
     type LoyaltyPoints,
     type LoyaltyPointsTransaction,
@@ -198,6 +201,17 @@ export interface IStorage {
     createNotification(notification: InsertNotification): Promise<Notification>;
     markNotificationAsRead(id: string, userId: string): Promise<number>;
     getUnreadNotificationCount(userId: string): Promise<number>;
+
+    // Job Assignment operations
+    createJobAssignment(assignment: InsertJobAssignment): Promise<JobAssignment>;
+    getJobAssignment(id: string): Promise<JobAssignment | undefined>;
+    getJobAssignmentsByProvider(providerId: string): Promise<JobAssignment[]>;
+    getJobAssignmentsByCountryManager(managerId: string): Promise<JobAssignment[]>;
+    getJobAssignmentByBooking(serviceBookingId: string): Promise<JobAssignment | undefined>;
+    acceptJobAssignment(id: string, providerId: string): Promise<JobAssignment>;
+    rejectJobAssignment(id: string, providerId: string, reason: string): Promise<JobAssignment>;
+    getPendingJobAssignmentsCount(providerId?: string): Promise<number>;
+    getCompletedJobAssignmentsCount(managerId?: string): Promise<number>;
 
     // Property-Service associations
     getPropertyServices(propertyId: string): Promise<ServiceProvider[]>;
@@ -1132,6 +1146,126 @@ export class DatabaseStorage implements IStorage {
                     eq(notifications.isRead, false)
                 )
             );
+        return result[0]?.count || 0;
+    }
+
+    // Job Assignment operations
+    async createJobAssignment(assignment: InsertJobAssignment): Promise<JobAssignment> {
+        const [newAssignment] = await db
+            .insert(jobAssignments)
+            .values(assignment)
+            .returning();
+        return newAssignment;
+    }
+
+    async getJobAssignment(id: string): Promise<JobAssignment | undefined> {
+        const [assignment] = await db
+            .select()
+            .from(jobAssignments)
+            .where(eq(jobAssignments.id, id));
+        return assignment;
+    }
+
+    async getJobAssignmentsByProvider(providerId: string): Promise<JobAssignment[]> {
+        return await db
+            .select()
+            .from(jobAssignments)
+            .where(eq(jobAssignments.serviceProviderId, providerId))
+            .orderBy(desc(jobAssignments.createdAt));
+    }
+
+    async getJobAssignmentsByCountryManager(managerId: string): Promise<JobAssignment[]> {
+        return await db
+            .select()
+            .from(jobAssignments)
+            .where(eq(jobAssignments.assignedBy, managerId))
+            .orderBy(desc(jobAssignments.createdAt));
+    }
+
+    async getJobAssignmentByBooking(serviceBookingId: string): Promise<JobAssignment | undefined> {
+        const [assignment] = await db
+            .select()
+            .from(jobAssignments)
+            .where(eq(jobAssignments.serviceBookingId, serviceBookingId));
+        return assignment;
+    }
+
+    async acceptJobAssignment(id: string, providerId: string): Promise<JobAssignment> {
+        const [assignment] = await db
+            .update(jobAssignments)
+            .set({
+                status: 'accepted',
+                respondedAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .where(
+                and(
+                    eq(jobAssignments.id, id),
+                    eq(jobAssignments.serviceProviderId, providerId),
+                    eq(jobAssignments.status, 'pending')
+                )
+            )
+            .returning();
+        
+        if (!assignment) {
+            throw new Error('Assignment not found or already processed');
+        }
+        
+        return assignment;
+    }
+
+    async rejectJobAssignment(id: string, providerId: string, reason: string): Promise<JobAssignment> {
+        const [assignment] = await db
+            .update(jobAssignments)
+            .set({
+                status: 'rejected',
+                rejectionReason: reason,
+                respondedAt: new Date(),
+                updatedAt: new Date(),
+            })
+            .where(
+                and(
+                    eq(jobAssignments.id, id),
+                    eq(jobAssignments.serviceProviderId, providerId),
+                    eq(jobAssignments.status, 'pending')
+                )
+            )
+            .returning();
+        
+        if (!assignment) {
+            throw new Error('Assignment not found or already processed');
+        }
+        
+        return assignment;
+    }
+
+    async getPendingJobAssignmentsCount(providerId?: string): Promise<number> {
+        const conditions = [eq(jobAssignments.status, 'pending')];
+        
+        if (providerId) {
+            conditions.push(eq(jobAssignments.serviceProviderId, providerId));
+        }
+        
+        const result = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(jobAssignments)
+            .where(and(...conditions));
+        
+        return result[0]?.count || 0;
+    }
+
+    async getCompletedJobAssignmentsCount(managerId?: string): Promise<number> {
+        const conditions = [eq(jobAssignments.status, 'accepted')];
+        
+        if (managerId) {
+            conditions.push(eq(jobAssignments.assignedBy, managerId));
+        }
+        
+        const result = await db
+            .select({ count: sql<number>`COUNT(*)` })
+            .from(jobAssignments)
+            .where(and(...conditions));
+        
         return result[0]?.count || 0;
     }
 

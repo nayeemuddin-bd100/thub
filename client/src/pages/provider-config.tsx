@@ -24,7 +24,10 @@ import {
   Home,
   Upload,
   Image as ImageIcon,
-  User
+  User,
+  Briefcase,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import type { 
   ServiceProvider, 
@@ -108,6 +111,10 @@ export default function ProviderConfig() {
               <ClipboardList className="w-4 h-4 mr-2" />
               {t('dashboard.overview')}
             </TabsTrigger>
+            <TabsTrigger value="assignments">
+              <Briefcase className="w-4 h-4 mr-2" />
+              Job Assignments
+            </TabsTrigger>
             {isChef && (
               <TabsTrigger value="menus">
                 <ChefHat className="w-4 h-4 mr-2" />
@@ -136,6 +143,10 @@ export default function ProviderConfig() {
 
           <TabsContent value="overview" className="space-y-6">
             <OverviewTab provider={provider} />
+          </TabsContent>
+
+          <TabsContent value="assignments" className="space-y-6">
+            <JobAssignmentsTab providerId={provider.id} />
           </TabsContent>
 
           {isChef && (
@@ -1529,3 +1540,231 @@ function AvailabilityManagement({ provider }: { provider: ServiceProvider }) {
     </Card>
   );
 }
+
+
+function JobAssignmentsTab({ providerId }: { providerId: string }) {
+  const { toast } = useToast();
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
+  const { data: assignments = [], isLoading } = useQuery<any[]>({
+    queryKey: ["/api/provider/job-assignments"],
+  });
+
+  const acceptMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const response = await apiRequest("POST", `/api/provider/job-assignments/${assignmentId}/accept`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/job-assignments"] });
+      toast({
+        title: "Success",
+        description: "Job assignment accepted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to accept job assignment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedAssignment || !rejectionReason.trim()) {
+        throw new Error("Rejection reason is required");
+      }
+      const response = await apiRequest("POST", `/api/provider/job-assignments/${selectedAssignment.id}/reject`, {
+        reason: rejectionReason,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/provider/job-assignments"] });
+      toast({
+        title: "Job Rejected",
+        description: "Job assignment has been rejected",
+      });
+      setRejectDialogOpen(false);
+      setSelectedAssignment(null);
+      setRejectionReason("");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reject job assignment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const pendingAssignments = assignments.filter((a) => a.status === "pending");
+  const acceptedAssignments = assignments.filter((a) => a.status === "accepted");
+  const rejectedAssignments = assignments.filter((a) => a.status === "rejected");
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-4">Job Assignments</h2>
+        <p className="text-muted-foreground mb-6">
+          Manage jobs assigned to you by the Country Manager. Accept or reject assignments as needed.
+        </p>
+
+        <Tabs defaultValue="pending">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="pending">
+              Pending ({pendingAssignments.length})
+            </TabsTrigger>
+            <TabsTrigger value="accepted">
+              Accepted ({acceptedAssignments.length})
+            </TabsTrigger>
+            <TabsTrigger value="rejected">
+              Rejected ({rejectedAssignments.length})
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="pending" className="space-y-4">
+            {isLoading ? (
+              <p className="text-center text-muted-foreground">Loading assignments...</p>
+            ) : pendingAssignments.length === 0 ? (
+              <div className="text-center py-12">
+                <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No pending job assignments</p>
+              </div>
+            ) : (
+              pendingAssignments.map((assignment) => (
+                <Card key={assignment.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline">Pending Assignment</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          Assigned on {new Date(assignment.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold mb-2">New Job Assignment</h3>
+                      <p className="text-sm text-muted-foreground">
+                        You have been assigned a new job. Please review and accept or reject this assignment.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button
+                      onClick={() => acceptMutation.mutate(assignment.id)}
+                      disabled={acceptMutation.isPending}
+                      className="flex-1"
+                    >
+                      <Check className="w-4 h-4 mr-2" />
+                      Accept
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setSelectedAssignment(assignment);
+                        setRejectDialogOpen(true);
+                      }}
+                      disabled={rejectMutation.isPending}
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Reject
+                    </Button>
+                  </div>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="accepted" className="space-y-4">
+            {acceptedAssignments.length === 0 ? (
+              <div className="text-center py-12">
+                <Check className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No accepted assignments</p>
+              </div>
+            ) : (
+              acceptedAssignments.map((assignment) => (
+                <Card key={assignment.id} className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-green-500">Accepted</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Accepted on {assignment.respondedAt ? new Date(assignment.respondedAt).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold">Job Assignment</h3>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+
+          <TabsContent value="rejected" className="space-y-4">
+            {rejectedAssignments.length === 0 ? (
+              <div className="text-center py-12">
+                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No rejected assignments</p>
+              </div>
+            ) : (
+              rejectedAssignments.map((assignment) => (
+                <Card key={assignment.id} className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="destructive">Rejected</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      Rejected on {assignment.respondedAt ? new Date(assignment.respondedAt).toLocaleDateString() : "N/A"}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold mb-2">Job Assignment</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Reason: {assignment.rejectionReason}
+                  </p>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      {rejectDialogOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md p-6 m-4">
+            <h3 className="text-lg font-semibold mb-4">Reject Job Assignment</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Please provide a reason for rejecting this job assignment.
+            </p>
+            <Textarea
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="mb-4"
+              rows={4}
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRejectDialogOpen(false);
+                  setSelectedAssignment(null);
+                  setRejectionReason("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => rejectMutation.mutate()}
+                disabled={!rejectionReason.trim() || rejectMutation.isPending}
+                className="flex-1"
+              >
+                Reject
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+

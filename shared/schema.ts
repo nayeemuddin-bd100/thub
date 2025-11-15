@@ -1238,6 +1238,13 @@ export const insertServiceTaskSchema = createInsertSchema(serviceTasks).omit({
 });
 export type InsertServiceTask = z.infer<typeof insertServiceTaskSchema>;
 
+export const insertJobAssignmentSchema = createInsertSchema(jobAssignments).omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+});
+export type InsertJobAssignment = z.infer<typeof insertJobAssignmentSchema>;
+
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
     id: true,
     createdAt: true,

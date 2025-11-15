@@ -305,9 +305,6 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                       <Link href="/country-manager-dashboard">Country Manager Dashboard</Link>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <Link href="/bookings" data-testid="link-bookings">{t('header.my_bookings')}</Link>
-                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} data-testid="link-logout">
                     {t('header.log_out')}
