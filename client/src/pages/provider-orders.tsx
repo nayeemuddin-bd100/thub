@@ -1,9 +1,14 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar, Clock, User, Phone, Mail, MapPin, DollarSign, Package, CheckCircle, XCircle, Clock3 } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +49,12 @@ interface ServiceOrder {
 export default function ProviderOrders() {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [completionNotes, setCompletionNotes] = useState("");
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+  const [actualStartTime, setActualStartTime] = useState("");
+  const [actualEndTime, setActualEndTime] = useState("");
 
   const { data: orders, isLoading } = useQuery<ServiceOrder[]>({
     queryKey: ['/api/service-orders/provider'],
@@ -69,6 +80,36 @@ export default function ProviderOrders() {
     },
   });
 
+  const completeServiceMutation = useMutation({
+    mutationFn: async ({ orderId, providerNotes }: { orderId: string; providerNotes: string }) => {
+      const response = await fetch(`/api/service-orders/${orderId}/complete`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ providerNotes }),
+      });
+      if (!response.ok) throw new Error('Failed to complete service');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-orders/provider'] });
+      toast({
+        title: "Success",
+        description: "Service marked as completed",
+      });
+      setShowCompletionDialog(false);
+      setSelectedOrder(null);
+      setCompletionNotes("");
+      setCompletedTasks(new Set());
+    },
+    onError: () => {
+      toast({
+        title: t("common.error"),
+        description: "Failed to complete service",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAcceptOrder = (orderId: string) => {
     updateStatusMutation.mutate({ orderId, status: 'confirmed' });
   };
@@ -81,8 +122,72 @@ export default function ProviderOrders() {
     updateStatusMutation.mutate({ orderId, status: 'in_progress' });
   };
 
-  const handleCompleteService = (orderId: string) => {
-    updateStatusMutation.mutate({ orderId, status: 'completed' });
+  const handleCompleteService = (order: ServiceOrder) => {
+    // Reset state for new order
+    setCompletionNotes("");
+    setCompletedTasks(new Set());
+    setActualStartTime("");
+    setActualEndTime("");
+    setSelectedOrder(order);
+    setShowCompletionDialog(true);
+  };
+
+  const submitCompletion = () => {
+    if (!selectedOrder) return;
+    
+    // Build completion notes with task completion info and time tracking
+    let notes = "";
+    
+    // Add time tracking info if provided
+    if (actualStartTime || actualEndTime) {
+      let duration = "";
+      if (actualStartTime && actualEndTime) {
+        const start = new Date(`2000-01-01 ${actualStartTime}`);
+        const end = new Date(`2000-01-01 ${actualEndTime}`);
+        const diffMs = end.getTime() - start.getTime();
+        const diffMins = Math.round(diffMs / 60000);
+        const hours = Math.floor(diffMins / 60);
+        const minutes = diffMins % 60;
+        duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+      }
+      
+      notes += `Time Tracking:\n`;
+      if (actualStartTime) notes += `Start Time: ${actualStartTime}\n`;
+      if (actualEndTime) notes += `End Time: ${actualEndTime}\n`;
+      if (duration) notes += `Duration: ${duration}\n`;
+      notes += '\n';
+    }
+    
+    if (selectedOrder.items.some(item => item.itemType === 'task')) {
+      const taskInfo = selectedOrder.items
+        .filter(item => item.itemType === 'task')
+        .map(task => {
+          const isCompleted = completedTasks.has(task.id);
+          return `${task.itemName}: ${isCompleted ? '✓ Completed' : '○ Not completed'}`;
+        })
+        .join('\n');
+      
+      notes += `Task Completion:\n${taskInfo}\n\n`;
+    }
+    
+    notes += `Additional Notes:\n${completionNotes || 'None'}`;
+
+    completeServiceMutation.mutate({
+      orderId: selectedOrder.id,
+      providerNotes: notes,
+    });
+  };
+
+  const toggleTaskCompletion = (taskId: string) => {
+    setCompletedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -299,8 +404,8 @@ export default function ProviderOrders() {
 
                         {order.status === 'in_progress' && (
                           <Button
-                            onClick={() => handleCompleteService(order.id)}
-                            disabled={updateStatusMutation.isPending}
+                            onClick={() => handleCompleteService(order)}
+                            disabled={updateStatusMutation.isPending || completeServiceMutation.isPending}
                             data-testid={`button-complete-${order.id}`}
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -316,6 +421,137 @@ export default function ProviderOrders() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <Dialog open={showCompletionDialog} onOpenChange={setShowCompletionDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Complete Service</DialogTitle>
+            <DialogDescription>
+              Mark this service as completed and add any notes about the service.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-base font-semibold mb-3 block">
+                  Time Tracking (Optional)
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="actual-start-time" className="text-sm">
+                      Actual Start Time
+                    </Label>
+                    <input
+                      id="actual-start-time"
+                      type="time"
+                      value={actualStartTime}
+                      onChange={(e) => setActualStartTime(e.target.value)}
+                      className="w-full p-2 border rounded mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="actual-end-time" className="text-sm">
+                      Actual End Time
+                    </Label>
+                    <input
+                      id="actual-end-time"
+                      type="time"
+                      value={actualEndTime}
+                      onChange={(e) => setActualEndTime(e.target.value)}
+                      className="w-full p-2 border rounded mt-1"
+                    />
+                  </div>
+                </div>
+                {actualStartTime && actualEndTime && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Duration: {(() => {
+                      const start = new Date(`2000-01-01 ${actualStartTime}`);
+                      const end = new Date(`2000-01-01 ${actualEndTime}`);
+                      const diffMs = end.getTime() - start.getTime();
+                      const diffMins = Math.round(diffMs / 60000);
+                      const hours = Math.floor(diffMins / 60);
+                      const minutes = diffMins % 60;
+                      return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                    })()}
+                  </p>
+                )}
+              </div>
+
+              {selectedOrder.items.some(item => item.itemType === 'task') && (
+                <div>
+                  <Label className="text-base font-semibold mb-3 block">
+                    Task Completion Checklist
+                  </Label>
+                  <div className="space-y-3 bg-muted p-4 rounded-lg">
+                    {selectedOrder.items
+                      .filter(item => item.itemType === 'task')
+                      .map(task => (
+                        <div key={task.id} className="flex items-center gap-3">
+                          <Checkbox
+                            id={`task-${task.id}`}
+                            checked={completedTasks.has(task.id)}
+                            onCheckedChange={() => toggleTaskCompletion(task.id)}
+                          />
+                          <Label
+                            htmlFor={`task-${task.id}`}
+                            className="text-sm cursor-pointer flex-1"
+                          >
+                            {task.itemName}
+                            {task.quantity > 1 && ` (x${task.quantity})`}
+                          </Label>
+                        </div>
+                      ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {completedTasks.size} of {selectedOrder.items.filter(item => item.itemType === 'task').length} tasks completed
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="completion-notes" className="text-base font-semibold">
+                  Completion Notes (Optional)
+                </Label>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Add any notes about the service, special observations, or recommendations.
+                </p>
+                <Textarea
+                  id="completion-notes"
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  placeholder="Example: All tasks completed as requested. Client was very satisfied. Recommended to schedule regular cleanings."
+                  rows={4}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCompletionDialog(false);
+                setCompletionNotes("");
+                setCompletedTasks(new Set());
+                setActualStartTime("");
+                setActualEndTime("");
+                setSelectedOrder(null);
+              }}
+              disabled={completeServiceMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitCompletion}
+              disabled={completeServiceMutation.isPending}
+            >
+              {completeServiceMutation.isPending ? "Completing..." : "Mark as Completed"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
