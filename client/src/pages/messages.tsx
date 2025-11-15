@@ -284,32 +284,34 @@ export default function MessagesPage() {
                             No users found with this role
                           </p>
                         ) : (
-                          <>
-                            <Input
-                              placeholder="Search by name or email..."
-                              value={userSearchQuery}
-                              onChange={(e) => setUserSearchQuery(e.target.value)}
-                              className="mb-2"
-                            />
-                            {filteredUsers.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">
-                                No users match your search
-                              </p>
-                            ) : (
-                              <Select value={selectedNewUser} onValueChange={setSelectedNewUser}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Choose a user..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {filteredUsers.map((user) => (
-                                    <SelectItem key={user.id} value={user.id}>
-                                      {user.firstName} {user.lastName} ({user.email})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          </>
+                          <Select value={selectedNewUser} onValueChange={setSelectedNewUser}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a user..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <div className="px-2 pb-2 sticky top-0 bg-popover z-10">
+                                <Input
+                                  placeholder="Search by name or email..."
+                                  value={userSearchQuery}
+                                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                                  className="h-8"
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                />
+                              </div>
+                              {filteredUsers.length === 0 ? (
+                                <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                  No users match your search
+                                </div>
+                              ) : (
+                                filteredUsers.map((user) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.firstName} {user.lastName} ({user.email})
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
                         )}
                       </div>
                     )}
