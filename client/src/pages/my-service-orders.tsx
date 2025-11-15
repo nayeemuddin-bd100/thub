@@ -1,13 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, MapPin, DollarSign, Package, CheckCircle, XCircle, Clock3, Phone, Mail, AlertCircle } from "lucide-react";
+import { Calendar, Clock, User, MapPin, DollarSign, Package, CheckCircle, XCircle, Clock3, Phone, Mail, AlertCircle, Star } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface ServiceOrderItem {
   id: string;
@@ -32,6 +38,7 @@ interface ServiceOrder {
   paymentStatus: 'pending' | 'paid' | 'refunded';
   specialInstructions?: string;
   serviceProvider?: {
+    id?: string;
     businessName: string;
     user?: {
       firstName: string;
@@ -45,9 +52,103 @@ interface ServiceOrder {
 
 export default function MyServiceOrders() {
   const { t } = useTranslation();
+  const { toast } = useToast();
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<ServiceOrder | null>(null);
+  const [rating, setRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [cancellationReasons, setCancellationReasons] = useState<Record<string, string>>({});
+
   const { data: orders, isLoading } = useQuery<ServiceOrder[]>({
     queryKey: ['/api/service-orders/client'],
   });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: async ({ orderId, reason }: { orderId: string; reason: string }) => {
+      return await apiRequest('POST', `/api/service-orders/${orderId}/cancel`, { cancellationReason: reason });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-orders/client'] });
+      toast({
+        title: t('common.success'),
+        description: 'Order cancelled successfully. Refund will be processed if payment was made.',
+      });
+      // Clear the cancellation reason for this order
+      setCancellationReasons(prev => {
+        const newReasons = { ...prev };
+        delete newReasons[variables.orderId];
+        return newReasons;
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || 'Failed to cancel order',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const submitReviewMutation = useMutation({
+    mutationFn: async (data: { serviceProviderId: string; rating: number; comment: string }) => {
+      return await apiRequest('POST', '/api/reviews', data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/service-orders/client'] });
+      toast({
+        title: t('common.success'),
+        description: 'Review submitted successfully',
+      });
+      setReviewDialogOpen(false);
+      setSelectedOrder(null);
+      setRating(0);
+      setReviewComment('');
+    },
+    onError: (error: any) => {
+      toast({
+        title: t('common.error'),
+        description: error.message || 'Failed to submit review',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleCancelOrder = (orderId: string) => {
+    const reason = cancellationReasons[orderId] || '';
+    if (!reason.trim()) {
+      toast({
+        title: t('common.error'),
+        description: 'Please provide a cancellation reason',
+        variant: 'destructive',
+      });
+      return;
+    }
+    cancelOrderMutation.mutate({ orderId, reason });
+  };
+
+  const handleSubmitReview = () => {
+    if (!selectedOrder || rating === 0) {
+      toast({
+        title: t('common.error'),
+        description: 'Please select a rating',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (!selectedOrder.serviceProvider) {
+      toast({
+        title: t('common.error'),
+        description: 'Service provider information not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+    submitReviewMutation.mutate({
+      serviceProviderId: selectedOrder.serviceProvider.id!,
+      rating,
+      comment: reviewComment.trim(),
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -304,10 +405,53 @@ export default function MyServiceOrders() {
                       )}
 
                       {order.status === 'completed' && (
-                        <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-                          <p className="text-sm text-green-800 dark:text-green-200">
-                            <strong>{t('orders.order_completed')}</strong>
-                          </p>
+                        <div className="mt-4">
+                          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md mb-4">
+                            <p className="text-sm text-green-800 dark:text-green-200">
+                              <strong>{t('orders.order_completed')}</strong>
+                            </p>
+                          </div>
+                          <Button
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setReviewDialogOpen(true);
+                            }}
+                            className="w-full"
+                            data-testid={`button-review-${order.id}`}
+                          >
+                            <Star className="h-4 w-4 mr-2" />
+                            Leave Review
+                          </Button>
+                        </div>
+                      )}
+
+                      {(order.status === 'pending_payment' || order.status === 'confirmed') && order.paymentStatus !== 'refunded' && (
+                        <div className="mt-4">
+                          <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md mb-4">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                              <strong>You can cancel this order</strong>
+                            </p>
+                            <Textarea
+                              placeholder="Please provide a reason for cancellation..."
+                              value={cancellationReasons[order.id] || ''}
+                              onChange={(e) => setCancellationReasons(prev => ({
+                                ...prev,
+                                [order.id]: e.target.value
+                              }))}
+                              className="mb-3"
+                              data-testid={`textarea-cancel-reason-${order.id}`}
+                            />
+                            <Button
+                              variant="destructive"
+                              onClick={() => handleCancelOrder(order.id)}
+                              disabled={cancelOrderMutation.isPending}
+                              className="w-full"
+                              data-testid={`button-cancel-${order.id}`}
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              {cancelOrderMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
+                            </Button>
+                          </div>
                         </div>
                       )}
                     </CardContent>
@@ -318,6 +462,74 @@ export default function MyServiceOrders() {
           </TabsContent>
         ))}
       </Tabs>
+
+      <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Leave a Review</DialogTitle>
+            <DialogDescription>
+              Share your experience with {selectedOrder?.serviceProvider?.businessName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Rating</Label>
+              <div className="flex gap-2 mt-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="focus:outline-none"
+                    data-testid={`button-rating-${star}`}
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= rating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="review-comment">Comment (optional)</Label>
+              <Textarea
+                id="review-comment"
+                placeholder="Tell us about your experience..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows={4}
+                data-testid="textarea-review-comment"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSubmitReview}
+                disabled={submitReviewMutation.isPending || rating === 0}
+                className="flex-1"
+                data-testid="button-submit-review"
+              >
+                {submitReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReviewDialogOpen(false);
+                  setSelectedOrder(null);
+                  setRating(0);
+                  setReviewComment('');
+                }}
+                data-testid="button-cancel-review"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
