@@ -2025,6 +2025,23 @@ export default function Dashboard() {
                             </Card>
                         )}
 
+                        {/* Export Payment History Button */}
+                        {bookings && bookings.length > 0 && (
+                            <div className="flex justify-end mb-4">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        window.location.href = '/api/payments/export';
+                                    }}
+                                    data-testid="button-export-payment-history"
+                                >
+                                    <DollarSign className="w-4 h-4 mr-2" />
+                                    {t("dashboard.export_payment_history") || "Export Payment History"}
+                                </Button>
+                            </div>
+                        )}
+
                         {bookingsLoading ? (
                             <div className="space-y-4">
                                 {[1, 2, 3].map((i) => (
@@ -2134,6 +2151,21 @@ export default function Dashboard() {
                                                         "dashboard.view_details_button"
                                                     )}
                                                 </Button>
+                                                {booking.status === "confirmed" && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            toast({
+                                                                title: t("dashboard.modify_booking_title") || "Modify Booking",
+                                                                description: t("dashboard.modify_booking_message") || "To modify your booking (dates, guests, etc.), please contact support or use the modification request form.",
+                                                            });
+                                                        }}
+                                                        data-testid={`button-modify-booking-${booking.id}`}
+                                                    >
+                                                        {t("dashboard.modify_button") || "Modify"}
+                                                    </Button>
+                                                )}
                                                 {(booking.status ===
                                                     "confirmed" ||
                                                     booking.status ===
