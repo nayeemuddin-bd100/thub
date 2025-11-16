@@ -817,14 +817,19 @@ export default function CountryManagerDashboard() {
         />
       )}
 
-      {selectedAssignment && (
+      {reassignDialogOpen && selectedAssignment && !loadingProviders && providers && providers.length > 0 && (
         <AssignJobDialog
           open={reassignDialogOpen}
-          onOpenChange={setReassignDialogOpen}
+          onOpenChange={(open) => {
+            setReassignDialogOpen(open);
+            if (!open) {
+              setSelectedAssignment(null);
+            }
+          }}
           booking={{
-            id: selectedAssignment.serviceBooking?.bookingId || selectedAssignment.serviceBookingId,
-            status: 'pending',
-            createdAt: selectedAssignment.createdAt,
+            id: selectedAssignment.serviceBooking?.bookingId || selectedAssignment.serviceBookingId || selectedAssignment.id,
+            status: selectedAssignment.status || 'pending',
+            createdAt: selectedAssignment.createdAt || new Date().toISOString(),
             scheduledDate: selectedAssignment.serviceBooking?.serviceDate,
             totalAmount: selectedAssignment.serviceBooking?.total || '0',
             client: {

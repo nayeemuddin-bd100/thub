@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
@@ -35,13 +35,13 @@ interface ServiceProvider {
 
 interface ServiceBooking {
   id: string;
-  status: string;
-  createdAt: string;
-  scheduledDate: string;
-  totalAmount: string;
-  client: {
-    firstName: string;
-    lastName: string;
+  status?: string;
+  createdAt?: string;
+  scheduledDate?: string;
+  totalAmount?: string;
+  client?: {
+    firstName?: string;
+    lastName?: string;
   };
 }
 
@@ -68,6 +68,13 @@ export default function AssignJobDialog({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Reset selection when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedProviderId("");
+    }
+  }, [open]);
+
   const assignMutation = useMutation({
     mutationFn: async () => {
       if (!selectedProviderId) {
@@ -82,7 +89,7 @@ export default function AssignJobDialog({
 
       // Otherwise, use the default assignment endpoint
       const response = await apiRequest("POST", "/api/country-manager/assign-job", {
-        serviceBookingId: booking.id,
+        serviceBookingId: booking?.id || "",
         serviceProviderId: selectedProviderId,
       });
       return await response.json();
@@ -108,9 +115,16 @@ export default function AssignJobDialog({
     },
   });
 
-  const availableProviders = providers.filter(
-    (p) => p.approvalStatus === "approved"
+  // Prepare safe data - NO EARLY RETURNS ALLOWED BEFORE THIS POINT (Rules of Hooks)
+  const safeProviders = Array.isArray(providers) ? providers : [];
+  const availableProviders = safeProviders.filter(
+    (p) => p && p.approvalStatus === "approved"
   );
+
+  // Safety check - can return null AFTER all hooks have been called
+  if (!booking || !booking.id || !open) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -130,12 +144,12 @@ export default function AssignJobDialog({
             <label className="text-sm font-medium">Booking Details</label>
             <div className="text-sm text-muted-foreground">
               <p>
-                Client: {booking.client.firstName} {booking.client.lastName}
+                Client: {booking.client?.firstName || 'N/A'} {booking.client?.lastName || ''}
               </p>
               <p>
-                Scheduled: {new Date(booking.scheduledDate).toLocaleDateString()}
+                Scheduled: {booking.scheduledDate ? new Date(booking.scheduledDate).toLocaleDateString() : 'N/A'}
               </p>
-              <p>Amount: ${booking.totalAmount}</p>
+              <p>Amount: ${booking.totalAmount || '0'}</p>
               {isReassign && currentProvider && (
                 <p className="mt-2 font-medium text-foreground">
                   Current Provider: {currentProvider}
