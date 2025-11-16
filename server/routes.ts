@@ -7118,6 +7118,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Property-Service Associations endpoints
+    app.get("/api/admin/property-service-associations", requireAuth, async (req: any, res) => {
+        try {
+            const { propertyServices, properties, serviceProviders } = await import("@shared/schema");
+            const associations = await db
+                .select({
+                    id: propertyServices.id,
+                    propertyId: propertyServices.propertyId,
+                    serviceProviderId: propertyServices.serviceProviderId,
+                    isRecommended: propertyServices.isRecommended,
+                    propertyTitle: properties.title,
+                    providerName: serviceProviders.businessName,
+                })
+                .from(propertyServices)
+                .leftJoin(properties, eq(propertyServices.propertyId, properties.id))
+                .leftJoin(serviceProviders, eq(propertyServices.serviceProviderId, serviceProviders.id));
+            
+            res.json(associations);
+        } catch (error: any) {
+            console.error("Error fetching property-service associations:", error);
+            res.status(500).json({ message: "Failed to fetch associations" });
+        }
+    });
+
+    app.post("/api/admin/property-service-associations", requireAuth, async (req: any, res) => {
+        try {
+            const { propertyServices } = await import("@shared/schema");
+            const { propertyId, serviceProviderId, isRecommended } = req.body;
+
+            if (!propertyId || !serviceProviderId) {
+                return res.status(400).json({ message: "Property ID and Service Provider ID are required" });
+            }
+
+            const [association] = await db.insert(propertyServices).values({
+                propertyId,
+                serviceProviderId,
+                isRecommended: isRecommended || false,
+            }).returning();
+
+            res.json(association);
+        } catch (error: any) {
+            console.error("Error creating property-service association:", error);
+            res.status(500).json({ message: "Failed to create association" });
+        }
+    });
+
+    // Territories endpoints
+    app.get("/api/admin/territories", requireAuth, async (req: any, res) => {
+        try {
+            const { territories, users } = await import("@shared/schema");
+            const territoryList = await db
+                .select({
+                    id: territories.id,
+                    name: territories.name,
+                    countryManagerId: territories.managerId,
+                    managerName: users.firstName,
+                })
+                .from(territories)
+                .leftJoin(users, eq(territories.managerId, users.id));
+            
+            res.json(territoryList);
+        } catch (error: any) {
+            console.error("Error fetching territories:", error);
+            res.status(500).json({ message: "Failed to fetch territories" });
+        }
+    });
+
+    app.post("/api/admin/territories", requireAuth, async (req: any, res) => {
+        try {
+            const { territories } = await import("@shared/schema");
+            const { name, countryManagerId } = req.body;
+
+            if (!name) {
+                return res.status(400).json({ message: "Territory name is required" });
+            }
+
+            const [territory] = await db.insert(territories).values({
+                name,
+                country: name,
+                managerId: countryManagerId || null,
+            }).returning();
+
+            res.json(territory);
+        } catch (error: any) {
+            console.error("Error creating territory:", error);
+            res.status(500).json({ message: "Failed to create territory" });
+        }
+    });
+
+    // Activity Logs endpoint
+    app.get("/api/admin/activity-logs", requireAuth, async (req: any, res) => {
+        try {
+            const { userActivityLogs, users } = await import("@shared/schema");
+            const logs = await db
+                .select({
+                    id: userActivityLogs.id,
+                    userId: userActivityLogs.userId,
+                    action: userActivityLogs.activityType,
+                    details: userActivityLogs.description,
+                    timestamp: userActivityLogs.createdAt,
+                    userName: users.firstName,
+                })
+                .from(userActivityLogs)
+                .leftJoin(users, eq(userActivityLogs.userId, users.id))
+                .orderBy(desc(userActivityLogs.createdAt))
+                .limit(100);
+            
+            res.json(logs);
+        } catch (error: any) {
+            console.error("Error fetching activity logs:", error);
+            res.status(500).json({ message: "Failed to fetch activity logs" });
+        }
+    });
+
+    // Country Managers endpoint
+    app.get("/api/admin/country-managers", requireAuth, async (req: any, res) => {
+        try {
+            const managers = await db
+                .select({
+                    id: users.id,
+                    name: users.firstName,
+                    email: users.email,
+                })
+                .from(users)
+                .where(eq(users.role, "country_manager"));
+            
+            res.json(managers);
+        } catch (error: any) {
+            console.error("Error fetching country managers:", error);
+            res.status(500).json({ message: "Failed to fetch country managers" });
+        }
+    });
+
     const httpServer = createServer(app);
 
     // WebSocket setup for real-time messaging and notifications

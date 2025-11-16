@@ -501,7 +501,7 @@ export default function PromotionalCodes() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {promoCodes.map((code) => (
+                  {[...promoCodes].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map((code) => (
                     <TableRow key={code.id} data-testid={`row-promo-${code.id}`}>
                       <TableCell>
                         <div>
