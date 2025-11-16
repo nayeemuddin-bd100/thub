@@ -86,6 +86,137 @@ const AMENITIES = [
     { id: "petsAllowed", label: "Pets Allowed" },
 ];
 
+function ApprovalsTab({ toast, user }: { toast: any, user: any }) {
+    const { data: pendingUsers, isLoading, refetch } = useQuery({
+        queryKey: ["/api/approvals/pending"],
+        queryFn: async () => {
+            const response = await apiRequest("GET", "/api/approvals/pending");
+            return response.json();
+        },
+    });
+
+    const approveMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            const response = await apiRequest("POST", `/api/approvals/approve/${userId}`);
+            return response.json();
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "User approved successfully",
+            });
+            refetch();
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to approve user",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const rejectMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            const response = await apiRequest("POST", `/api/approvals/reject/${userId}`);
+            return response.json();
+        },
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "User rejected successfully",
+            });
+            refetch();
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to reject user",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const roleTitle = user?.role === 'country_manager' ? 'City Managers' : 'Hosts & Service Providers';
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h2 className="text-2xl font-semibold text-foreground mb-2">
+                    Pending Approvals
+                </h2>
+                <p className="text-muted-foreground">
+                    Review and approve or reject {roleTitle} applications
+                </p>
+            </div>
+
+            {isLoading ? (
+                <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} className="h-32 bg-muted rounded-lg animate-pulse"></div>
+                    ))}
+                </div>
+            ) : !pendingUsers || pendingUsers.length === 0 ? (
+                <Card className="p-12 text-center">
+                    <UserCheck className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                        No Pending Approvals
+                    </h3>
+                    <p className="text-muted-foreground">
+                        There are no pending {roleTitle} waiting for approval at this time.
+                    </p>
+                </Card>
+            ) : (
+                <div className="space-y-4">
+                    {pendingUsers.map((pendingUser: any) => (
+                        <Card key={pendingUser.id} className="p-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-lg font-semibold text-foreground">
+                                            {pendingUser.firstName} {pendingUser.lastName}
+                                        </h3>
+                                        <Badge variant="outline" className="bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400">
+                                            Pending
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Email:</strong> {pendingUser.email}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Role:</strong> {pendingUser.role?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                        <strong>Applied:</strong> {new Date(pendingUser.createdAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="default"
+                                        onClick={() => approveMutation.mutate(pendingUser.id)}
+                                        disabled={approveMutation.isPending || rejectMutation.isPending}
+                                    >
+                                        <Check className="w-4 h-4 mr-2" />
+                                        Approve
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        onClick={() => rejectMutation.mutate(pendingUser.id)}
+                                        disabled={approveMutation.isPending || rejectMutation.isPending}
+                                    >
+                                        <X className="w-4 h-4 mr-2" />
+                                        Reject
+                                    </Button>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function CreateStaffForm({ toast }: { toast: any }) {
     const [selectedRole, setSelectedRole] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -112,11 +243,7 @@ function CreateStaffForm({ toast }: { toast: any }) {
                     };
 
                     try {
-                        await apiRequest('/api/admin/create-staff', {
-                            method: 'POST',
-                            body: JSON.stringify(data),
-                            headers: { 'Content-Type': 'application/json' },
-                        });
+                        await apiRequest('POST', '/api/admin/create-staff', data);
 
                         toast({
                             title: "Success",
@@ -957,6 +1084,7 @@ export default function Dashboard() {
                         <TabsList className={`grid w-full ${
                             user?.role === 'client' ? 'grid-cols-3' :
                             user?.role === 'property_owner' || user?.role === 'service_provider' ? 'grid-cols-4' :
+                            user?.role === 'country_manager' || user?.role === 'city_manager' ? 'grid-cols-4' :
                             'grid-cols-5'
                         }`}>
                             <TabsTrigger
@@ -984,6 +1112,16 @@ export default function Dashboard() {
                                 >
                                     <UserCheck className="w-4 h-4 mr-2" />
                                     {t("dashboard.my_services")}
+                                </TabsTrigger>
+                            )}
+                            {/* Show Approvals tab for Country Manager and City Manager */}
+                            {(user?.role === 'country_manager' || user?.role === 'city_manager') && (
+                                <TabsTrigger
+                                    value="approvals"
+                                    data-testid="tab-approvals"
+                                >
+                                    <UserCheck className="w-4 h-4 mr-2" />
+                                    Approvals
                                 </TabsTrigger>
                             )}
                             <TabsTrigger
@@ -1873,6 +2011,13 @@ export default function Dashboard() {
                             </div>
                         )}
                     </TabsContent>
+
+                    {/* Approvals Tab - For Country Manager and City Manager */}
+                    {(user?.role === 'country_manager' || user?.role === 'city_manager') && (
+                        <TabsContent value="approvals" className="space-y-6">
+                            <ApprovalsTab toast={toast} user={user} />
+                        </TabsContent>
+                    )}
 
                     {/* My Properties - Only for property_owner */}
                     {user?.role === 'property_owner' && (<>

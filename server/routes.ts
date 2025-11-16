@@ -224,12 +224,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: "pending", // Set status to pending for approval
             });
 
-            // Set session
-            (req.session as any).userId = user.id;
-
-            // Return user without password
-            const { password: _, ...userWithoutPassword } = user;
-            res.status(201).json(userWithoutPassword);
+            // DO NOT auto-login - user must wait for approval
+            // Return success message instead
+            res.status(201).json({
+                message: "Application submitted successfully. You will receive an email once your account has been approved.",
+                email: user.email,
+                role: user.role,
+            });
         } catch (error: any) {
             console.error("Work-with-us registration error:", error);
             if (error.code === "23505") {
@@ -1131,12 +1132,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
 
     // Admin staff account creation
-    app.post("/api/admin/create-staff", requireAuth, async (req, res) => {
+    app.post("/api/admin/create-staff", requireAuth, requireApprovedUser, async (req, res) => {
         try {
             const userId = (req.session as any).userId;
             const user = await storage.getUser(userId);
 
-            if (user?.role !== "admin") {
+            if (user?.role !== "admin" || user?.status !== "approved") {
                 return res.status(403).json({ message: "Admin privileges required" });
             }
 
@@ -1191,6 +1192,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error creating staff account:", error);
             res.status(500).json({ message: "Failed to create staff account" });
+        }
+    });
+
+    // Approval routes for Country Manager and City Manager
+    app.get("/api/approvals/pending", requireAuth, requireApprovedUser, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.status !== "approved") {
+                return res.status(403).json({ message: "Approved user required" });
+            }
+
+            let pendingUsers;
+
+            // Country Manager can approve City Managers
+            if (user.role === "country_manager") {
+                const allUsers = await storage.getAllUsers();
+                pendingUsers = allUsers.filter(u => 
+                    u.status === "pending" && u.role === "city_manager"
+                );
+            }
+            // City Manager can approve Hosts and Service Providers
+            else if (user.role === "city_manager") {
+                const allUsers = await storage.getAllUsers();
+                pendingUsers = allUsers.filter(u => 
+                    u.status === "pending" && 
+                    (u.role === "property_owner" || u.role === "service_provider")
+                );
+            }
+            else {
+                return res.status(403).json({ message: "Not authorized to view approvals" });
+            }
+
+            res.json(pendingUsers);
+        } catch (error) {
+            console.error("Error fetching pending users:", error);
+            res.status(500).json({ message: "Failed to fetch pending users" });
+        }
+    });
+
+    app.post("/api/approvals/approve/:userId", requireAuth, requireApprovedUser, async (req, res) => {
+        try {
+            const approverId = (req.session as any).userId;
+            const approver = await storage.getUser(approverId);
+            const targetUserId = req.params.userId;
+
+            if (!approver || approver.status !== "approved") {
+                return res.status(403).json({ message: "Approved user required" });
+            }
+
+            const targetUser = await storage.getUser(targetUserId);
+            if (!targetUser) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Validate approval permissions
+            const canApprove = 
+                (approver.role === "country_manager" && targetUser.role === "city_manager") ||
+                (approver.role === "city_manager" && 
+                 (targetUser.role === "property_owner" || targetUser.role === "service_provider"));
+
+            if (!canApprove) {
+                return res.status(403).json({ message: "Not authorized to approve this user" });
+            }
+
+            // Approve the user
+            await storage.updateUser(targetUserId, {
+                status: "approved",
+                approvedBy: approverId,
+                approvedAt: new Date().toISOString(),
+            });
+
+            res.json({ message: "User approved successfully" });
+        } catch (error) {
+            console.error("Error approving user:", error);
+            res.status(500).json({ message: "Failed to approve user" });
+        }
+    });
+
+    app.post("/api/approvals/reject/:userId", requireAuth, requireApprovedUser, async (req, res) => {
+        try {
+            const approverId = (req.session as any).userId;
+            const approver = await storage.getUser(approverId);
+            const targetUserId = req.params.userId;
+
+            if (!approver || approver.status !== "approved") {
+                return res.status(403).json({ message: "Approved user required" });
+            }
+
+            const targetUser = await storage.getUser(targetUserId);
+            if (!targetUser) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Validate rejection permissions
+            const canReject = 
+                (approver.role === "country_manager" && targetUser.role === "city_manager") ||
+                (approver.role === "city_manager" && 
+                 (targetUser.role === "property_owner" || targetUser.role === "service_provider"));
+
+            if (!canReject) {
+                return res.status(403).json({ message: "Not authorized to reject this user" });
+            }
+
+            // Reject the user
+            await storage.updateUser(targetUserId, {
+                status: "rejected",
+                approvedBy: approverId,
+                approvedAt: new Date().toISOString(),
+            });
+
+            res.json({ message: "User rejected successfully" });
+        } catch (error) {
+            console.error("Error rejecting user:", error);
+            res.status(500).json({ message: "Failed to reject user" });
         }
     });
 

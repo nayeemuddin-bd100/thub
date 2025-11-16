@@ -74,12 +74,12 @@ export default function WorkWithUs() {
 
             return res.json();
         },
-        onSuccess: () => {
+        onSuccess: (data: any) => {
             toast({
-                title: t("auth.registration_pending"),
-                description: t("auth.awaiting_approval_message"),
+                title: "Application Submitted",
+                description: data.message || "Your application has been submitted successfully. You will receive an email once approved.",
             });
-            setLocation("/dashboard");
+            setLocation("/login");
         },
         onError: (error: Error) => {
             toast({
