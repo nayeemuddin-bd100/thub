@@ -131,9 +131,20 @@ export default function WorkWithUs() {
                     <h1 className="text-3xl font-bold text-foreground mb-2">
                         Work With Us
                     </h1>
-                    <p className="text-muted-foreground">
-                        Join our team as a City Manager, Host, or Service Provider
-                    </p>
+                    {!formData.role ? (
+                        <p className="text-muted-foreground">
+                            Join our team as a City Manager, Host, or Service Provider
+                        </p>
+                    ) : (
+                        <p className="text-muted-foreground">
+                            {formData.role === "city_manager" && 
+                                "Manage operations and approve hosts & service providers in your city"}
+                            {formData.role === "property_owner" && 
+                                "List your properties and welcome travelers from around the world"}
+                            {formData.role === "service_provider" && 
+                                "Offer tours, activities, and services to enhance traveler experiences"}
+                        </p>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -279,139 +290,255 @@ export default function WorkWithUs() {
                         </div>
                     </div>
 
-                    {/* Business Information */}
-                    <div className="border-t pt-6">
-                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                            <Briefcase className="w-5 h-5" />
-                            Business Information (Optional)
-                        </h3>
+                    {/* Role-Specific Information */}
+                    {formData.role && (
+                        <div className="border-t pt-6">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Briefcase className="w-5 h-5" />
+                                {formData.role === "city_manager" && "Management Information"}
+                                {formData.role === "property_owner" && "Property & Business Information"}
+                                {formData.role === "service_provider" && "Service Provider Information"}
+                            </h3>
 
-                        <div className="space-y-4">
-                            <div>
-                                <Label htmlFor="businessName">Business Name</Label>
-                                <Input
-                                    id="businessName"
-                                    value={formData.businessName}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            businessName: e.target.value,
-                                        })
-                                    }
-                                    data-testid="input-businessName"
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input
-                                    id="phone"
-                                    type="tel"
-                                    value={formData.phone}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            phone: e.target.value,
-                                        })
-                                    }
-                                    data-testid="input-phone"
-                                />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="businessAddress">
-                                    Business Address
-                                </Label>
-                                <Textarea
-                                    id="businessAddress"
-                                    value={formData.businessAddress}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            businessAddress: e.target.value,
-                                        })
-                                    }
-                                    rows={3}
-                                    data-testid="input-businessAddress"
-                                />
-                            </div>
-
-                            {formData.role === "property_owner" && (
+                            <div className="space-y-4">
+                                {/* Common Fields for All Roles */}
                                 <div>
-                                    <Label htmlFor="taxLicense">
-                                        Tax License / Registration Number
+                                    <Label htmlFor="phone">
+                                        Phone Number <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
-                                        id="taxLicense"
-                                        value={formData.taxLicense}
+                                        id="phone"
+                                        type="tel"
+                                        value={formData.phone}
                                         onChange={(e) =>
                                             setFormData({
                                                 ...formData,
-                                                taxLicense: e.target.value,
+                                                phone: e.target.value,
                                             })
                                         }
-                                        data-testid="input-taxLicense"
+                                        placeholder="+1 (555) 123-4567"
+                                        required
+                                        data-testid="input-phone"
                                     />
                                 </div>
-                            )}
 
-                            {formData.role === "service_provider" && (
-                                <>
-                                    <div>
-                                        <Label htmlFor="certifications">
-                                            Certifications (comma-separated)
-                                        </Label>
-                                        <Input
-                                            id="certifications"
-                                            value={formData.certifications}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    certifications: e.target.value,
-                                                })
-                                            }
-                                            placeholder="e.g., Licensed Plumber, HVAC Certified"
-                                            data-testid="input-certifications"
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="portfolio">
-                                            Portfolio Links (comma-separated)
-                                        </Label>
-                                        <Input
-                                            id="portfolio"
-                                            value={formData.portfolio}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    portfolio: e.target.value,
-                                                })
-                                            }
-                                            placeholder="e.g., https://mywork.com, https://portfolio.com"
-                                            data-testid="input-portfolio"
-                                        />
-                                    </div>
-                                </>
-                            )}
+                                {/* City Manager Specific Fields */}
+                                {formData.role === "city_manager" && (
+                                    <>
+                                        <div>
+                                            <Label htmlFor="businessAddress">
+                                                City/Region You'll Manage <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="businessAddress"
+                                                value={formData.businessAddress}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        businessAddress: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="e.g., New York, NY"
+                                                required
+                                                data-testid="input-businessAddress"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="bio">
+                                                Management Experience <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Textarea
+                                                id="bio"
+                                                value={formData.bio}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        bio: e.target.value,
+                                                    })
+                                                }
+                                                rows={4}
+                                                placeholder="Describe your experience in property/hospitality management, team leadership, and relevant skills..."
+                                                required
+                                                data-testid="input-bio"
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
-                            <div>
-                                <Label htmlFor="bio">Bio / About You</Label>
-                                <Textarea
-                                    id="bio"
-                                    value={formData.bio}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            bio: e.target.value,
-                                        })
-                                    }
-                                    rows={4}
-                                    placeholder="Tell us about yourself and your experience..."
-                                    data-testid="input-bio"
-                                />
+                                {/* Property Owner (Host) Specific Fields */}
+                                {formData.role === "property_owner" && (
+                                    <>
+                                        <div>
+                                            <Label htmlFor="businessName">
+                                                Property/Business Name
+                                            </Label>
+                                            <Input
+                                                id="businessName"
+                                                value={formData.businessName}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        businessName: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="e.g., Sunset Villa Rentals"
+                                                data-testid="input-businessName"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="businessAddress">
+                                                Property Location <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Textarea
+                                                id="businessAddress"
+                                                value={formData.businessAddress}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        businessAddress: e.target.value,
+                                                    })
+                                                }
+                                                rows={2}
+                                                placeholder="Main property address or location"
+                                                required
+                                                data-testid="input-businessAddress"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="taxLicense">
+                                                Tax License / Registration Number
+                                            </Label>
+                                            <Input
+                                                id="taxLicense"
+                                                value={formData.taxLicense}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        taxLicense: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="Business registration or tax ID"
+                                                data-testid="input-taxLicense"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="bio">
+                                                About Your Property/Properties <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Textarea
+                                                id="bio"
+                                                value={formData.bio}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        bio: e.target.value,
+                                                    })
+                                                }
+                                                rows={4}
+                                                placeholder="Describe your property types (apartment, villa, etc.), number of properties, amenities, and hosting experience..."
+                                                required
+                                                data-testid="input-bio"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Service Provider Specific Fields */}
+                                {formData.role === "service_provider" && (
+                                    <>
+                                        <div>
+                                            <Label htmlFor="businessName">
+                                                Business/Company Name
+                                            </Label>
+                                            <Input
+                                                id="businessName"
+                                                value={formData.businessName}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        businessName: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="e.g., ABC Tour Services"
+                                                data-testid="input-businessName"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="businessAddress">
+                                                Service Area/Location <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Input
+                                                id="businessAddress"
+                                                value={formData.businessAddress}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        businessAddress: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="Cities/regions where you provide services"
+                                                required
+                                                data-testid="input-businessAddress"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="certifications">
+                                                Certifications & Licenses
+                                            </Label>
+                                            <Input
+                                                id="certifications"
+                                                value={formData.certifications}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        certifications: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="e.g., Licensed Tour Guide, Certified Chef, Licensed Driver"
+                                                data-testid="input-certifications"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="portfolio">
+                                                Portfolio/Website Links
+                                            </Label>
+                                            <Input
+                                                id="portfolio"
+                                                value={formData.portfolio}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        portfolio: e.target.value,
+                                                    })
+                                                }
+                                                placeholder="Website, Instagram, or portfolio links (comma-separated)"
+                                                data-testid="input-portfolio"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="bio">
+                                                Service Description & Experience <span className="text-red-500">*</span>
+                                            </Label>
+                                            <Textarea
+                                                id="bio"
+                                                value={formData.bio}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        bio: e.target.value,
+                                                    })
+                                                }
+                                                rows={4}
+                                                placeholder="Describe the services you offer (tours, transportation, activities, etc.), your experience, and what makes you unique..."
+                                                required
+                                                data-testid="input-bio"
+                                            />
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    )}
 
                     <Button
                         type="submit"
