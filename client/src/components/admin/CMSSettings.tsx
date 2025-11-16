@@ -10,12 +10,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Edit, Plus, Trash2, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 interface CMSContent {
     id: string;
@@ -25,6 +34,7 @@ interface CMSContent {
     content: string;
     metaDescription?: string;
     metaKeywords?: string;
+    footerSection?: "company" | "support" | "legal" | "resources" | "none";
     isPublished: boolean;
     updatedBy?: string;
     updatedAt?: string;
@@ -38,15 +48,39 @@ export default function CMSSettings() {
     const [previewOpen, setPreviewOpen] = useState(false);
     const [previewContent, setPreviewContent] = useState<CMSContent | null>(null);
     
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        pageKey: string;
+        pageName: string;
+        title: string;
+        content: string;
+        metaDescription: string;
+        metaKeywords: string;
+        footerSection: "company" | "support" | "legal" | "resources" | "none";
+        isPublished: boolean;
+    }>({
         pageKey: "",
         pageName: "",
         title: "",
         content: "",
         metaDescription: "",
         metaKeywords: "",
+        footerSection: "none",
         isPublished: true,
     });
+
+    const quillModules = useMemo(
+        () => ({
+            toolbar: [
+                [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                ["bold", "italic", "underline", "strike"],
+                [{ list: "ordered" }, { list: "bullet" }],
+                [{ indent: "-1" }, { indent: "+1" }],
+                ["link", "image"],
+                ["clean"],
+            ],
+        }),
+        []
+    );
 
     // Fetch CMS content
     const { data: cmsContentList, isLoading } = useQuery<CMSContent[]>({
@@ -111,6 +145,32 @@ export default function CMSSettings() {
         },
     });
 
+    // Toggle publish status mutation
+    const togglePublishMutation = useMutation({
+        mutationFn: async ({ id, isPublished }: { id: string; isPublished: boolean }) => {
+            const response = await apiRequest("PATCH", `/api/cms-content/${id}`, {
+                isPublished,
+            });
+            return response.json();
+        },
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ["cmsContent"] });
+            toast({
+                title: variables.isPublished ? "Page published" : "Page unpublished",
+                description: variables.isPublished
+                    ? "Page is now visible to users"
+                    : "Page is now hidden from users",
+            });
+        },
+        onError: (error: Error) => {
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive",
+            });
+        },
+    });
+
     const resetForm = () => {
         setFormData({
             pageKey: "",
@@ -119,6 +179,7 @@ export default function CMSSettings() {
             content: "",
             metaDescription: "",
             metaKeywords: "",
+            footerSection: "none",
             isPublished: true,
         });
     };
@@ -132,6 +193,7 @@ export default function CMSSettings() {
             content: content.content,
             metaDescription: content.metaDescription || "",
             metaKeywords: content.metaKeywords || "",
+            footerSection: content.footerSection || "none",
             isPublished: content.isPublished,
         });
         setDialogOpen(true);
@@ -189,17 +251,29 @@ export default function CMSSettings() {
                                     <p className="text-sm text-muted-foreground">
                                         Key: {content.pageKey}
                                     </p>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    {content.isPublished ? (
-                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                            Published
-                                        </span>
-                                    ) : (
-                                        <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                                            Draft
-                                        </span>
+                                    {content.footerSection && content.footerSection !== "none" && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Footer: {content.footerSection}
+                                        </p>
                                     )}
+                                </div>
+                                <div className="flex flex-col items-end gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-muted-foreground">
+                                            {content.isPublished ? "Published" : "Draft"}
+                                        </span>
+                                        <Switch
+                                            checked={content.isPublished}
+                                            onCheckedChange={(checked) =>
+                                                togglePublishMutation.mutate({
+                                                    id: content.id,
+                                                    isPublished: checked,
+                                                })
+                                            }
+                                            disabled={togglePublishMutation.isPending}
+                                            data-testid={`switch-publish-${content.pageKey}`}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             
@@ -252,13 +326,13 @@ export default function CMSSettings() {
 
             {/* Edit/Create Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>
                             {editingContent ? "Edit CMS Content" : "Add CMS Content"}
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4">
+                    <div className="space-y-4 overflow-y-auto flex-1 pr-2">
                         <div>
                             <Label htmlFor="pageKey">Page Key *</Label>
                             <Input
@@ -303,19 +377,20 @@ export default function CMSSettings() {
                         </div>
 
                         <div>
-                            <Label htmlFor="content">Content (HTML) *</Label>
-                            <Textarea
-                                id="content"
-                                value={formData.content}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, content: e.target.value })
-                                }
-                                placeholder="<div>Your HTML content here</div>"
-                                rows={10}
-                                data-testid="input-content"
-                            />
+                            <Label htmlFor="content">Content *</Label>
+                            <div className="border rounded-md" data-testid="input-content">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={formData.content}
+                                    onChange={(value) =>
+                                        setFormData({ ...formData, content: value })
+                                    }
+                                    modules={quillModules}
+                                    className="min-h-[300px]"
+                                />
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1">
-                                HTML content for the page
+                                Rich text editor for page content
                             </p>
                         </div>
 
@@ -352,6 +427,33 @@ export default function CMSSettings() {
                             />
                         </div>
 
+                        <div>
+                            <Label htmlFor="footerSection">Footer Placement</Label>
+                            <Select
+                                value={formData.footerSection}
+                                onValueChange={(value) =>
+                                    setFormData({
+                                        ...formData,
+                                        footerSection: value as typeof formData.footerSection,
+                                    })
+                                }
+                            >
+                                <SelectTrigger id="footerSection" data-testid="select-footer-section">
+                                    <SelectValue placeholder="Select footer section" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="company">Company</SelectItem>
+                                    <SelectItem value="support">Support</SelectItem>
+                                    <SelectItem value="legal">Legal</SelectItem>
+                                    <SelectItem value="resources">Resources</SelectItem>
+                                    <SelectItem value="none">None (Hidden from footer)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Choose which footer section this page appears in
+                            </p>
+                        </div>
+
                         <div className="flex items-center gap-2">
                             <Switch
                                 id="isPublished"
@@ -363,37 +465,37 @@ export default function CMSSettings() {
                             />
                             <Label htmlFor="isPublished">Published</Label>
                         </div>
+                    </div>
 
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setDialogOpen(false);
-                                    setEditingContent(null);
-                                    resetForm();
-                                }}
-                                data-testid="button-cancel"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={
-                                    saveMutation.isPending ||
-                                    !formData.pageKey ||
-                                    !formData.pageName ||
-                                    !formData.title ||
-                                    !formData.content
-                                }
-                                data-testid="button-save"
-                            >
-                                {saveMutation.isPending
-                                    ? "Saving..."
-                                    : editingContent
-                                    ? "Update"
-                                    : "Create"}
-                            </Button>
-                        </div>
+                    <div className="flex justify-end gap-2 pt-4 border-t sticky bottom-0 bg-background">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDialogOpen(false);
+                                setEditingContent(null);
+                                resetForm();
+                            }}
+                            data-testid="button-cancel"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={
+                                saveMutation.isPending ||
+                                !formData.pageKey ||
+                                !formData.pageName ||
+                                !formData.title ||
+                                !formData.content
+                            }
+                            data-testid="button-save"
+                        >
+                            {saveMutation.isPending
+                                ? "Saving..."
+                                : editingContent
+                                ? "Update"
+                                : "Create"}
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

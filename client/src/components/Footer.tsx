@@ -1,9 +1,35 @@
 import { Link } from "wouter";
 import { useTranslation } from 'react-i18next';
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface CMSPage {
+  id: string;
+  pageKey: string;
+  pageName: string;
+  footerSection?: "company" | "support" | "legal" | "resources" | "none";
+  isPublished: boolean;
+}
 
 export default function Footer() {
   const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
+
+  // Fetch published CMS pages
+  const { data: cmsPages = [] } = useQuery<CMSPage[]>({
+    queryKey: ["cmsPages"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/cms-content");
+      return response.json();
+    },
+  });
+
+  // Filter and group published pages by footer section
+  const publishedPages = cmsPages.filter((page) => page.isPublished);
+  const companyPages = publishedPages.filter((p) => p.footerSection === "company");
+  const supportPages = publishedPages.filter((p) => p.footerSection === "support");
+  const legalPages = publishedPages.filter((p) => p.footerSection === "legal");
+  const resourcePages = publishedPages.filter((p) => p.footerSection === "resources");
   
   return (
     <footer className="bg-card border-t border-border">
@@ -65,96 +91,92 @@ export default function Footer() {
           </div>
 
           {/* Company */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-company-title">
-              {t('footer.company')}
-            </h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link href="/about" className="hover:text-foreground transition-colors" data-testid="link-about">
-                  {t('footer.about')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/careers" className="hover:text-foreground transition-colors" data-testid="link-careers">
-                  {t('footer.careers')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/press" className="hover:text-foreground transition-colors" data-testid="link-press">
-                  {t('footer.press')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-foreground transition-colors" data-testid="link-blog">
-                  {t('footer.blog')}
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {companyPages.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-company-title">
+                {t('footer.company')}
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {companyPages.map((page) => (
+                  <li key={page.id}>
+                    <Link
+                      href={`/${page.pageKey}`}
+                      className="hover:text-foreground transition-colors"
+                      data-testid={`link-${page.pageKey}`}
+                    >
+                      {page.pageName}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Support */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-support-title">
-              {t('footer.support')}
-            </h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link href="/help" className="hover:text-foreground transition-colors" data-testid="link-help">
-                  {t('footer.help')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/safety" className="hover:text-foreground transition-colors" data-testid="link-safety">
-                  {t('footer.safety')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/cancellation" className="hover:text-foreground transition-colors" data-testid="link-cancellation">
-                  {t('footer.cancellation')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-foreground transition-colors" data-testid="link-contact">
-                  {t('footer.contact')}
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {supportPages.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-support-title">
+                {t('footer.support')}
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {supportPages.map((page) => (
+                  <li key={page.id}>
+                    <Link
+                      href={`/${page.pageKey}`}
+                      className="hover:text-foreground transition-colors"
+                      data-testid={`link-${page.pageKey}`}
+                    >
+                      {page.pageName}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-          {/* Hosting */}
-          <div>
-            <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-hosting-title">
-              {t('footer.hosting')}
-            </h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link href="/work-with-us" className="hover:text-foreground transition-colors font-medium text-primary" data-testid="link-work-with-us">
-                  Work With Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/host" className="hover:text-foreground transition-colors" data-testid="link-host">
-                  {t('footer.become_host')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/provider" className="hover:text-foreground transition-colors" data-testid="link-provider">
-                  {t('footer.become_provider')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/resources" className="hover:text-foreground transition-colors" data-testid="link-resources">
-                  {t('footer.resources')}
-                </Link>
-              </li>
-              <li>
-                <Link href="/community" className="hover:text-foreground transition-colors" data-testid="link-community">
-                  {t('footer.community')}
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Resources */}
+          {resourcePages.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-resources-title">
+                {t('footer.resources')}
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {resourcePages.map((page) => (
+                  <li key={page.id}>
+                    <Link
+                      href={`/${page.pageKey}`}
+                      className="hover:text-foreground transition-colors"
+                      data-testid={`link-${page.pageKey}`}
+                    >
+                      {page.pageName}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Legal - If there are legal pages, show them in a separate column */}
+          {legalPages.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-foreground mb-4" data-testid="text-footer-legal-title">
+                {t('footer.legal') || "Legal"}
+              </h3>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                {legalPages.map((page) => (
+                  <li key={page.id}>
+                    <Link
+                      href={`/${page.pageKey}`}
+                      className="hover:text-foreground transition-colors"
+                      data-testid={`link-${page.pageKey}`}
+                    >
+                      {page.pageName}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-border mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
@@ -167,9 +189,6 @@ export default function Footer() {
             </Link>
             <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-terms">
               {t('footer.terms')}
-            </Link>
-            <Link href="/sitemap" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-sitemap">
-              {t('footer.sitemap')}
             </Link>
           </div>
         </div>

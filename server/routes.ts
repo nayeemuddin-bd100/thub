@@ -3115,7 +3115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             const { id } = req.params;
-            const { pageName, title, content, metaDescription, metaKeywords, isPublished } = req.body;
+            const { pageName, title, content, metaDescription, metaKeywords, footerSection, isPublished } = req.body;
 
             // Get existing content
             const existing = await db
@@ -3137,6 +3137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     content: content || existing[0].content,
                     metaDescription: metaDescription !== undefined ? metaDescription : existing[0].metaDescription,
                     metaKeywords: metaKeywords !== undefined ? metaKeywords : existing[0].metaKeywords,
+                    footerSection: footerSection !== undefined ? footerSection : existing[0].footerSection,
                     isPublished: isPublished !== undefined ? isPublished : existing[0].isPublished,
                     updatedBy: userId,
                     updatedAt: new Date(),
