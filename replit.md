@@ -45,7 +45,7 @@ Preferred communication style: Simple, everyday language.
 - **Seasonal Pricing System**: Property owners can manage seasonal pricing for their properties with comprehensive date range and pricing controls (November 16, 2025).
 
 ## CMS Content Management System (November 16, 2025)
-- **Admin-Only Access**: CMS content management is restricted to administrators via the Settings page
+- **Admin-Only Access**: CMS content management is restricted to administrators via the Admin Dashboard
 - **Managed Pages**: 10 informational pages (About, Careers, Press, Help, Safety, Cancellation Policy, Contact, Resources, Community, Sitemap)
 - **Features**:
   - Full CRUD operations (Create, Read, Update, Delete)
@@ -55,7 +55,8 @@ Preferred communication style: Simple, everyday language.
   - Preview functionality before publishing
   - Page key system for unique page identification
 - **API Routes**: `/api/cms-content` endpoints (GET all, GET by pageKey, POST create, PATCH update, DELETE)
-- **Access**: Available via `/settings` route in the Settings page under "CMS Settings" tab
+- **Access**: Available via Admin Dashboard at `/admin` as a navigation menu item "CMS Content"
+- **Navigation Structure**: All settings and management features (CMS Content, Platform Settings, Associations, Promo Codes, Cancellations, Territories, Email Templates, Activity Logs, Staff Management) are accessible as menu items in the Admin Dashboard sidebar
 - **Security**: All API endpoints protected with `requireApprovedUser` middleware and admin role checks
 
 ## Payment Flow
