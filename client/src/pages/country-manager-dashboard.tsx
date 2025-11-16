@@ -202,13 +202,13 @@ export default function CountryManagerDashboard() {
   });
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Country Manager Dashboard</h1>
-          <p className="text-muted-foreground">Manage regional operations, assign jobs, and monitor provider performance</p>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Country Manager Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage regional operations, assign jobs, and monitor provider performance</p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/')}>
+        <Button variant="outline" onClick={() => navigate('/')} className="w-full sm:w-auto">
           <Home className="w-4 h-4 mr-2" />
           Home
         </Button>
