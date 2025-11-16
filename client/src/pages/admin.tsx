@@ -6,6 +6,8 @@ import PromotionalCodes from "@/components/admin/PromotionalCodes";
 import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
 import TerritoryManagement from "@/components/admin/TerritoryManagement";
 import RoleChangeRequests from "@/components/admin/RoleChangeRequests";
+import CreateStaffAccount from "@/components/admin/CreateStaffAccount";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -447,6 +449,28 @@ export default function AdminDashboard() {
             toast({
                 title: t("common.error"),
                 description: error.message || t("errors.role_update_failed"),
+                variant: "destructive",
+            });
+        },
+    });
+
+    // Toggle user active status mutation
+    const toggleUserActiveMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            return await apiRequest("PATCH", `/api/users/${userId}/toggle-active`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+            toast({
+                title: t("common.success"),
+                description: "User account status updated successfully",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: t("common.error"),
+                description: error.message || "Failed to update user status",
                 variant: "destructive",
             });
         },
@@ -1374,12 +1398,19 @@ export default function AdminDashboard() {
                                                             </span>
                                                         </div>
                                                         <div className="min-w-0 flex-1">
-                                                            <p className="font-semibold text-foreground text-sm sm:text-base truncate">
-                                                                {u.firstName &&
-                                                                u.lastName
-                                                                    ? `${u.firstName} ${u.lastName}`
-                                                                    : "No name"}
-                                                            </p>
+                                                            <div className="flex items-center gap-2">
+                                                                <p className="font-semibold text-foreground text-sm sm:text-base truncate">
+                                                                    {u.firstName &&
+                                                                    u.lastName
+                                                                        ? `${u.firstName} ${u.lastName}`
+                                                                        : "No name"}
+                                                                </p>
+                                                                {u.isActive === false && (
+                                                                    <Badge variant="destructive" className="text-xs">
+                                                                        Inactive
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                             <p className="text-xs sm:text-sm text-muted-foreground truncate">
                                                                 {u.email}
                                                             </p>
@@ -1391,36 +1422,37 @@ export default function AdminDashboard() {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <Select
-                                                        value={u.role}
-                                                        onValueChange={(
-                                                            newRole
-                                                        ) =>
-                                                            assignRoleMutation.mutate(
-                                                                {
-                                                                    userId: u.id,
-                                                                    role: newRole,
-                                                                }
-                                                            )
-                                                        }
-                                                        disabled={
-                                                            assignRoleMutation.isPending
-                                                        }
-                                                    >
-                                                        <SelectTrigger
-                                                            className="w-full sm:w-[180px]"
-                                                            data-testid={`select-role-${u.id}`}
+                                                    <div className="flex flex-col sm:flex-row gap-2">
+                                                        <Select
+                                                            value={u.role}
+                                                            onValueChange={(
+                                                                newRole
+                                                            ) =>
+                                                                assignRoleMutation.mutate(
+                                                                    {
+                                                                        userId: u.id,
+                                                                        role: newRole,
+                                                                    }
+                                                                )
+                                                            }
+                                                            disabled={
+                                                                assignRoleMutation.isPending
+                                                            }
                                                         >
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="admin">
-                                                                Admin
-                                                            </SelectItem>
-                                                            <SelectItem value="billing">
-                                                                Billing
-                                                            </SelectItem>
-                                                            <SelectItem value="operation">
+                                                            <SelectTrigger
+                                                                className="w-full sm:w-[180px]"
+                                                                data-testid={`select-role-${u.id}`}
+                                                            >
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="admin">
+                                                                    Admin
+                                                                </SelectItem>
+                                                                <SelectItem value="billing">
+                                                                    Billing
+                                                                </SelectItem>
+                                                                <SelectItem value="operation">
                                                                 Operation
                                                             </SelectItem>
                                                             <SelectItem value="marketing">
@@ -1446,7 +1478,26 @@ export default function AdminDashboard() {
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
+                                                    {user?.id !== u.id && (
+                                                        <Button
+                                                            variant={u.isActive === false ? "default" : "destructive"}
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                if (confirm(
+                                                                    u.isActive === false
+                                                                        ? `Are you sure you want to activate ${u.email}?`
+                                                                        : `Are you sure you want to deactivate ${u.email}? They will not be able to log in.`
+                                                                )) {
+                                                                    toggleUserActiveMutation.mutate(u.id);
+                                                                }
+                                                            }}
+                                                            data-testid={`button-toggle-active-${u.id}`}
+                                                        >
+                                                            {u.isActive === false ? "Activate" : "Deactivate"}
+                                                        </Button>
+                                                    )}
                                                 </div>
+                                            </div>
                                             </Card>
                                         ))}
                                 </div>
@@ -3780,6 +3831,13 @@ export default function AdminDashboard() {
                                             >
                                                 {t("admin.activity_logs")}
                                             </TabsTrigger>
+                                            <TabsTrigger
+                                                value="staff"
+                                                data-testid="tab-staff"
+                                                className="whitespace-nowrap"
+                                            >
+                                                Internal Staff
+                                            </TabsTrigger>
                                         </TabsList>
                                     </div>
                                     <Button
@@ -3839,6 +3897,10 @@ export default function AdminDashboard() {
 
                                 <TabsContent value="logs" className="space-y-4">
                                     <ActivityLogs />
+                                </TabsContent>
+
+                                <TabsContent value="staff" className="space-y-4">
+                                    <CreateStaffAccount />
                                 </TabsContent>
                             </Tabs>
                         </div>

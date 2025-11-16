@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Home } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "wouter";
@@ -17,6 +17,11 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    
+    // Get redirect parameter from URL to preserve it when switching to register
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectParam = urlParams.get('redirect');
+    const registerUrl = redirectParam ? `/register?redirect=${encodeURIComponent(redirectParam)}` : '/register';
 
     const loginMutation = useMutation({
         mutationFn: async () => {
@@ -27,6 +32,16 @@ export default function Login() {
             return await response.json();
         },
         onSuccess: async (loginData: any) => {
+            // Check if password reset is required
+            if (loginData.status === "PASSWORD_RESET_REQUIRED") {
+                toast({
+                    title: "Password Reset Required",
+                    description: "You must change your temporary password before continuing.",
+                });
+                setLocation(`/force-password-reset/${loginData.userId}`);
+                return;
+            }
+
             // Fetch user data to check role
             const userResponse = await apiRequest("GET", "/api/auth/user");
             const userData = await userResponse.json();
@@ -37,11 +52,31 @@ export default function Login() {
                 description: t("auth.login_success"),
             });
 
-            // Redirect based on user role
-            if (userData.role === "admin") {
-                setLocation("/admin");
+            // Check for redirect parameter in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectTo = urlParams.get('redirect');
+
+            if (redirectTo) {
+                // Security: Only allow relative paths (prevent open redirect)
+                const decodedRedirect = decodeURIComponent(redirectTo);
+                if (decodedRedirect.startsWith('/') && !decodedRedirect.startsWith('//')) {
+                    // Safe relative redirect
+                    window.location.href = decodedRedirect;
+                } else {
+                    // Unsafe redirect attempt, use default
+                    if (userData.role === "admin") {
+                        setLocation("/admin");
+                    } else {
+                        setLocation("/dashboard");
+                    }
+                }
             } else {
-                setLocation("/dashboard");
+                // Default redirect based on user role
+                if (userData.role === "admin") {
+                    setLocation("/admin");
+                } else {
+                    setLocation("/dashboard");
+                }
             }
         },
         onError: (error: any) => {
@@ -80,6 +115,18 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center px-4">
             <Card className="w-full max-w-md p-8">
+                <div className="flex justify-end mb-4">
+                    <Link href="/">
+                        <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground"
+                        >
+                            <Home className="w-4 h-4 mr-2" />
+                            Home
+                        </Button>
+                    </Link>
+                </div>
                 <div className="text-center mb-8">
                     <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
                         <svg
@@ -155,7 +202,7 @@ export default function Login() {
                 <div className="mt-6 text-center text-sm space-y-2">
                     <p className="text-muted-foreground">
                         {t("auth.no_account")}{" "}
-                        <Link href="/register">
+                        <Link href={registerUrl}>
                             <span
                                 className="text-primary hover:underline cursor-pointer"
                                 data-testid="link-register"
@@ -165,16 +212,10 @@ export default function Login() {
                         </Link>
                     </p>
                     <p className="text-muted-foreground text-xs">
-                        Or register as:{" "}
-                        <Link href="/register-host">
-                            <span className="text-primary hover:underline cursor-pointer">
-                                Host
-                            </span>
-                        </Link>
-                        {" · "}
-                        <Link href="/register-provider">
-                            <span className="text-primary hover:underline cursor-pointer">
-                                Service Provider
+                        Want to work with us?{" "}
+                        <Link href="/work-with-us">
+                            <span className="text-primary hover:underline cursor-pointer font-medium">
+                                Join as Host, Service Provider, or City Manager
                             </span>
                         </Link>
                     </p>

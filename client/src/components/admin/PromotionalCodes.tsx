@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Plus, Percent, DollarSign, Tag, Calendar, Users, TrendingUp, CheckCircle, XCircle } from "lucide-react";
@@ -123,6 +124,29 @@ export default function PromotionalCodes() {
       toast({
         title: "Error",
         description: error.message || "Failed to create promotional code",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const togglePromoCodeMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const response = await apiRequest("PATCH", `/api/admin/promo-codes/${id}/toggle`, {
+        isActive,
+      });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/promo-codes"] });
+      toast({
+        title: "Success",
+        description: "Promotional code status updated",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update promotional code status",
         variant: "destructive",
       });
     },
@@ -530,7 +554,19 @@ export default function PromotionalCodes() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {getStatusBadge(code)}
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            checked={code.isActive}
+                            onCheckedChange={(checked) => {
+                              togglePromoCodeMutation.mutate({
+                                id: code.id,
+                                isActive: checked,
+                              });
+                            }}
+                            data-testid={`switch-active-${code.id}`}
+                          />
+                          {getStatusBadge(code)}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

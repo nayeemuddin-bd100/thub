@@ -3,6 +3,7 @@ export type UserRole =
   | "billing"
   | "operation"
   | "marketing"
+  | "support"
   | "property_owner"
   | "service_provider"
   | "client"
@@ -20,6 +21,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "country_manager",
     "city_manager",
     "property_owner",
@@ -28,6 +30,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "operation_support",
   ],
   billing: [
+    "support",
     "country_manager",
     "city_manager",
     "property_owner",
@@ -35,6 +38,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "client",
   ],
   operation: [
+    "support",
     "country_manager",
     "city_manager",
     "property_owner",
@@ -42,17 +46,31 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "client",
   ],
   marketing: [
+    "support",
     "country_manager",
     "city_manager",
     "property_owner",
     "service_provider",
     "client",
   ],
+  support: [
+    "admin",
+    "billing",
+    "operation",
+    "marketing",
+    "country_manager",
+    "city_manager",
+    "property_owner",
+    "service_provider",
+    "client",
+    "operation_support",
+  ],
   country_manager: [
     "admin",
     "billing",
     "operation",
     "marketing",
+    "support",
     "country_manager",
     "property_owner",
     "service_provider",
@@ -62,6 +80,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "country_manager",
     "property_owner",
     "client",
@@ -71,6 +90,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "city_manager",
     "client",
   ],
@@ -79,6 +99,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "country_manager",
     "client",
   ],
@@ -87,6 +108,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "property_owner",
     "service_provider",
   ],
@@ -95,6 +117,7 @@ export const ROLE_MESSAGING_PERMISSIONS: RoleMessagingPermissions = {
     "billing",
     "operation",
     "marketing",
+    "support",
     "country_manager",
     "city_manager",
     "property_owner",
@@ -117,6 +140,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   billing: "Billing",
   operation: "Operation",
   marketing: "Marketing",
+  support: "Support",
   property_owner: "Property Owner / Host",
   service_provider: "Service Provider",
   client: "Client",

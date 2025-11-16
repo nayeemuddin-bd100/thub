@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import WorkWithUs from "@/pages/work-with-us";
+import ForcePasswordReset from "@/pages/force-password-reset";
 import Home from "@/pages/home";
 import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
@@ -61,6 +62,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/work-with-us" component={WorkWithUs} />
+      <Route path="/force-password-reset/:userId" component={ForcePasswordReset} />
       
       {/* Public pages - accessible to all (CRITICAL: Public browsing without login) */}
       <Route path="/" component={Home} />

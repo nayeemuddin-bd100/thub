@@ -269,10 +269,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .json({ message: "Invalid email or password" });
             }
 
+            // Check if account is active
+            if (users.isActive === false) {
+                return res.status(403).json({ 
+                    message: "Your account has been deactivated. Please contact support for assistance." 
+                });
+            }
+
             // Check if user is rejected
             if (users.status === "rejected") {
                 return res.status(403).json({ 
                     message: "Your account application has been rejected. Please contact support for more information." 
+                });
+            }
+
+            // Check if password reset is required (for staff accounts)
+            if (users.passwordResetRequired) {
+                return res.status(200).json({
+                    status: "PASSWORD_RESET_REQUIRED",
+                    userId: users.id,
+                    email: users.email,
                 });
             }
 
@@ -296,6 +312,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             res.json({ message: "Logged out successfully" });
         });
+    });
+
+    // Force password reset endpoint (for staff accounts with temporary passwords)
+    app.post("/api/auth/force-password-reset", async (req, res) => {
+        try {
+            const { userId, temporaryPassword, newPassword, confirmPassword } = req.body;
+
+            // Validate input
+            if (!userId || !temporaryPassword || !newPassword || !confirmPassword) {
+                return res.status(400).json({ 
+                    message: "All fields are required" 
+                });
+            }
+
+            if (newPassword !== confirmPassword) {
+                return res.status(400).json({ 
+                    message: "Passwords do not match" 
+                });
+            }
+
+            if (newPassword.length < 8) {
+                return res.status(400).json({
+                    message: "New password must be at least 8 characters",
+                });
+            }
+
+            // Get user
+            const user = await storage.getUser(userId);
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Verify temporary password
+            const isValid = await verifyPassword(temporaryPassword, user.password);
+            if (!isValid) {
+                return res.status(401).json({ 
+                    message: "Invalid temporary password" 
+                });
+            }
+
+            // Hash new password
+            const hashedPassword = await hashPassword(newPassword);
+
+            // Update password and clear password reset flag
+            await storage.updateUser(userId, { 
+                password: hashedPassword,
+                passwordResetRequired: false,
+            });
+
+            // Create session for the user
+            (req.session as any).userId = user.id;
+
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = user;
+            res.json({ 
+                message: "Password changed successfully",
+                user: userWithoutPassword,
+            });
+        } catch (error) {
+            console.error("Force password reset error:", error);
+            res.status(500).json({ message: "Failed to reset password" });
+        }
     });
 
     // Change password endpoint
@@ -541,6 +619,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error fetching users:", error);
             res.status(500).json({ message: "Failed to fetch users" });
+        }
+    });
+
+    // Create internal staff account (billing, operation, marketing)
+    app.post("/api/admin/create-staff", requireAuth, async (req, res) => {
+        try {
+            const adminUserId = (req.session as any).userId;
+            const adminUser = await storage.getUser(adminUserId);
+
+            // Check if user is admin
+            if (adminUser?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            const { email, firstName, lastName, role, password } = req.body;
+
+            // Validate required fields
+            if (!email || !firstName || !role || !password) {
+                return res.status(400).json({ message: "Email, first name, role, and password are required" });
+            }
+
+            // Validate password strength
+            if (password.length < 8) {
+                return res.status(400).json({ message: "Password must be at least 8 characters long" });
+            }
+
+            // Validate role - only internal staff roles allowed
+            const allowedRoles = ["billing", "operation", "marketing", "support"];
+            if (!allowedRoles.includes(role)) {
+                return res.status(400).json({ 
+                    message: "Invalid role. Allowed roles: billing, operation, marketing, support" 
+                });
+            }
+
+            // Check if email already exists
+            const existingUser = await storage.getUserByEmail(email);
+            if (existingUser) {
+                return res.status(400).json({ message: "Email already exists" });
+            }
+
+            // Hash the provided password
+            const hashedPassword = await hashPassword(password);
+
+            // Create the user account with password reset required
+            const newUser = await storage.createUser({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName: lastName || "",
+                role,
+                status: "approved",
+                approvedBy: adminUserId,
+                approvedAt: new Date(),
+                passwordResetRequired: true,
+            });
+
+            // Send credentials email with temporary password
+            try {
+                await sendAccountCredentialsEmail(
+                    email,
+                    firstName,
+                    role,
+                    password
+                );
+            } catch (emailError) {
+                console.error("Error sending credentials email:", emailError);
+                // Continue even if email fails - admin can still share credentials manually
+            }
+
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = newUser;
+            res.status(201).json({
+                user: userWithoutPassword,
+                message: "Staff account created successfully. Credentials sent via email.",
+            });
+        } catch (error) {
+            console.error("Error creating staff account:", error);
+            res.status(500).json({ message: "Failed to create staff account" });
         }
     });
 
@@ -1187,10 +1345,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 return res.status(403).json({ message: "Admin privileges required" });
             }
 
-            const { email, firstName, lastName, role } = req.body;
+            const { email, firstName, lastName, role, password } = req.body;
 
             // Validate internal role
-            const internalRoles = ["billing", "operation", "marketing", "accounts", "country_manager"];
+            const internalRoles = ["billing", "operation", "marketing", "support"];
             if (!internalRoles.includes(role)) {
                 return res.status(400).json({ message: "Invalid staff role" });
             }
@@ -1201,11 +1359,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 return res.status(400).json({ message: "User with this email already exists" });
             }
 
-            // Generate temporary password (8 random characters)
-            const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
-            const hashedPassword = await hashPassword(tempPassword);
+            // Use provided password
+            const hashedPassword = await hashPassword(password);
 
-            // Create user with approved status
+            // Create user with approved status and force password reset
             const newUser = await storage.createUser({
                 email,
                 password: hashedPassword,
@@ -1215,15 +1372,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 status: "approved",
                 approvedBy: userId,
                 approvedAt: new Date().toISOString(),
+                passwordResetRequired: true, // Force password reset on first login
             });
-
-            // Send credentials email
-            try {
-                await sendAccountCredentialsEmail(email, firstName, role, tempPassword);
-            } catch (emailError) {
-                console.error("Failed to send credentials email:", emailError);
-                // Don't fail the request if email fails
-            }
 
             res.status(201).json({
                 message: "Staff account created successfully",
@@ -1238,6 +1388,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error creating staff account:", error);
             res.status(500).json({ message: "Failed to create staff account" });
+        }
+    });
+
+    // Admin reset staff password
+    app.post("/api/admin/reset-password/:userId", requireAuth, requireApprovedUser, async (req, res) => {
+        try {
+            const adminUserId = (req.session as any).userId;
+            const adminUser = await storage.getUser(adminUserId);
+
+            if (adminUser?.role !== "admin" || adminUser?.status !== "approved") {
+                return res.status(403).json({ message: "Admin privileges required" });
+            }
+
+            const { userId } = req.params;
+            const { password } = req.body;
+
+            if (!password || password.length < 8) {
+                return res.status(400).json({ message: "Password must be at least 8 characters long" });
+            }
+
+            // Get the target user
+            const targetUser = await storage.getUser(userId);
+            if (!targetUser) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            // Only allow resetting passwords for staff members
+            const staffRoles = ["billing", "operation", "marketing", "support"];
+            if (!staffRoles.includes(targetUser.role)) {
+                return res.status(403).json({ message: "Can only reset passwords for staff members" });
+            }
+
+            // Hash the new password
+            const hashedPassword = await hashPassword(password);
+
+            // Update the user's password and require reset on next login
+            await storage.updateUser(userId, {
+                password: hashedPassword,
+                passwordResetRequired: true,
+            });
+
+            res.json({ message: "Password reset successfully" });
+        } catch (error) {
+            console.error("Error resetting password:", error);
+            res.status(500).json({ message: "Failed to reset password" });
         }
     });
 
@@ -2722,6 +2917,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.error("Error updating provider profile:", error);
             res.status(500).json({
                 message: "Failed to update provider profile",
+            });
+        }
+    });
+
+    // Provider Service Categories routes
+    // Get all categories for a provider
+    app.get("/api/providers/:id/categories", async (req, res) => {
+        try {
+            const categories = await storage.getProviderCategories(req.params.id);
+            res.json(categories);
+        } catch (error) {
+            console.error("Error fetching provider categories:", error);
+            res.status(500).json({
+                message: "Failed to fetch provider categories",
+            });
+        }
+    });
+
+    // Add a category to a provider (Admin, Operation, or the provider themselves)
+    app.post("/api/providers/:id/categories", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const provider = await storage.getServiceProvider(req.params.id);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider not found" });
+            }
+
+            // Check permissions: admin, operation, or the provider themselves
+            const isAdmin = user?.role === "admin";
+            const isOperation = user?.role === "operation";
+            const isOwnProvider = provider.userId === userId;
+
+            if (!isAdmin && !isOperation && !isOwnProvider) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const { categoryId, isPrimary } = req.body;
+            if (!categoryId) {
+                return res.status(400).json({ message: "Category ID is required" });
+            }
+
+            await storage.addProviderCategory(req.params.id, categoryId, isPrimary || false);
+            res.status(201).json({ message: "Category added successfully" });
+        } catch (error: any) {
+            console.error("Error adding provider category:", error);
+            // Check if this is a duplicate entry error
+            if (error.message && error.message.includes("already assigned")) {
+                return res.status(400).json({
+                    message: error.message,
+                });
+            }
+            // Generic error for other cases
+            res.status(500).json({
+                message: "Failed to add category",
+            });
+        }
+    });
+
+    // Remove a category from a provider (Admin, Operation, or the provider themselves)
+    app.delete("/api/providers/:id/categories/:categoryId", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const provider = await storage.getServiceProvider(req.params.id);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider not found" });
+            }
+
+            // Check permissions: admin, operation, or the provider themselves
+            const isAdmin = user?.role === "admin";
+            const isOperation = user?.role === "operation";
+            const isOwnProvider = provider.userId === userId;
+
+            if (!isAdmin && !isOperation && !isOwnProvider) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            await storage.removeProviderCategory(req.params.id, req.params.categoryId);
+            res.json({ message: "Category removed successfully" });
+        } catch (error) {
+            console.error("Error removing provider category:", error);
+            res.status(500).json({
+                message: "Failed to remove category",
+            });
+        }
+    });
+
+    // Set a category as primary for a provider (Admin, Operation, or the provider themselves)
+    app.put("/api/providers/:id/categories/:categoryId/primary", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            const provider = await storage.getServiceProvider(req.params.id);
+            
+            if (!provider) {
+                return res.status(404).json({ message: "Provider not found" });
+            }
+
+            // Check permissions: admin, operation, or the provider themselves
+            const isAdmin = user?.role === "admin";
+            const isOperation = user?.role === "operation";
+            const isOwnProvider = provider.userId === userId;
+
+            if (!isAdmin && !isOperation && !isOwnProvider) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            await storage.updateProviderCategoryPrimary(req.params.id, req.params.categoryId);
+            res.json({ message: "Primary category updated successfully" });
+        } catch (error) {
+            console.error("Error updating primary category:", error);
+            res.status(500).json({
+                message: "Failed to update primary category",
             });
         }
     });
@@ -5434,6 +5745,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    app.patch("/api/notifications/mark-all-read", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const updatedCount = await storage.markAllNotificationsAsRead(userId);
+            res.json({ success: true, count: updatedCount });
+        } catch (error) {
+            console.error("Error marking all notifications as read:", error);
+            res.status(500).json({
+                message: "Failed to mark all notifications as read",
+            });
+        }
+    });
+
     // Update user role (admin only)
     app.patch("/api/users/:id/role", requireAuth, async (req: any, res) => {
         try {
@@ -5462,6 +5786,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error updating user role:", error);
             res.status(500).json({ message: "Failed to update user role" });
+        }
+    });
+
+    // Toggle user active status (admin only)
+    app.patch("/api/users/:id/toggle-active", requireAuth, async (req: any, res) => {
+        try {
+            const currentUserId = (req.session as any).userId;
+            const targetUserId = req.params.id;
+
+            // Prevent admin from deactivating themselves (check before DB query)
+            if (String(targetUserId) === String(currentUserId)) {
+                return res.status(400).json({ 
+                    message: "You cannot deactivate your own account" 
+                });
+            }
+
+            const currentUser = await storage.getUser(currentUserId);
+
+            if (currentUser?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin access required" });
+            }
+
+            const targetUser = await storage.getUser(targetUserId);
+
+            if (!targetUser) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            const updatedUser = await storage.upsertUser({
+                ...targetUser,
+                isActive: !targetUser.isActive,
+            });
+
+            res.json(updatedUser);
+        } catch (error) {
+            console.error("Error toggling user active status:", error);
+            res.status(500).json({ message: "Failed to toggle user status" });
         }
     });
 
@@ -5573,6 +5936,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error getting promo codes:", error);
             res.status(500).json({ message: "Failed to get promo codes" });
+        }
+    });
+
+    // Admin/Country Manager: Toggle promo code active status
+    app.patch("/api/admin/promo-codes/:id/toggle", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            
+            // Allow both admin and country_manager roles
+            if (!user || (user.role !== "admin" && user.role !== "country_manager")) {
+                return res.status(403).json({ message: "Unauthorized. Admin or Country Manager access required." });
+            }
+
+            const promoCodeId = req.params.id;
+            const { isActive } = req.body;
+
+            if (typeof isActive !== "boolean") {
+                return res.status(400).json({ message: "isActive must be a boolean" });
+            }
+
+            // Update the promo code status
+            const updatedPromoCode = await storage.updatePromoCodeStatus(promoCodeId, isActive);
+            
+            res.json(updatedPromoCode);
+        } catch (error) {
+            console.error("Error toggling promo code status:", error);
+            res.status(500).json({ message: "Failed to toggle promo code status" });
         }
     });
 

@@ -81,6 +81,20 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
     logoutMutation.mutate();
   };
 
+  const markAllAsReadMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", "/api/notifications/mark-all-read", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications/unread-count"] });
+    },
+  });
+
+  const handleMarkAllAsRead = () => {
+    markAllAsReadMutation.mutate();
+  };
+
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (searchQuery.trim()) {
@@ -169,11 +183,24 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   <PopoverContent className="w-80 p-0" align="end">
                     <div className="flex items-center justify-between border-b border-border p-4">
                       <h3 className="font-semibold text-foreground">Notifications</h3>
-                      {unreadCount > 0 && (
-                        <Badge variant="secondary" className="text-xs">
-                          {unreadCount} new
-                        </Badge>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {unreadCount > 0 && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={handleMarkAllAsRead}
+                              disabled={markAllAsReadMutation.isPending}
+                            >
+                              Mark all read
+                            </Button>
+                            <Badge variant="secondary" className="text-xs">
+                              {unreadCount} new
+                            </Badge>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                       {recentNotifications.length > 0 ? (
@@ -283,6 +310,11 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   {user.role === 'marketing' && (
                     <DropdownMenuItem asChild>
                       <Link href="/marketing-dashboard">Marketing Dashboard</Link>
+                    </DropdownMenuItem>
+                  )}
+                  {user.role === 'support' && (
+                    <DropdownMenuItem asChild>
+                      <Link href="/support-dashboard">Support Dashboard</Link>
                     </DropdownMenuItem>
                   )}
                   {user.role === 'city_manager' && (

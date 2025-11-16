@@ -1,0 +1,100 @@
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:23:04 PM [express] GET /api/ 200 in 2ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:23:34 PM [express] GET /api/ 200 in 2ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:24:04 PM [express] GET /api/ 200 in 2ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:24:34 PM [express] GET /api/ 200 in 2ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:25:04 PM [express] GET /api/ 200 in 1ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:25:19 PM [express] GET /api/auth/user 401 in 3ms :: {"message":"Unauthorized"}
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:25:24 PM [express] GET /api/properties 200 in 8ms :: []
+12:25:24 PM [express] GET /api/service-categories 200 in 25ms :: []
+12:25:24 PM [express] GET /api/auth/user 401 in 25ms :: {"message":"Unauthorized"}
+12:25:24 PM [express] GET /api/service-providers 200 in 31ms :: []
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+12:25:34 PM [express] GET /api/ 200 in 1ms
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection
+WebSocket authentication failed - closing connection

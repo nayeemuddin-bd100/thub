@@ -9,6 +9,8 @@ import {
     pgTable,
     text,
     timestamp,
+    unique,
+    uniqueIndex,
     uuid,
     varchar,
 } from "drizzle-orm/pg-core";
@@ -72,6 +74,12 @@ export const users = pgTable("users", {
     approvedBy: varchar("approved_by").references(() => users.id),
     approvedAt: timestamp("approved_at"),
     
+    // Password management
+    passwordResetRequired: boolean("password_reset_required").default(false),
+    
+    // Account status
+    isActive: boolean("is_active").default(true),
+    
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -100,7 +108,7 @@ export const roleChangeRequests = pgTable("role_change_requests", {
 // Properties table
 export const properties = pgTable("properties", {
     id: uuid("id").defaultRandom().primaryKey(),
-    ownerId: uuid("owner_id").references(() => users.id)
+    ownerId: varchar("owner_id").references(() => users.id)
         .notNull(),
     title: varchar("title").notNull(),
     description: text("description"),
@@ -136,10 +144,9 @@ export const serviceCategories = pgTable("service_categories", {
 // Service providers table
 export const serviceProviders = pgTable("service_providers", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
-    categoryId: uuid("category_id").references(() => serviceCategories.id)
-        .notNull(),
+    categoryId: uuid("category_id").references(() => serviceCategories.id),
     businessName: varchar("business_name").notNull(),
     description: text("description"),
     hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
@@ -170,10 +177,23 @@ export const serviceProviders = pgTable("service_providers", {
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Provider-Service Categories junction table (many-to-many relationship)
+export const providerServiceCategories = pgTable("provider_service_categories", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
+        .notNull(),
+    categoryId: uuid("category_id").references(() => serviceCategories.id)
+        .notNull(),
+    isPrimary: boolean("is_primary").default(false),
+    createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+    uniqueProviderCategory: uniqueIndex("unique_provider_category").on(table.serviceProviderId, table.categoryId),
+}));
+
 // Bookings table
 export const bookings = pgTable("bookings", {
     id: uuid("id").defaultRandom().primaryKey(),
-    clientId: uuid("client_id").references(() => users.id)
+    clientId: varchar("client_id").references(() => users.id)
         .notNull(),
     propertyId: uuid("property_id").references(() => properties.id)
         .notNull(),
@@ -241,9 +261,9 @@ export const serviceBookings = pgTable("service_bookings", {
 // Reviews table
 export const reviews = pgTable("reviews", {
     id: uuid("id").defaultRandom().primaryKey(),
-    reviewerId: uuid("reviewer_id").references(() => users.id)
+    reviewerId: varchar("reviewer_id").references(() => users.id)
         .notNull(),
-    revieweeId: uuid("reviewee_id").references(() => users.id),
+    revieweeId: varchar("reviewee_id").references(() => users.id),
     propertyId: uuid("property_id").references(() => properties.id),
     serviceProviderId: uuid("service_provider_id").references(
         () => serviceProviders.id
@@ -261,9 +281,9 @@ export const reviews = pgTable("reviews", {
 // Messages table
 export const messages = pgTable("messages", {
     id: uuid("id").defaultRandom().primaryKey(),
-    senderId: uuid("sender_id").references(() => users.id)
+    senderId: varchar("sender_id").references(() => users.id)
         .notNull(),
-    receiverId: uuid("receiver_id").references(() => users.id)
+    receiverId: varchar("receiver_id").references(() => users.id)
         .notNull(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     content: text("content").notNull(),
@@ -308,7 +328,7 @@ export const serviceTaskAssignments = pgTable("service_task_assignments", {
         .notNull(),
     isCompleted: boolean("is_completed").default(false),
     completedAt: timestamp("completed_at"),
-    completedBy: uuid("completed_by").references(() => users.id),
+    completedBy: varchar("completed_by").references(() => users.id),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -319,7 +339,7 @@ export const jobAssignments = pgTable("job_assignments", {
     id: uuid("id").defaultRandom().primaryKey(),
     serviceBookingId: uuid("service_booking_id").references(() => serviceBookings.id)
         .notNull(),
-    assignedBy: uuid("assigned_by").references(() => users.id)
+    assignedBy: varchar("assigned_by").references(() => users.id)
         .notNull(),
     serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
@@ -335,7 +355,7 @@ export const jobAssignments = pgTable("job_assignments", {
 // Notifications table
 export const notifications = pgTable("notifications", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
     type: varchar("type", {
         enum: [
@@ -514,7 +534,7 @@ export const providerPricing = pgTable("provider_pricing", {
 export const serviceOrders = pgTable("service_orders", {
     id: uuid("id").defaultRandom().primaryKey(),
     bookingId: uuid("booking_id").references(() => bookings.id),
-    clientId: uuid("client_id").references(() => users.id)
+    clientId: varchar("client_id").references(() => users.id)
         .notNull(),
     serviceProviderId: uuid("service_provider_id").references(() => serviceProviders.id)
         .notNull(),
@@ -688,7 +708,7 @@ export const promoCodeUsage = pgTable("promo_code_usage", {
 // Loyalty points
 export const loyaltyPoints = pgTable("loyalty_points", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
     points: integer("points").default(0),
     lifetimePoints: integer("lifetime_points").default(0),
@@ -704,7 +724,7 @@ export const loyaltyPointsTransactions = pgTable(
     "loyalty_points_transactions",
     {
         id: uuid("id").defaultRandom().primaryKey(),
-        userId: uuid("user_id").references(() => users.id)
+        userId: varchar("user_id").references(() => users.id)
             .notNull(),
         points: integer("points").notNull(),
         transactionType: varchar("transaction_type", {
@@ -725,7 +745,7 @@ export const bookingCancellations = pgTable("booking_cancellations", {
     id: uuid("id").defaultRandom().primaryKey(),
     bookingId: uuid("booking_id").references(() => bookings.id)
         .notNull(),
-    requestedBy: uuid("requested_by").references(() => users.id)
+    requestedBy: varchar("requested_by").references(() => users.id)
         .notNull(),
     reason: text("reason").notNull(),
     cancellationFee: decimal("cancellation_fee", {
@@ -739,7 +759,7 @@ export const bookingCancellations = pgTable("booking_cancellations", {
     status: varchar("status", {
         enum: ["pending", "approved", "rejected", "refunded"],
     }).default("pending"),
-    approvedBy: uuid("approved_by").references(() => users.id),
+    approvedBy: varchar("approved_by").references(() => users.id),
     rejectionReason: text("rejection_reason"),
     refundedAt: timestamp("refunded_at"),
     createdAt: timestamp("created_at").defaultNow(),
@@ -749,7 +769,7 @@ export const bookingCancellations = pgTable("booking_cancellations", {
 // Trip plans / Itineraries
 export const tripPlans = pgTable("trip_plans", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id)
+    userId: varchar("user_id").references(() => users.id)
         .notNull(),
     title: varchar("title").notNull(),
     description: text("description"),
@@ -879,7 +899,7 @@ export const providerPayouts = pgTable("provider_payouts", {
 // User activity logs
 export const userActivityLogs = pgTable("user_activity_logs", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").references(() => users.id),
+    userId: varchar("user_id").references(() => users.id),
     activityType: varchar("activity_type").notNull(),
     description: text("description").notNull(),
     ipAddress: varchar("ip_address"),
@@ -899,7 +919,7 @@ export const platformSettings = pgTable("platform_settings", {
     description: text("description"),
     category: varchar("category").notNull(),
     isPublic: boolean("is_public").default(false),
-    updatedBy: uuid("updated_by").references(() => users.id),
+    updatedBy: varchar("updated_by").references(() => users.id),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -923,9 +943,9 @@ export const disputes = pgTable("disputes", {
     id: uuid("id").defaultRandom().primaryKey(),
     bookingId: uuid("booking_id").references(() => bookings.id),
     serviceOrderId: uuid("service_order_id").references(() => serviceOrders.id),
-    raisedBy: uuid("raised_by").references(() => users.id)
+    raisedBy: varchar("raised_by").references(() => users.id)
         .notNull(),
-    againstUser: uuid("against_user").references(() => users.id),
+    againstUser: varchar("against_user").references(() => users.id),
     category: varchar("category", {
         enum: [
             "payment",
@@ -943,7 +963,7 @@ export const disputes = pgTable("disputes", {
         enum: ["open", "investigating", "resolved", "closed"],
     }).default("open"),
     resolution: text("resolution"),
-    resolvedBy: uuid("resolved_by").references(() => users.id),
+    resolvedBy: varchar("resolved_by").references(() => users.id),
     resolvedAt: timestamp("resolved_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -954,7 +974,7 @@ export const disputeMessages = pgTable("dispute_messages", {
     id: uuid("id").defaultRandom().primaryKey(),
     disputeId: uuid("dispute_id").references(() => disputes.id)
         .notNull(),
-    senderId: uuid("sender_id").references(() => users.id)
+    senderId: varchar("sender_id").references(() => users.id)
         .notNull(),
     message: text("message").notNull(),
     attachments: jsonb("attachments").default([]),
@@ -968,7 +988,7 @@ export const territories = pgTable("territories", {
     name: varchar("name").notNull(),
     country: varchar("country").notNull(),
     regions: jsonb("regions").default([]),
-    managerId: uuid("manager_id").references(() => users.id),
+    managerId: varchar("manager_id").references(() => users.id),
     isActive: boolean("is_active").default(true),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -1004,7 +1024,7 @@ export const contactSubmissions = pgTable("contact_submissions", {
     status: varchar("status", {
         enum: ["new", "read", "responded", "archived"],
     }).default("new"),
-    respondedBy: uuid("responded_by").references(() => users.id),
+    respondedBy: varchar("responded_by").references(() => users.id),
     response: text("response"),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -1026,7 +1046,7 @@ export const jobPostings = pgTable("job_postings", {
     status: varchar("status", { enum: ["draft", "active", "closed"] }).default(
         "draft"
     ),
-    postedBy: uuid("posted_by").references(() => users.id)
+    postedBy: varchar("posted_by").references(() => users.id)
         .notNull(),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
@@ -1045,7 +1065,7 @@ export const jobApplications = pgTable("job_applications", {
     status: varchar("status", {
         enum: ["pending", "reviewing", "interview", "rejected", "accepted"],
     }).default("pending"),
-    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedBy: varchar("reviewed_by").references(() => users.id),
     notes: text("notes"),
     createdAt: timestamp("created_at").defaultNow(),
 });
@@ -1058,7 +1078,7 @@ export const blogPosts = pgTable("blog_posts", {
     excerpt: text("excerpt"),
     content: text("content").notNull(),
     featuredImage: varchar("featured_image"),
-    authorId: uuid("author_id").references(() => users.id)
+    authorId: varchar("author_id").references(() => users.id)
         .notNull(),
     category: varchar("category").notNull(),
     tags: text("tags").array().default([]),
@@ -1248,6 +1268,8 @@ export type ServiceCategory = typeof serviceCategories.$inferSelect;
 export type ServiceBooking = typeof serviceBookings.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type PropertyService = typeof propertyServices.$inferSelect;
+export type ProviderServiceCategory = typeof providerServiceCategories.$inferSelect;
+export type InsertProviderServiceCategory = typeof providerServiceCategories.$inferInsert;
 export type ServiceTask = typeof serviceTasks.$inferSelect;
 export type ServiceTaskAssignment = typeof serviceTaskAssignments.$inferSelect;
 export type JobAssignment = typeof jobAssignments.$inferSelect;

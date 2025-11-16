@@ -1,0 +1,1136 @@
+658080
+Preparing container with helper image: ghcr.io/coollabsio/coolify-helper:1.0.12
+2025-Nov-16 12:37:01.789636
+[CMD]: docker stop --time=30 u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:37:01.789636
+Flag --time has been deprecated, use --timeout instead
+2025-Nov-16 12:37:01.792530
+Error response from daemon: No such container: u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:37:01.912308
+[CMD]: docker rm -f u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:37:01.912308
+Error response from daemon: No such container: u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:37:02.072624
+[CMD]: docker run -d --network coolify --name u0kkkks8sk04wsk8s4o4s4g4  --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/coollabsio/coolify-helper:1.0.12
+2025-Nov-16 12:37:02.072624
+0ccbf9fda3a853ad3e97809aaeb3ef94809d5ab809d6efd8848eef1fe751e5c3
+2025-Nov-16 12:37:02.882736
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'GIT_SSH_COMMAND="ssh -o ConnectTimeout=30 -p 22 -o Port=22 -o LogLevel=ERROR -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git ls-remote https://github.com/nayeemuddin-bd100/thub refs/heads/main'
+2025-Nov-16 12:37:02.882736
+99db4519c7b6d8af76a2b03166a511e534d0b733	refs/heads/main
+2025-Nov-16 12:37:02.902072
+----------------------------------------
+2025-Nov-16 12:37:02.909304
+Importing nayeemuddin-bd100/thub:main (commit sha 99db4519c7b6d8af76a2b03166a511e534d0b733) to /artifacts/u0kkkks8sk04wsk8s4o4s4g4.
+2025-Nov-16 12:37:03.085449
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'git clone --depth=1 --recurse-submodules --shallow-submodules -b 'main' 'https://github.com/nayeemuddin-bd100/thub' '/artifacts/u0kkkks8sk04wsk8s4o4s4g4' && cd '/artifacts/u0kkkks8sk04wsk8s4o4s4g4' && if [ -f .gitmodules ]; then sed -i "s#git@\(.*\):#https://\1/#g" '/artifacts/u0kkkks8sk04wsk8s4o4s4g4'/.gitmodules || true && git submodule sync && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git submodule update --init --recursive --depth=1; fi && cd '/artifacts/u0kkkks8sk04wsk8s4o4s4g4' && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" git lfs pull'
+2025-Nov-16 12:37:03.085449
+Cloning into '/artifacts/u0kkkks8sk04wsk8s4o4s4g4'...
+2025-Nov-16 12:37:04.431514
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cd /artifacts/u0kkkks8sk04wsk8s4o4s4g4 && git log -1 99db4519c7b6d8af76a2b03166a511e534d0b733 --pretty=%B'
+2025-Nov-16 12:37:04.431514
+Standardize all user ID fields to use UUID
+2025-Nov-16 12:37:04.431514
+2025-Nov-16 12:37:04.431514
+Update the schema to use uuid type for all user ID references, resolving potential inconsistencies and improving data integrity.
+2025-Nov-16 12:37:04.431514
+2025-Nov-16 12:37:04.431514
+Replit-Commit-Author: Agent
+2025-Nov-16 12:37:04.431514
+Replit-Commit-Session-Id: c0af395f-56dc-4d2a-8e87-dabd8dd82abf
+2025-Nov-16 12:37:04.431514
+Replit-Commit-Checkpoint-Type: intermediate_checkpoint
+2025-Nov-16 12:37:04.431514
+Replit-Commit-Event-Id: 97da6598-a864-42a0-b399-59ad4d8c4983
+2025-Nov-16 12:37:04.558701
+[CMD]: docker images -q xc00osowwgssscsko88so44o:99db4519c7b6d8af76a2b03166a511e534d0b733 2>/dev/null
+2025-Nov-16 12:37:04.558701
+7de3f61f0cef
+2025-Nov-16 12:37:04.566880
+Configuration changed. Rebuilding image.
+2025-Nov-16 12:37:05.214808
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/u0kkkks8sk04wsk8s4o4s4g4/Dockerfile'
+2025-Nov-16 12:37:05.214808
+# TravelHub - Production Dockerfile
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Stage 1: Build
+2025-Nov-16 12:37:05.214808
+FROM node:18-alpine AS builder
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Set working directory
+2025-Nov-16 12:37:05.214808
+WORKDIR /app
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Copy package files
+2025-Nov-16 12:37:05.214808
+COPY package*.json ./
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Install ALL dependencies (including devDependencies for build)
+2025-Nov-16 12:37:05.214808
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Copy all source files
+2025-Nov-16 12:37:05.214808
+COPY . .
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Build the application
+2025-Nov-16 12:37:05.214808
+RUN npm run build
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Stage 2: Production
+2025-Nov-16 12:37:05.214808
+FROM node:18-alpine AS production
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Set working directory
+2025-Nov-16 12:37:05.214808
+WORKDIR /app
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Copy package files
+2025-Nov-16 12:37:05.214808
+COPY package*.json ./
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Install ALL dependencies (needed for vite in production)
+2025-Nov-16 12:37:05.214808
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Copy built files from builder
+2025-Nov-16 12:37:05.214808
+COPY --from=builder /app/dist ./dist
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Copy necessary files
+2025-Nov-16 12:37:05.214808
+COPY shared ./shared
+2025-Nov-16 12:37:05.214808
+COPY server ./server
+2025-Nov-16 12:37:05.214808
+COPY client ./client
+2025-Nov-16 12:37:05.214808
+COPY drizzle.config.ts ./drizzle.config.ts
+2025-Nov-16 12:37:05.214808
+COPY tsconfig.json ./tsconfig.json
+2025-Nov-16 12:37:05.214808
+COPY start.sh ./start.sh
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Make startup script executable
+2025-Nov-16 12:37:05.214808
+RUN chmod +x /app/start.sh
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Set environment to production
+2025-Nov-16 12:37:05.214808
+ENV NODE_ENV=production
+2025-Nov-16 12:37:05.214808
+ENV PORT=5000
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Expose port
+2025-Nov-16 12:37:05.214808
+EXPOSE 5000
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Health check
+2025-Nov-16 12:37:05.214808
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+2025-Nov-16 12:37:05.214808
+CMD node -e "require('http').get('http://127.0.0.1:5000/api/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+2025-Nov-16 12:37:05.214808
+2025-Nov-16 12:37:05.214808
+# Start the application with database initialization
+2025-Nov-16 12:37:05.214808
+CMD ["/app/start.sh"]
+2025-Nov-16 12:37:05.432713
+Creating build-time .env file in /artifacts (outside Docker context).
+2025-Nov-16 12:37:05.871519
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/build-time.env'
+2025-Nov-16 12:37:05.871519
+SOURCE_COMMIT='99db4519c7b6d8af76a2b03166a511e534d0b733'
+2025-Nov-16 12:37:05.871519
+COOLIFY_URL='https://inclusivesuites.com/'
+2025-Nov-16 12:37:05.871519
+COOLIFY_FQDN='inclusivesuites.com/'
+2025-Nov-16 12:37:05.871519
+COOLIFY_BRANCH='main'
+2025-Nov-16 12:37:05.871519
+COOLIFY_RESOURCE_UUID='xc00osowwgssscsko88so44o'
+2025-Nov-16 12:37:05.871519
+COOLIFY_CONTAINER_NAME='xc00osowwgssscsko88so44o-123658488534'
+2025-Nov-16 12:37:05.871519
+DATABASE_URL="postgresql://inclusivesuites-admin:NYD3CZX316Um@88.99.150.26:5433/inclusivesuites"
+2025-Nov-16 12:37:05.871519
+NODE_ENV="development"
+2025-Nov-16 12:37:05.871519
+PORT="5000"
+2025-Nov-16 12:37:05.871519
+SESSION_SECRET="secretcode123333333322222"
+2025-Nov-16 12:37:05.871519
+STRIPE_SECRET_KEY="sk_test_51ST14XPuIryr2eN6cQwdUbGGCXmImJgrspKKhFVgHZK8AeCse2p8ZCZvLhbkgUbgBJXh4Jde696vE33qW5O3IRv600sXi8jImV"
+2025-Nov-16 12:37:05.871519
+VITE_STRIPE_PUBLIC_KEY="pk_test_51ST14XPuIryr2eN6G1d3BIU8eOtrxDXQMFl1HIsZ7AmfxUjNlX5CrpPas87mljX88ZFZVwtGh6JmiIOIdRnFMuzb00yKeiif3W"
+2025-Nov-16 12:37:05.904139
+----------------------------------------
+2025-Nov-16 12:37:05.911166
+⚠️ Build-time environment variable warning: NODE_ENV=development
+2025-Nov-16 12:37:05.918699
+Affects: Node.js/npm/yarn/bun/pnpm
+2025-Nov-16 12:37:05.925845
+Issue: Skips devDependencies installation which are often required for building (webpack, typescript, etc.)
+2025-Nov-16 12:37:05.932966
+Recommendation: Uncheck "Available at Buildtime" or use "development" during build
+2025-Nov-16 12:37:05.939721
+2025-Nov-16 12:37:05.946419
+💡 Tips to resolve build issues:
+2025-Nov-16 12:37:05.953089
+1. Set these variables as "Runtime only" in the environment variables settings
+2025-Nov-16 12:37:05.960016
+2. Use different values for build-time (e.g., NODE_ENV=development for build)
+2025-Nov-16 12:37:05.967288
+3. Consider using multi-stage Docker builds to separate build and runtime environments
+2025-Nov-16 12:37:06.170783
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/u0kkkks8sk04wsk8s4o4s4g4/Dockerfile'
+2025-Nov-16 12:37:06.170783
+# TravelHub - Production Dockerfile
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Stage 1: Build
+2025-Nov-16 12:37:06.170783
+FROM node:18-alpine AS builder
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Set working directory
+2025-Nov-16 12:37:06.170783
+WORKDIR /app
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Copy package files
+2025-Nov-16 12:37:06.170783
+COPY package*.json ./
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Install ALL dependencies (including devDependencies for build)
+2025-Nov-16 12:37:06.170783
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Copy all source files
+2025-Nov-16 12:37:06.170783
+COPY . .
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Build the application
+2025-Nov-16 12:37:06.170783
+RUN npm run build
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Stage 2: Production
+2025-Nov-16 12:37:06.170783
+FROM node:18-alpine AS production
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Set working directory
+2025-Nov-16 12:37:06.170783
+WORKDIR /app
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Copy package files
+2025-Nov-16 12:37:06.170783
+COPY package*.json ./
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Install ALL dependencies (needed for vite in production)
+2025-Nov-16 12:37:06.170783
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Copy built files from builder
+2025-Nov-16 12:37:06.170783
+COPY --from=builder /app/dist ./dist
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Copy necessary files
+2025-Nov-16 12:37:06.170783
+COPY shared ./shared
+2025-Nov-16 12:37:06.170783
+COPY server ./server
+2025-Nov-16 12:37:06.170783
+COPY client ./client
+2025-Nov-16 12:37:06.170783
+COPY drizzle.config.ts ./drizzle.config.ts
+2025-Nov-16 12:37:06.170783
+COPY tsconfig.json ./tsconfig.json
+2025-Nov-16 12:37:06.170783
+COPY start.sh ./start.sh
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Make startup script executable
+2025-Nov-16 12:37:06.170783
+RUN chmod +x /app/start.sh
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Set environment to production
+2025-Nov-16 12:37:06.170783
+ENV NODE_ENV=production
+2025-Nov-16 12:37:06.170783
+ENV PORT=5000
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Expose port
+2025-Nov-16 12:37:06.170783
+EXPOSE 5000
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Health check
+2025-Nov-16 12:37:06.170783
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+2025-Nov-16 12:37:06.170783
+CMD node -e "require('http').get('http://127.0.0.1:5000/api/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+2025-Nov-16 12:37:06.170783
+2025-Nov-16 12:37:06.170783
+# Start the application with database initialization
+2025-Nov-16 12:37:06.170783
+CMD ["/app/start.sh"]
+2025-Nov-16 12:37:06.198571
+Final Dockerfile:
+2025-Nov-16 12:37:06.635280
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/u0kkkks8sk04wsk8s4o4s4g4/Dockerfile'
+2025-Nov-16 12:37:06.635280
+# TravelHub - Production Dockerfile
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Stage 1: Build
+2025-Nov-16 12:37:06.635280
+FROM node:18-alpine AS builder
+2025-Nov-16 12:37:06.635280
+ARG DATABASE_URL=postgresql://inclusivesuites-admin:NYD3CZX316Um@88.99.150.26:5433/inclusivesuites
+2025-Nov-16 12:37:06.635280
+ARG NODE_ENV=development
+2025-Nov-16 12:37:06.635280
+ARG PORT=5000
+2025-Nov-16 12:37:06.635280
+ARG SESSION_SECRET=secretcode123333333322222
+2025-Nov-16 12:37:06.635280
+ARG STRIPE_SECRET_KEY=sk_test_51ST14XPuIryr2eN6cQwdUbGGCXmImJgrspKKhFVgHZK8AeCse2p8ZCZvLhbkgUbgBJXh4Jde696vE33qW5O3IRv600sXi8jImV
+2025-Nov-16 12:37:06.635280
+ARG VITE_STRIPE_PUBLIC_KEY=pk_test_51ST14XPuIryr2eN6G1d3BIU8eOtrxDXQMFl1HIsZ7AmfxUjNlX5CrpPas87mljX88ZFZVwtGh6JmiIOIdRnFMuzb00yKeiif3W
+2025-Nov-16 12:37:06.635280
+ARG SOURCE_COMMIT=99db4519c7b6d8af76a2b03166a511e534d0b733
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_URL=https://inclusivesuites.com
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_FQDN=inclusivesuites.com
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_BRANCH=main
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_RESOURCE_UUID=xc00osowwgssscsko88so44o
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_CONTAINER_NAME=xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Set working directory
+2025-Nov-16 12:37:06.635280
+WORKDIR /app
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Copy package files
+2025-Nov-16 12:37:06.635280
+COPY package*.json ./
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Install ALL dependencies (including devDependencies for build)
+2025-Nov-16 12:37:06.635280
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Copy all source files
+2025-Nov-16 12:37:06.635280
+COPY . .
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Build the application
+2025-Nov-16 12:37:06.635280
+RUN npm run build
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Stage 2: Production
+2025-Nov-16 12:37:06.635280
+FROM node:18-alpine AS production
+2025-Nov-16 12:37:06.635280
+ARG DATABASE_URL=postgresql://inclusivesuites-admin:NYD3CZX316Um@88.99.150.26:5433/inclusivesuites
+2025-Nov-16 12:37:06.635280
+ARG NODE_ENV=development
+2025-Nov-16 12:37:06.635280
+ARG PORT=5000
+2025-Nov-16 12:37:06.635280
+ARG SESSION_SECRET=secretcode123333333322222
+2025-Nov-16 12:37:06.635280
+ARG STRIPE_SECRET_KEY=sk_test_51ST14XPuIryr2eN6cQwdUbGGCXmImJgrspKKhFVgHZK8AeCse2p8ZCZvLhbkgUbgBJXh4Jde696vE33qW5O3IRv600sXi8jImV
+2025-Nov-16 12:37:06.635280
+ARG VITE_STRIPE_PUBLIC_KEY=pk_test_51ST14XPuIryr2eN6G1d3BIU8eOtrxDXQMFl1HIsZ7AmfxUjNlX5CrpPas87mljX88ZFZVwtGh6JmiIOIdRnFMuzb00yKeiif3W
+2025-Nov-16 12:37:06.635280
+ARG SOURCE_COMMIT=99db4519c7b6d8af76a2b03166a511e534d0b733
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_URL=https://inclusivesuites.com
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_FQDN=inclusivesuites.com
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_BRANCH=main
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_RESOURCE_UUID=xc00osowwgssscsko88so44o
+2025-Nov-16 12:37:06.635280
+ARG COOLIFY_CONTAINER_NAME=xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Set working directory
+2025-Nov-16 12:37:06.635280
+WORKDIR /app
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Copy package files
+2025-Nov-16 12:37:06.635280
+COPY package*.json ./
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Install ALL dependencies (needed for vite in production)
+2025-Nov-16 12:37:06.635280
+RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Copy built files from builder
+2025-Nov-16 12:37:06.635280
+COPY --from=builder /app/dist ./dist
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Copy necessary files
+2025-Nov-16 12:37:06.635280
+COPY shared ./shared
+2025-Nov-16 12:37:06.635280
+COPY server ./server
+2025-Nov-16 12:37:06.635280
+COPY client ./client
+2025-Nov-16 12:37:06.635280
+COPY drizzle.config.ts ./drizzle.config.ts
+2025-Nov-16 12:37:06.635280
+COPY tsconfig.json ./tsconfig.json
+2025-Nov-16 12:37:06.635280
+COPY start.sh ./start.sh
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Make startup script executable
+2025-Nov-16 12:37:06.635280
+RUN chmod +x /app/start.sh
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Set environment to production
+2025-Nov-16 12:37:06.635280
+ENV NODE_ENV=production
+2025-Nov-16 12:37:06.635280
+ENV PORT=5000
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Expose port
+2025-Nov-16 12:37:06.635280
+EXPOSE 5000
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Health check
+2025-Nov-16 12:37:06.635280
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+2025-Nov-16 12:37:06.635280
+CMD node -e "require('http').get('http://127.0.0.1:5000/api/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+2025-Nov-16 12:37:06.635280
+2025-Nov-16 12:37:06.635280
+# Start the application with database initialization
+2025-Nov-16 12:37:06.635280
+CMD ["/app/start.sh"]
+2025-Nov-16 12:37:06.653805
+----------------------------------------
+2025-Nov-16 12:37:06.662976
+Building docker image started.
+2025-Nov-16 12:37:06.672067
+To check the current progress, click on Show Debug Logs.
+2025-Nov-16 12:37:07.099120
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/build.sh'
+2025-Nov-16 12:37:07.099120
+cd /artifacts/u0kkkks8sk04wsk8s4o4s4g4 && set -a && source /artifacts/build-time.env && set +a && docker build   --network host -f /artifacts/u0kkkks8sk04wsk8s4o4s4g4/Dockerfile --build-arg SOURCE_COMMIT --build-arg COOLIFY_URL --build-arg COOLIFY_FQDN --build-arg COOLIFY_BRANCH --build-arg COOLIFY_RESOURCE_UUID --build-arg COOLIFY_CONTAINER_NAME --build-arg DATABASE_URL --build-arg NODE_ENV --build-arg PORT --build-arg SESSION_SECRET --build-arg STRIPE_SECRET_KEY --build-arg VITE_STRIPE_PUBLIC_KEY --build-arg COOLIFY_BUILD_SECRETS_HASH=c37de9f1dbafca23d9283e91f12d6d2f22b2e8ddf5a60afa07fb536ff3ec1ac5 --build-arg 'SOURCE_COMMIT' --build-arg 'COOLIFY_URL' --build-arg 'COOLIFY_FQDN' --build-arg 'COOLIFY_BRANCH' --build-arg 'COOLIFY_RESOURCE_UUID' --build-arg 'COOLIFY_CONTAINER_NAME' --progress plain -t xc00osowwgssscsko88so44o:99db4519c7b6d8af76a2b03166a511e534d0b733 /artifacts/u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:37:07.758594
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'bash /artifacts/build.sh'
+2025-Nov-16 12:37:07.758594
+#0 building with "default" instance using docker driver
+2025-Nov-16 12:37:07.758594
+2025-Nov-16 12:37:07.758594
+#1 [internal] load build definition from Dockerfile
+2025-Nov-16 12:37:07.758594
+#1 transferring dockerfile: 2.78kB done
+2025-Nov-16 12:37:07.758594
+#1 DONE 0.0s
+2025-Nov-16 12:37:07.758594
+2025-Nov-16 12:37:07.758594
+#2 [internal] load metadata for docker.io/library/node:18-alpine
+2025-Nov-16 12:37:08.278603
+#2 DONE 0.7s
+2025-Nov-16 12:37:08.529026
+#3 [internal] load .dockerignore
+2025-Nov-16 12:37:08.529026
+#3 transferring context: 655B done
+2025-Nov-16 12:37:08.529026
+#3 DONE 0.0s
+2025-Nov-16 12:37:08.529026
+2025-Nov-16 12:37:08.529026
+#4 [builder 1/6] FROM docker.io/library/node:18-alpine@sha256:8d6421d663b4c28fd3ebc498332f249011d118945588d0a35cb9bc4b8ca09d9e
+2025-Nov-16 12:37:08.529026
+#4 DONE 0.0s
+2025-Nov-16 12:37:08.529026
+2025-Nov-16 12:37:08.529026
+#5 [internal] load build context
+2025-Nov-16 12:37:08.529026
+#5 transferring context: 4.39MB 0.0s done
+2025-Nov-16 12:37:08.529026
+#5 DONE 0.1s
+2025-Nov-16 12:37:08.529026
+2025-Nov-16 12:37:08.529026
+#6 [builder 2/6] WORKDIR /app
+2025-Nov-16 12:37:08.529026
+#6 CACHED
+2025-Nov-16 12:37:08.529026
+2025-Nov-16 12:37:08.529026
+#7 [builder 3/6] COPY package*.json ./
+2025-Nov-16 12:37:08.529026
+#7 CACHED
+2025-Nov-16 12:37:08.529026
+2025-Nov-16 12:37:08.529026
+#8 [builder 4/6] RUN npm ci && npm cache clean --force
+2025-Nov-16 12:37:09.975249
+#8 1.596 npm warn EBADENGINE Unsupported engine {
+2025-Nov-16 12:37:09.975249
+#8 1.596 npm warn EBADENGINE   package: 'file-type@21.1.0',
+2025-Nov-16 12:37:09.975249
+#8 1.596 npm warn EBADENGINE   required: { node: '>=20' },
+2025-Nov-16 12:37:09.975249
+#8 1.596 npm warn EBADENGINE   current: { node: 'v18.20.8', npm: '10.8.2' }
+2025-Nov-16 12:37:09.975249
+#8 1.596 npm warn EBADENGINE }
+2025-Nov-16 12:37:15.235555
+#8 6.857 npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-Nov-16 12:37:15.478486
+#8 6.949 npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-Nov-16 12:37:20.555787
+#8 12.18
+2025-Nov-16 12:37:20.555787
+#8 12.18 added 668 packages, and audited 669 packages in 12s
+2025-Nov-16 12:37:20.555787
+#8 12.18
+2025-Nov-16 12:37:20.555787
+#8 12.18 94 packages are looking for funding
+2025-Nov-16 12:37:20.555787
+#8 12.18   run `npm fund` for details
+2025-Nov-16 12:37:20.758085
+#8 12.23
+2025-Nov-16 12:37:20.758085
+#8 12.23 10 vulnerabilities (3 low, 7 moderate)
+2025-Nov-16 12:37:20.758085
+#8 12.23
+2025-Nov-16 12:37:20.758085
+#8 12.23 To address issues that do not require attention, run:
+2025-Nov-16 12:37:20.758085
+#8 12.23   npm audit fix
+2025-Nov-16 12:37:20.758085
+#8 12.23
+2025-Nov-16 12:37:20.758085
+#8 12.23 To address all issues (including breaking changes), run:
+2025-Nov-16 12:37:20.758085
+#8 12.23   npm audit fix --force
+2025-Nov-16 12:37:20.758085
+#8 12.23
+2025-Nov-16 12:37:20.758085
+#8 12.23 Run `npm audit` for details.
+2025-Nov-16 12:37:20.758085
+#8 12.23 npm notice
+2025-Nov-16 12:37:20.758085
+#8 12.23 npm notice New major version of npm available! 10.8.2 -> 11.6.2
+2025-Nov-16 12:37:20.758085
+#8 12.23 npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.6.2
+2025-Nov-16 12:37:20.758085
+#8 12.23 npm notice To update run: npm install -g npm@11.6.2
+2025-Nov-16 12:37:20.758085
+#8 12.23 npm notice
+2025-Nov-16 12:37:20.791735
+#8 12.41 npm warn using --force Recommended protections disabled.
+2025-Nov-16 12:37:21.645111
+#8 DONE 13.3s
+2025-Nov-16 12:37:21.774137
+#9 [builder 5/6] COPY . .
+2025-Nov-16 12:37:21.774137
+#9 DONE 0.1s
+2025-Nov-16 12:37:21.927476
+#10 [builder 6/6] RUN npm run build
+2025-Nov-16 12:37:22.039529
+#10 0.262
+2025-Nov-16 12:37:22.039529
+#10 0.262 > rest-express@1.0.0 build
+2025-Nov-16 12:37:22.039529
+#10 0.262 > vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-Nov-16 12:37:22.039529
+#10 0.262
+2025-Nov-16 12:37:22.352459
+#10 0.575 vite v5.4.19 building for production...
+2025-Nov-16 12:37:22.578572
+#10 0.649 transforming...
+2025-Nov-16 12:37:23.152294
+#10 1.375 Browserslist: browsers data (caniuse-lite) is 13 months old. Please run:
+2025-Nov-16 12:37:23.152294
+#10 1.375   npx update-browserslist-db@latest
+2025-Nov-16 12:37:23.152294
+#10 1.375   Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-Nov-16 12:37:32.556750
+#10 10.78 ✓ 2707 modules transformed.
+2025-Nov-16 12:37:33.467626
+#10 11.69 rendering chunks...
+2025-Nov-16 12:37:33.593720
+#10 11.73 computing gzip size...
+2025-Nov-16 12:37:33.593720
+#10 11.82 ../dist/public/index.html                     2.20 kB │ gzip:   0.86 kB
+2025-Nov-16 12:37:33.745992
+#10 11.82 ../dist/public/assets/index-CtySpYtu.css     82.33 kB │ gzip:  14.09 kB
+2025-Nov-16 12:37:33.745992
+#10 11.82 ../dist/public/assets/index-BjmsfK3u.js   2,146.11 kB │ gzip: 444.11 kB
+2025-Nov-16 12:37:33.745992
+#10 11.82
+2025-Nov-16 12:37:33.745992
+#10 11.82 (!) Some chunks are larger than 500 kB after minification. Consider:
+2025-Nov-16 12:37:33.745992
+#10 11.82 - Using dynamic import() to code-split the application
+2025-Nov-16 12:37:33.745992
+#10 11.82 - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+2025-Nov-16 12:37:33.745992
+#10 11.82 - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+2025-Nov-16 12:37:33.745992
+#10 11.82 ✓ built in 11.21s
+2025-Nov-16 12:37:33.805156
+#10 12.03
+2025-Nov-16 12:37:33.805156
+#10 12.03   dist/index.js  322.7kb
+2025-Nov-16 12:37:33.805156
+#10 12.03
+2025-Nov-16 12:37:33.805156
+#10 12.03 ⚡ Done in 49ms
+2025-Nov-16 12:37:34.024219
+#10 DONE 12.1s
+2025-Nov-16 12:37:35.157538
+#11 [production  5/12] COPY --from=builder /app/dist ./dist
+2025-Nov-16 12:37:35.340078
+#11 DONE 0.0s
+2025-Nov-16 12:37:35.340078
+2025-Nov-16 12:37:35.340078
+#12 [production  6/12] COPY shared ./shared
+2025-Nov-16 12:37:35.340078
+#12 DONE 0.0s
+2025-Nov-16 12:37:35.340078
+2025-Nov-16 12:37:35.340078
+#13 [production  7/12] COPY server ./server
+2025-Nov-16 12:37:35.340078
+#13 DONE 0.0s
+2025-Nov-16 12:37:35.340078
+2025-Nov-16 12:37:35.340078
+#14 [production  8/12] COPY client ./client
+2025-Nov-16 12:37:35.340078
+#14 DONE 0.1s
+2025-Nov-16 12:37:35.486055
+#15 [production  9/12] COPY drizzle.config.ts ./drizzle.config.ts
+2025-Nov-16 12:37:35.486055
+#15 DONE 0.0s
+2025-Nov-16 12:37:35.486055
+2025-Nov-16 12:37:35.486055
+#16 [production 10/12] COPY tsconfig.json ./tsconfig.json
+2025-Nov-16 12:37:35.486055
+#16 DONE 0.0s
+2025-Nov-16 12:37:35.486055
+2025-Nov-16 12:37:35.486055
+#17 [production 11/12] COPY start.sh ./start.sh
+2025-Nov-16 12:37:35.486055
+#17 DONE 0.0s
+2025-Nov-16 12:37:35.486055
+2025-Nov-16 12:37:35.486055
+#18 [production 12/12] RUN chmod +x /app/start.sh
+2025-Nov-16 12:37:35.486055
+#18 DONE 0.1s
+2025-Nov-16 12:37:35.639296
+#19 exporting to image
+2025-Nov-16 12:37:35.639296
+#19 exporting layers
+2025-Nov-16 12:37:54.448374
+#19 exporting layers 19.0s done
+2025-Nov-16 12:37:54.488639
+#19 writing image sha256:46ea81de95e6e1b26cc14f2c6b2dc38ca874174e659a915b5b8805976eaf7d68 done
+2025-Nov-16 12:37:54.488639
+#19 naming to docker.io/library/xc00osowwgssscsko88so44o:99db4519c7b6d8af76a2b03166a511e534d0b733 done
+2025-Nov-16 12:37:54.488639
+#19 DONE 19.0s
+2025-Nov-16 12:37:54.492616
+4 warnings found (use docker --debug to expand):
+2025-Nov-16 12:37:54.492616
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SESSION_SECRET") (line 8)
+2025-Nov-16 12:37:54.492616
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "STRIPE_SECRET_KEY") (line 9)
+2025-Nov-16 12:37:54.492616
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "SESSION_SECRET") (line 38)
+2025-Nov-16 12:37:54.492616
+- SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "STRIPE_SECRET_KEY") (line 39)
+2025-Nov-16 12:37:54.511059
+Building docker image completed.
+2025-Nov-16 12:37:54.534165
+Creating .env file with runtime variables for build phase.
+2025-Nov-16 12:37:54.965324
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'cat /artifacts/u0kkkks8sk04wsk8s4o4s4g4/.env'
+2025-Nov-16 12:37:54.965324
+SOURCE_COMMIT=99db4519c7b6d8af76a2b03166a511e534d0b733
+2025-Nov-16 12:37:54.965324
+COOLIFY_URL=https://inclusivesuites.com/
+2025-Nov-16 12:37:54.965324
+COOLIFY_FQDN=inclusivesuites.com/
+2025-Nov-16 12:37:54.965324
+COOLIFY_BRANCH=main
+2025-Nov-16 12:37:54.965324
+COOLIFY_RESOURCE_UUID=xc00osowwgssscsko88so44o
+2025-Nov-16 12:37:54.965324
+COOLIFY_CONTAINER_NAME=xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:37:54.965324
+NODE_ENV=development
+2025-Nov-16 12:37:54.965324
+PORT=5000
+2025-Nov-16 12:37:54.965324
+DATABASE_URL=postgresql://inclusivesuites-admin:NYD3CZX316Um@88.99.150.26:5433/inclusivesuites
+2025-Nov-16 12:37:54.965324
+SESSION_SECRET=secretcode123333333322222
+2025-Nov-16 12:37:54.965324
+STRIPE_SECRET_KEY=sk_test_51ST14XPuIryr2eN6cQwdUbGGCXmImJgrspKKhFVgHZK8AeCse2p8ZCZvLhbkgUbgBJXh4Jde696vE33qW5O3IRv600sXi8jImV
+2025-Nov-16 12:37:54.965324
+VITE_STRIPE_PUBLIC_KEY=pk_test_51ST14XPuIryr2eN6G1d3BIU8eOtrxDXQMFl1HIsZ7AmfxUjNlX5CrpPas87mljX88ZFZVwtGh6JmiIOIdRnFMuzb00yKeiif3W
+2025-Nov-16 12:37:54.965324
+HOST=0.0.0.0
+2025-Nov-16 12:37:55.069682
+----------------------------------------
+2025-Nov-16 12:37:55.078186
+Rolling update started.
+2025-Nov-16 12:37:55.355639
+[CMD]: docker exec u0kkkks8sk04wsk8s4o4s4g4 bash -c 'SOURCE_COMMIT=99db4519c7b6d8af76a2b03166a511e534d0b733 COOLIFY_URL=https://inclusivesuites.com COOLIFY_FQDN=inclusivesuites.com COOLIFY_BRANCH=main COOLIFY_RESOURCE_UUID=xc00osowwgssscsko88so44o COOLIFY_CONTAINER_NAME=xc00osowwgssscsko88so44o-123658488534  docker compose --project-name xc00osowwgssscsko88so44o --project-directory /artifacts/u0kkkks8sk04wsk8s4o4s4g4 -f /artifacts/u0kkkks8sk04wsk8s4o4s4g4/docker-compose.yaml up --build -d'
+2025-Nov-16 12:37:55.355639
+time="2025-11-16T12:37:55Z" level=warning msg="Found orphan containers ([xc00osowwgssscsko88so44o-011749547826]) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+2025-Nov-16 12:37:55.355639
+Container xc00osowwgssscsko88so44o-123658488534  Creating
+2025-Nov-16 12:37:55.418248
+xc00osowwgssscsko88so44o-123658488534 Your kernel does not support memory swappiness capabilities or the cgroup is not mounted. Memory swappiness discarded.
+2025-Nov-16 12:37:55.422668
+Container xc00osowwgssscsko88so44o-123658488534  Created
+2025-Nov-16 12:37:55.422668
+Container xc00osowwgssscsko88so44o-123658488534  Starting
+2025-Nov-16 12:37:55.570496
+Container xc00osowwgssscsko88so44o-123658488534  Started
+2025-Nov-16 12:37:55.589096
+New container started.
+2025-Nov-16 12:37:55.596996
+Custom healthcheck found in Dockerfile.
+2025-Nov-16 12:37:55.605190
+Waiting for healthcheck to pass on the new container.
+2025-Nov-16 12:37:55.612999
+Waiting for the start period (40 seconds) before starting healthcheck.
+2025-Nov-16 12:38:35.754698
+[CMD]: docker inspect --format='{{json .State.Health.Status}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:38:35.754698
+"starting"
+2025-Nov-16 12:38:35.870958
+[CMD]: docker inspect --format='{{json .State.Health.Log}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:38:35.870958
+[{"Start":"2025-11-16T12:38:00.558781647Z","End":"2025-11-16T12:38:00.67335279Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"}]
+2025-Nov-16 12:38:35.877125
+Attempt 1 of 3 | Healthcheck status: "starting"
+2025-Nov-16 12:38:35.886380
+Healthcheck logs: node:events:495
+2025-Nov-16 12:38:35.886380
+throw er; // Unhandled 'error' event
+2025-Nov-16 12:38:35.886380
+^
+2025-Nov-16 12:38:35.886380
+2025-Nov-16 12:38:35.886380
+Error: connect ECONNREFUSED 127.0.0.1:5000
+2025-Nov-16 12:38:35.886380
+at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)
+2025-Nov-16 12:38:35.886380
+Emitted 'error' event on ClientRequest instance at:
+2025-Nov-16 12:38:35.886380
+at Socket.socketErrorListener (node:_http_client:501:9)
+2025-Nov-16 12:38:35.886380
+at Socket.emit (node:events:517:28)
+2025-Nov-16 12:38:35.886380
+at emitErrorNT (node:internal/streams/destroy:151:8)
+2025-Nov-16 12:38:35.886380
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+2025-Nov-16 12:38:35.886380
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-Nov-16 12:38:35.886380
+errno: -111,
+2025-Nov-16 12:38:35.886380
+code: 'ECONNREFUSED',
+2025-Nov-16 12:38:35.886380
+syscall: 'connect',
+2025-Nov-16 12:38:35.886380
+address: '127.0.0.1',
+2025-Nov-16 12:38:35.886380
+port: 5000
+2025-Nov-16 12:38:35.886380
+}
+2025-Nov-16 12:38:35.886380
+2025-Nov-16 12:38:35.886380
+Node.js v18.20.8
+2025-Nov-16 12:38:35.886380
+| Return code: 1
+2025-Nov-16 12:39:06.046185
+[CMD]: docker inspect --format='{{json .State.Health.Status}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:39:06.046185
+"starting"
+2025-Nov-16 12:39:06.190189
+[CMD]: docker inspect --format='{{json .State.Health.Log}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:39:06.190189
+[{"Start":"2025-11-16T12:38:00.558781647Z","End":"2025-11-16T12:38:00.67335279Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"},{"Start":"2025-11-16T12:38:38.114831799Z","End":"2025-11-16T12:38:38.214747854Z","ExitCode":137,"Output":""},{"Start":"2025-11-16T12:38:49.80303504Z","End":"2025-11-16T12:38:49.929253959Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"}]
+2025-Nov-16 12:39:06.197081
+Attempt 2 of 3 | Healthcheck status: "starting"
+2025-Nov-16 12:39:06.205967
+Healthcheck logs: node:events:495
+2025-Nov-16 12:39:06.205967
+throw er; // Unhandled 'error' event
+2025-Nov-16 12:39:06.205967
+^
+2025-Nov-16 12:39:06.205967
+2025-Nov-16 12:39:06.205967
+Error: connect ECONNREFUSED 127.0.0.1:5000
+2025-Nov-16 12:39:06.205967
+at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)
+2025-Nov-16 12:39:06.205967
+Emitted 'error' event on ClientRequest instance at:
+2025-Nov-16 12:39:06.205967
+at Socket.socketErrorListener (node:_http_client:501:9)
+2025-Nov-16 12:39:06.205967
+at Socket.emit (node:events:517:28)
+2025-Nov-16 12:39:06.205967
+at emitErrorNT (node:internal/streams/destroy:151:8)
+2025-Nov-16 12:39:06.205967
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+2025-Nov-16 12:39:06.205967
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-Nov-16 12:39:06.205967
+errno: -111,
+2025-Nov-16 12:39:06.205967
+code: 'ECONNREFUSED',
+2025-Nov-16 12:39:06.205967
+syscall: 'connect',
+2025-Nov-16 12:39:06.205967
+address: '127.0.0.1',
+2025-Nov-16 12:39:06.205967
+port: 5000
+2025-Nov-16 12:39:06.205967
+}
+2025-Nov-16 12:39:06.205967
+2025-Nov-16 12:39:06.205967
+Node.js v18.20.8
+2025-Nov-16 12:39:06.205967
+| Return code: 1
+2025-Nov-16 12:39:36.335647
+[CMD]: docker inspect --format='{{json .State.Health.Status}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:39:36.335647
+"starting"
+2025-Nov-16 12:39:36.460234
+[CMD]: docker inspect --format='{{json .State.Health.Log}}' xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:39:36.460234
+[{"Start":"2025-11-16T12:38:00.558781647Z","End":"2025-11-16T12:38:00.67335279Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"},{"Start":"2025-11-16T12:38:38.114831799Z","End":"2025-11-16T12:38:38.214747854Z","ExitCode":137,"Output":""},{"Start":"2025-11-16T12:38:49.80303504Z","End":"2025-11-16T12:38:49.929253959Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"},{"Start":"2025-11-16T12:39:07.938764125Z","End":"2025-11-16T12:39:08.049352675Z","ExitCode":1,"Output":"node:events:495\n      throw er; // Unhandled 'error' event\n      ^\n\nError: connect ECONNREFUSED 127.0.0.1:5000\n    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)\nEmitted 'error' event on ClientRequest instance at:\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:517:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {\n  errno: -111,\n  code: 'ECONNREFUSED',\n  syscall: 'connect',\n  address: '127.0.0.1',\n  port: 5000\n}\n\nNode.js v18.20.8\n"}]
+2025-Nov-16 12:39:36.465848
+Attempt 3 of 3 | Healthcheck status: "starting"
+2025-Nov-16 12:39:36.474508
+Healthcheck logs: node:events:495
+2025-Nov-16 12:39:36.474508
+throw er; // Unhandled 'error' event
+2025-Nov-16 12:39:36.474508
+^
+2025-Nov-16 12:39:36.474508
+2025-Nov-16 12:39:36.474508
+Error: connect ECONNREFUSED 127.0.0.1:5000
+2025-Nov-16 12:39:36.474508
+at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)
+2025-Nov-16 12:39:36.474508
+Emitted 'error' event on ClientRequest instance at:
+2025-Nov-16 12:39:36.474508
+at Socket.socketErrorListener (node:_http_client:501:9)
+2025-Nov-16 12:39:36.474508
+at Socket.emit (node:events:517:28)
+2025-Nov-16 12:39:36.474508
+at emitErrorNT (node:internal/streams/destroy:151:8)
+2025-Nov-16 12:39:36.474508
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+2025-Nov-16 12:39:36.474508
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-Nov-16 12:39:36.474508
+errno: -111,
+2025-Nov-16 12:39:36.474508
+code: 'ECONNREFUSED',
+2025-Nov-16 12:39:36.474508
+syscall: 'connect',
+2025-Nov-16 12:39:36.474508
+address: '127.0.0.1',
+2025-Nov-16 12:39:36.474508
+port: 5000
+2025-Nov-16 12:39:36.474508
+}
+2025-Nov-16 12:39:36.474508
+2025-Nov-16 12:39:36.474508
+Node.js v18.20.8
+2025-Nov-16 12:39:36.474508
+| Return code: 1
+2025-Nov-16 12:40:06.493997
+----------------------------------------
+2025-Nov-16 12:40:06.502735
+Container logs:
+2025-Nov-16 12:40:06.620851
+[CMD]: docker logs -n 100 xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:40:06.620851
+[⣷] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣷] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣷] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+[2K[1G[✓] Pulling schema from database...
+2025-Nov-16 12:40:06.620851
+🌱 Seeding database with demo data...
+2025-Nov-16 12:40:06.625254
+error: column "id" cannot be cast automatically to type uuid
+2025-Nov-16 12:40:06.625254
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 12:40:06.625254
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 12:40:06.625254
+at async Object.query (/app/node_modules/drizzle-kit/bin.cjs:66575:26)
+2025-Nov-16 12:40:06.625254
+at async pgPush (/app/node_modules/drizzle-kit/bin.cjs:70117:13)
+2025-Nov-16 12:40:06.625254
+at async Object.handler (/app/node_modules/drizzle-kit/bin.cjs:79124:9)
+2025-Nov-16 12:40:06.625254
+at async run (/app/node_modules/drizzle-kit/bin.cjs:78381:7) {
+2025-Nov-16 12:40:06.625254
+length: 169,
+2025-Nov-16 12:40:06.625254
+severity: 'ERROR',
+2025-Nov-16 12:40:06.625254
+code: '42804',
+2025-Nov-16 12:40:06.625254
+detail: undefined,
+2025-Nov-16 12:40:06.625254
+hint: 'You might need to specify "USING id::uuid".',
+2025-Nov-16 12:40:06.625254
+position: undefined,
+2025-Nov-16 12:40:06.625254
+internalPosition: undefined,
+2025-Nov-16 12:40:06.625254
+internalQuery: undefined,
+2025-Nov-16 12:40:06.625254
+where: undefined,
+2025-Nov-16 12:40:06.625254
+schema: undefined,
+2025-Nov-16 12:40:06.625254
+table: undefined,
+2025-Nov-16 12:40:06.625254
+column: undefined,
+2025-Nov-16 12:40:06.625254
+dataType: undefined,
+2025-Nov-16 12:40:06.625254
+constraint: undefined,
+2025-Nov-16 12:40:06.625254
+file: 'tablecmds.c',
+2025-Nov-16 12:40:06.625254
+line: '12932',
+2025-Nov-16 12:40:06.625254
+routine: 'ATPrepAlterColumnType'
+2025-Nov-16 12:40:06.625254
+}
+2025-Nov-16 12:40:06.629247
+> rest-express@1.0.0 db:seed
+2025-Nov-16 12:40:06.629247
+> tsx server/seed.ts
+2025-Nov-16 12:40:06.629247
+2025-Nov-16 12:40:06.629247
+🌱 Starting database seeding...
+2025-Nov-16 12:40:06.629247
+Cleaning existing data...
+2025-Nov-16 12:40:06.629247
+✓ Existing data cleaned
+2025-Nov-16 12:40:06.629247
+Creating users...
+2025-Nov-16 12:40:06.633256
+❌ Error seeding database: error: column "business_name" of relation "users" does not exist
+2025-Nov-16 12:40:06.633256
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 12:40:06.633256
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 12:40:06.633256
+at seed (/app/server/seed.ts:263:9) {
+2025-Nov-16 12:40:06.633256
+length: 132,
+2025-Nov-16 12:40:06.633256
+severity: 'ERROR',
+2025-Nov-16 12:40:06.633256
+code: '42703',
+2025-Nov-16 12:40:06.633256
+detail: undefined,
+2025-Nov-16 12:40:06.633256
+hint: undefined,
+2025-Nov-16 12:40:06.633256
+position: '105',
+2025-Nov-16 12:40:06.633256
+internalPosition: undefined,
+2025-Nov-16 12:40:06.633256
+internalQuery: undefined,
+2025-Nov-16 12:40:06.633256
+where: undefined,
+2025-Nov-16 12:40:06.633256
+schema: undefined,
+2025-Nov-16 12:40:06.633256
+table: undefined,
+2025-Nov-16 12:40:06.633256
+column: undefined,
+2025-Nov-16 12:40:06.633256
+dataType: undefined,
+2025-Nov-16 12:40:06.633256
+constraint: undefined,
+2025-Nov-16 12:40:06.633256
+file: 'parse_target.c',
+2025-Nov-16 12:40:06.633256
+line: '1065',
+2025-Nov-16 12:40:06.633256
+routine: 'checkInsertTargets'
+2025-Nov-16 12:40:06.633256
+}
+2025-Nov-16 12:40:06.633256
+Failed to seed database: error: column "business_name" of relation "users" does not exist
+2025-Nov-16 12:40:06.633256
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 12:40:06.633256
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 12:40:06.633256
+at seed (/app/server/seed.ts:263:9) {
+2025-Nov-16 12:40:06.633256
+length: 132,
+2025-Nov-16 12:40:06.633256
+severity: 'ERROR',
+2025-Nov-16 12:40:06.633256
+code: '42703',
+2025-Nov-16 12:40:06.633256
+detail: undefined,
+2025-Nov-16 12:40:06.633256
+hint: undefined,
+2025-Nov-16 12:40:06.633256
+position: '105',
+2025-Nov-16 12:40:06.633256
+internalPosition: undefined,
+2025-Nov-16 12:40:06.633256
+internalQuery: undefined,
+2025-Nov-16 12:40:06.633256
+where: undefined,
+2025-Nov-16 12:40:06.633256
+schema: undefined,
+2025-Nov-16 12:40:06.633256
+table: undefined,
+2025-Nov-16 12:40:06.633256
+column: undefined,
+2025-Nov-16 12:40:06.633256
+dataType: undefined,
+2025-Nov-16 12:40:06.633256
+constraint: undefined,
+2025-Nov-16 12:40:06.633256
+file: 'parse_target.c',
+2025-Nov-16 12:40:06.633256
+line: '1065',
+2025-Nov-16 12:40:06.633256
+routine: 'checkInsertTargets'
+2025-Nov-16 12:40:06.633256
+}
+2025-Nov-16 12:40:06.638377
+----------------------------------------
+2025-Nov-16 12:40:06.647121
+Removing old containers.
+2025-Nov-16 12:40:06.655748
+----------------------------------------
+2025-Nov-16 12:40:06.664083
+WARNING: Dockerfile or Docker Image based deployment detected. The healthcheck needs a curl or wget command to check the health of the application. Please make sure that it is available in the image or turn off healthcheck on Coolify's UI.
+2025-Nov-16 12:40:06.672565
+----------------------------------------
+2025-Nov-16 12:40:06.681215
+New container is not healthy, rolling back to the old container.
+2025-Nov-16 12:40:06.832317
+[CMD]: docker stop --time=30 xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:40:06.832317
+Flag --time has been deprecated, use --timeout instead
+2025-Nov-16 12:40:06.844247
+xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:40:06.969375
+[CMD]: docker rm -f xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:40:06.969375
+xc00osowwgssscsko88so44o-123658488534
+2025-Nov-16 12:40:06.976097
+Rolling update completed.
+2025-Nov-16 12:40:07.293580
+Gracefully shutting down build container: u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:40:07.419955
+[CMD]: docker stop --time=30 u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:40:07.419955
+Flag --time has been deprecated, use --timeout instead
+2025-Nov-16 12:40:07.551173
+u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:40:07.675858
+[CMD]: docker rm -f u0kkkks8sk04wsk8s4o4s4g4
+2025-Nov-16 12:40:07.675858
+Error response from daemon: No such container: u0kkkks8sk04wsk8s4o4s4g4

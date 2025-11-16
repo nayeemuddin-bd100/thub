@@ -1,0 +1,336 @@
+2025-Nov-16 11:21:47.370626
+💡 Tips to resolve build issues:
+2025-Nov-16 11:21:47.378272
+1. Set these variables as "Runtime only" in the environment variables settings
+2025-Nov-16 11:21:47.386777
+2. Use different values for build-time (e.g., NODE_ENV=development for build)
+2025-Nov-16 11:21:47.395726
+3. Consider using multi-stage Docker builds to separate build and runtime environments
+2025-Nov-16 11:21:48.706488
+----------------------------------------
+2025-Nov-16 11:21:48.714007
+Building docker image started.
+2025-Nov-16 11:21:48.721280
+To check the current progress, click on Show Debug Logs.
+2025-Nov-16 11:22:38.207256
+Building docker image completed.
+2025-Nov-16 11:22:39.433029
+----------------------------------------
+2025-Nov-16 11:22:39.455788
+Rolling update started.
+2025-Nov-16 11:22:40.321495
+New container started.
+2025-Nov-16 11:22:40.329846
+Custom healthcheck found in Dockerfile.
+2025-Nov-16 11:22:40.337271
+Waiting for healthcheck to pass on the new container.
+2025-Nov-16 11:22:40.348605
+Waiting for the start period (40 seconds) before starting healthcheck.
+2025-Nov-16 11:23:21.012331
+Attempt 1 of 3 | Healthcheck status: "starting"
+2025-Nov-16 11:23:21.022982
+Healthcheck logs: (no logs) | Return code: 137
+2025-Nov-16 11:23:51.606632
+Attempt 2 of 3 | Healthcheck status: "starting"
+2025-Nov-16 11:23:51.615028
+Healthcheck logs: node:events:495
+2025-Nov-16 11:23:51.615028
+throw er; // Unhandled 'error' event
+2025-Nov-16 11:23:51.615028
+^
+2025-Nov-16 11:23:51.615028
+2025-Nov-16 11:23:51.615028
+Error: connect ECONNREFUSED 127.0.0.1:5000
+2025-Nov-16 11:23:51.615028
+at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)
+2025-Nov-16 11:23:51.615028
+Emitted 'error' event on ClientRequest instance at:
+2025-Nov-16 11:23:51.615028
+at Socket.socketErrorListener (node:_http_client:501:9)
+2025-Nov-16 11:23:51.615028
+at Socket.emit (node:events:517:28)
+2025-Nov-16 11:23:51.615028
+at emitErrorNT (node:internal/streams/destroy:151:8)
+2025-Nov-16 11:23:51.615028
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+2025-Nov-16 11:23:51.615028
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-Nov-16 11:23:51.615028
+errno: -111,
+2025-Nov-16 11:23:51.615028
+code: 'ECONNREFUSED',
+2025-Nov-16 11:23:51.615028
+syscall: 'connect',
+2025-Nov-16 11:23:51.615028
+address: '127.0.0.1',
+2025-Nov-16 11:23:51.615028
+port: 5000
+2025-Nov-16 11:23:51.615028
+}
+2025-Nov-16 11:23:51.615028
+2025-Nov-16 11:23:51.615028
+Node.js v18.20.8
+2025-Nov-16 11:23:51.615028
+| Return code: 1
+2025-Nov-16 11:24:22.666699
+Attempt 3 of 3 | Healthcheck status: "starting"
+2025-Nov-16 11:24:22.677061
+Healthcheck logs: node:events:495
+2025-Nov-16 11:24:22.677061
+throw er; // Unhandled 'error' event
+2025-Nov-16 11:24:22.677061
+^
+2025-Nov-16 11:24:22.677061
+2025-Nov-16 11:24:22.677061
+Error: connect ECONNREFUSED 127.0.0.1:5000
+2025-Nov-16 11:24:22.677061
+at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1555:16)
+2025-Nov-16 11:24:22.677061
+Emitted 'error' event on ClientRequest instance at:
+2025-Nov-16 11:24:22.677061
+at Socket.socketErrorListener (node:_http_client:501:9)
+2025-Nov-16 11:24:22.677061
+at Socket.emit (node:events:517:28)
+2025-Nov-16 11:24:22.677061
+at emitErrorNT (node:internal/streams/destroy:151:8)
+2025-Nov-16 11:24:22.677061
+at emitErrorCloseNT (node:internal/streams/destroy:116:3)
+2025-Nov-16 11:24:22.677061
+at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+2025-Nov-16 11:24:22.677061
+errno: -111,
+2025-Nov-16 11:24:22.677061
+code: 'ECONNREFUSED',
+2025-Nov-16 11:24:22.677061
+syscall: 'connect',
+2025-Nov-16 11:24:22.677061
+address: '127.0.0.1',
+2025-Nov-16 11:24:22.677061
+port: 5000
+2025-Nov-16 11:24:22.677061
+}
+2025-Nov-16 11:24:22.677061
+2025-Nov-16 11:24:22.677061
+Node.js v18.20.8
+2025-Nov-16 11:24:22.677061
+| Return code: 1
+2025-Nov-16 11:24:52.699539
+----------------------------------------
+2025-Nov-16 11:24:52.711157
+Container logs:
+2025-Nov-16 11:24:52.990541
+[CMD]: docker logs -n 100 xc00osowwgssscsko88so44o-112138803384
+2025-Nov-16 11:24:52.990541
+[⣷] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣷] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣷] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣯] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣟] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⡿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⢿] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣻] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[⣽] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+[2K[1G[✓] Pulling schema from database...
+2025-Nov-16 11:24:52.990541
+🌱 Seeding database with demo data...
+2025-Nov-16 11:24:52.990541
+2025-Nov-16 11:24:52.990541
+> rest-express@1.0.0 db:seed
+2025-Nov-16 11:24:52.990541
+> tsx server/seed.ts
+2025-Nov-16 11:24:52.990541
+2025-Nov-16 11:24:52.990541
+🌱 Starting database seeding...
+2025-Nov-16 11:24:52.990541
+Cleaning existing data...
+2025-Nov-16 11:24:52.990541
+✓ Existing data cleaned
+2025-Nov-16 11:24:52.990541
+Creating users...
+2025-Nov-16 11:24:52.995129
+error: column "id" cannot be cast automatically to type uuid
+2025-Nov-16 11:24:52.995129
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 11:24:52.995129
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 11:24:52.995129
+at async Object.query (/app/node_modules/drizzle-kit/bin.cjs:66575:26)
+2025-Nov-16 11:24:52.995129
+at async pgPush (/app/node_modules/drizzle-kit/bin.cjs:70117:13)
+2025-Nov-16 11:24:52.995129
+at async Object.handler (/app/node_modules/drizzle-kit/bin.cjs:79124:9)
+2025-Nov-16 11:24:52.995129
+at async run (/app/node_modules/drizzle-kit/bin.cjs:78381:7) {
+2025-Nov-16 11:24:52.995129
+length: 169,
+2025-Nov-16 11:24:52.995129
+severity: 'ERROR',
+2025-Nov-16 11:24:52.995129
+code: '42804',
+2025-Nov-16 11:24:52.995129
+detail: undefined,
+2025-Nov-16 11:24:52.995129
+hint: 'You might need to specify "USING id::uuid".',
+2025-Nov-16 11:24:52.995129
+position: undefined,
+2025-Nov-16 11:24:52.995129
+internalPosition: undefined,
+2025-Nov-16 11:24:52.995129
+internalQuery: undefined,
+2025-Nov-16 11:24:52.995129
+where: undefined,
+2025-Nov-16 11:24:52.995129
+schema: undefined,
+2025-Nov-16 11:24:52.995129
+table: undefined,
+2025-Nov-16 11:24:52.995129
+column: undefined,
+2025-Nov-16 11:24:52.995129
+dataType: undefined,
+2025-Nov-16 11:24:52.995129
+constraint: undefined,
+2025-Nov-16 11:24:52.995129
+file: 'tablecmds.c',
+2025-Nov-16 11:24:52.995129
+line: '12932',
+2025-Nov-16 11:24:52.995129
+routine: 'ATPrepAlterColumnType'
+2025-Nov-16 11:24:52.995129
+}
+2025-Nov-16 11:24:52.995129
+❌ Error seeding database: error: column "business_name" of relation "users" does not exist
+2025-Nov-16 11:24:52.995129
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 11:24:52.995129
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 11:24:52.995129
+at seed (/app/server/seed.ts:263:9) {
+2025-Nov-16 11:24:52.995129
+length: 132,
+2025-Nov-16 11:24:52.995129
+severity: 'ERROR',
+2025-Nov-16 11:24:52.995129
+code: '42703',
+2025-Nov-16 11:24:52.995129
+detail: undefined,
+2025-Nov-16 11:24:52.995129
+hint: undefined,
+2025-Nov-16 11:24:52.995129
+position: '105',
+2025-Nov-16 11:24:52.995129
+internalPosition: undefined,
+2025-Nov-16 11:24:52.995129
+internalQuery: undefined,
+2025-Nov-16 11:24:52.995129
+where: undefined,
+2025-Nov-16 11:24:52.995129
+schema: undefined,
+2025-Nov-16 11:24:52.995129
+table: undefined,
+2025-Nov-16 11:24:52.995129
+column: undefined,
+2025-Nov-16 11:24:52.995129
+dataType: undefined,
+2025-Nov-16 11:24:52.995129
+constraint: undefined,
+2025-Nov-16 11:24:52.995129
+file: 'parse_target.c',
+2025-Nov-16 11:24:52.995129
+line: '1065',
+2025-Nov-16 11:24:52.995129
+routine: 'checkInsertTargets'
+2025-Nov-16 11:24:52.995129
+}
+2025-Nov-16 11:24:52.995129
+Failed to seed database: error: column "business_name" of relation "users" does not exist
+2025-Nov-16 11:24:52.995129
+at /app/node_modules/pg-pool/index.js:45:11
+2025-Nov-16 11:24:52.995129
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-Nov-16 11:24:52.995129
+at seed (/app/server/seed.ts:263:9) {
+2025-Nov-16 11:24:52.995129
+length: 132,
+2025-Nov-16 11:24:52.995129
+severity: 'ERROR',
+2025-Nov-16 11:24:52.995129
+code: '42703',
+2025-Nov-16 11:24:52.995129
+detail: undefined,
+2025-Nov-16 11:24:52.995129
+hint: undefined,
+2025-Nov-16 11:24:52.995129
+position: '105',
+2025-Nov-16 11:24:52.995129
+internalPosition: undefined,
+2025-Nov-16 11:24:52.995129
+internalQuery: undefined,
+2025-Nov-16 11:24:52.995129
+where: undefined,
+2025-Nov-16 11:24:52.995129
+schema: undefined,
+2025-Nov-16 11:24:52.995129
+table: undefined,
+2025-Nov-16 11:24:52.995129
+column: undefined,
+2025-Nov-16 11:24:52.995129
+dataType: undefined,
+2025-Nov-16 11:24:52.995129
+constraint: undefined,
+2025-Nov-16 11:24:52.995129
+file: 'parse_target.c',
+2025-Nov-16 11:24:52.995129
+line: '1065',
+2025-Nov-16 11:24:52.995129
+routine: 'checkInsertTargets'
+2025-Nov-16 11:24:52.995129
+}
+2025-Nov-16 11:24:53.000416
+----------------------------------------
+2025-Nov-16 11:24:53.009013
+Removing old containers.
+2025-Nov-16 11:24:53.017472
+----------------------------------------
+2025-Nov-16 11:24:53.026063
+WARNING: Dockerfile or Docker Image based deployment detected. The healthcheck needs a curl or wget command to check the health of the application. Please make sure that it is available in the image or turn off healthcheck on Coolify's UI.
+2025-Nov-16 11:24:53.034626
+----------------------------------------
+2025-Nov-16 11:24:53.042861
+New container is not healthy, rolling back to the old container.
+2025-Nov-16 11:24:53.689136
+Rolling update completed.
+2025-Nov-16 11:24:54.590763
+Gracefully shutting down build container: gw808o4wk8sgkkk4kwkcosks

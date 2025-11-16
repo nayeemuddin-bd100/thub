@@ -24,6 +24,7 @@ import {
     providerMenus,
     providerPayouts,
     providerPricing,
+    providerServiceCategories,
     providerTaskConfigs,
     reviews,
     roleChangeRequests,
@@ -164,6 +165,12 @@ export interface IStorage {
         reason: string | null
     ): Promise<ServiceProvider>;
     deleteServiceProvider(id: string): Promise<void>;
+    
+    // Provider Service Categories operations
+    getProviderCategories(serviceProviderId: string): Promise<ServiceCategory[]>;
+    addProviderCategory(serviceProviderId: string, categoryId: string, isPrimary?: boolean): Promise<void>;
+    removeProviderCategory(serviceProviderId: string, categoryId: string): Promise<void>;
+    updateProviderCategoryPrimary(serviceProviderId: string, categoryId: string): Promise<void>;
 
     // Booking operations
     getAllBookings(): Promise<Booking[]>;
@@ -201,6 +208,7 @@ export interface IStorage {
     getUserNotifications(userId: string): Promise<Notification[]>;
     createNotification(notification: InsertNotification): Promise<Notification>;
     markNotificationAsRead(id: string, userId: string): Promise<number>;
+    markAllNotificationsAsRead(userId: string): Promise<number>;
     getUnreadNotificationCount(userId: string): Promise<number>;
 
     // Job Assignment operations
@@ -355,6 +363,7 @@ export interface IStorage {
     ): Promise<{ valid: boolean; discount?: number; message?: string }>;
     createPromoCode(code: InsertPromotionalCode): Promise<PromotionalCode>;
     getAllPromoCodes(): Promise<PromotionalCode[]>;
+    updatePromoCodeStatus(promoCodeId: string, isActive: boolean): Promise<PromotionalCode>;
 
     // NEW FEATURES - Loyalty Points
     getUserLoyaltyPoints(userId: string): Promise<LoyaltyPoints | undefined>;
@@ -822,6 +831,101 @@ export class DatabaseStorage implements IStorage {
     async deleteServiceProvider(id: string): Promise<void> {
         await db.delete(serviceProviders).where(eq(serviceProviders.id, id));
     }
+    
+    // Provider Service Categories operations
+    async getProviderCategories(serviceProviderId: string): Promise<ServiceCategory[]> {
+        const results = await db
+            .select({
+                id: serviceCategories.id,
+                name: serviceCategories.name,
+                description: serviceCategories.description,
+                icon: serviceCategories.icon,
+                createdAt: serviceCategories.createdAt,
+                isPrimary: providerServiceCategories.isPrimary,
+            })
+            .from(providerServiceCategories)
+            .innerJoin(
+                serviceCategories,
+                eq(providerServiceCategories.categoryId, serviceCategories.id)
+            )
+            .where(eq(providerServiceCategories.serviceProviderId, serviceProviderId))
+            .orderBy(desc(providerServiceCategories.isPrimary), asc(serviceCategories.name));
+        
+        return results as any;
+    }
+    
+    async addProviderCategory(
+        serviceProviderId: string,
+        categoryId: string,
+        isPrimary: boolean = false
+    ): Promise<void> {
+        // Check if this provider-category pair already exists
+        const existing = await db
+            .select()
+            .from(providerServiceCategories)
+            .where(
+                and(
+                    eq(providerServiceCategories.serviceProviderId, serviceProviderId),
+                    eq(providerServiceCategories.categoryId, categoryId)
+                )
+            );
+        
+        if (existing.length > 0) {
+            throw new Error("This service category is already assigned to this provider");
+        }
+        
+        // If setting as primary, unset all other primary categories first
+        if (isPrimary) {
+            await db
+                .update(providerServiceCategories)
+                .set({ isPrimary: false })
+                .where(eq(providerServiceCategories.serviceProviderId, serviceProviderId));
+        }
+        
+        await db
+            .insert(providerServiceCategories)
+            .values({
+                serviceProviderId,
+                categoryId,
+                isPrimary,
+            });
+    }
+    
+    async removeProviderCategory(
+        serviceProviderId: string,
+        categoryId: string
+    ): Promise<void> {
+        await db
+            .delete(providerServiceCategories)
+            .where(
+                and(
+                    eq(providerServiceCategories.serviceProviderId, serviceProviderId),
+                    eq(providerServiceCategories.categoryId, categoryId)
+                )
+            );
+    }
+    
+    async updateProviderCategoryPrimary(
+        serviceProviderId: string,
+        categoryId: string
+    ): Promise<void> {
+        // First, unset all primary categories for this provider
+        await db
+            .update(providerServiceCategories)
+            .set({ isPrimary: false })
+            .where(eq(providerServiceCategories.serviceProviderId, serviceProviderId));
+        
+        // Then set the specified category as primary
+        await db
+            .update(providerServiceCategories)
+            .set({ isPrimary: true })
+            .where(
+                and(
+                    eq(providerServiceCategories.serviceProviderId, serviceProviderId),
+                    eq(providerServiceCategories.categoryId, categoryId)
+                )
+            );
+    }
 
     // Booking operations
     async createBooking(
@@ -1156,6 +1260,20 @@ export class DatabaseStorage implements IStorage {
                 and(
                     eq(notifications.id, id),
                     eq(notifications.userId, userId)
+                )
+            )
+            .returning();
+        return result.length;
+    }
+
+    async markAllNotificationsAsRead(userId: string): Promise<number> {
+        const result = await db
+            .update(notifications)
+            .set({ isRead: true })
+            .where(
+                and(
+                    eq(notifications.userId, userId),
+                    eq(notifications.isRead, false)
                 )
             )
             .returning();
@@ -1957,6 +2075,20 @@ export class DatabaseStorage implements IStorage {
             .select()
             .from(promotionalCodes)
             .orderBy(desc(promotionalCodes.createdAt));
+    }
+
+    async updatePromoCodeStatus(promoCodeId: string, isActive: boolean): Promise<PromotionalCode> {
+        const [updatedCode] = await db
+            .update(promotionalCodes)
+            .set({ isActive })
+            .where(eq(promotionalCodes.id, promoCodeId))
+            .returning();
+        
+        if (!updatedCode) {
+            throw new Error("Promo code not found");
+        }
+        
+        return updatedCode;
     }
 
     // NEW FEATURES - Loyalty Points

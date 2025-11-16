@@ -162,7 +162,7 @@ export default function Home() {
 
             {/* Floating CTA */}
             <div className="fixed bottom-6 right-6 z-50">
-                <Link href="/booking">
+                <Link href={isAuthenticated ? "/booking" : "/login?redirect=/booking"}>
                     <Button
                         data-testid="button-quick-book"
                         className="bg-primary text-primary-foreground px-6 py-3 rounded-full shadow-lg hover:bg-primary/90 transition-all duration-300 flex items-center space-x-2"

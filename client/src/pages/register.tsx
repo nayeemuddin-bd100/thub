@@ -21,6 +21,11 @@ export default function Register() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Get redirect parameter from URL to preserve it when switching to login
+  const urlParams = new URLSearchParams(window.location.search);
+  const redirectParam = urlParams.get('redirect');
+  const loginUrl = redirectParam ? `/login?redirect=${encodeURIComponent(redirectParam)}` : '/login';
 
   const registerMutation = useMutation({
     mutationFn: async () => {
@@ -49,11 +54,31 @@ export default function Register() {
         description: t('auth.register_success'),
       });
       
-      // Redirect based on user role (new users are typically clients)
-      if (userData.role === 'admin') {
-        setLocation("/admin");
+      // Check for redirect parameter in URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get('redirect');
+
+      if (redirectTo) {
+        // Security: Only allow relative paths (prevent open redirect)
+        const decodedRedirect = decodeURIComponent(redirectTo);
+        if (decodedRedirect.startsWith('/') && !decodedRedirect.startsWith('//')) {
+          // Safe relative redirect
+          window.location.href = decodedRedirect;
+        } else {
+          // Unsafe redirect attempt, use default
+          if (userData.role === 'admin') {
+            setLocation("/admin");
+          } else {
+            setLocation("/dashboard");
+          }
+        }
       } else {
-        setLocation("/dashboard");
+        // Default redirect based on user role (new users are typically clients)
+        if (userData.role === 'admin') {
+          setLocation("/admin");
+        } else {
+          setLocation("/dashboard");
+        }
       }
     },
     onError: (error: any) => {
@@ -173,7 +198,7 @@ export default function Register() {
         <div className="mt-6 text-center text-sm">
           <p className="text-muted-foreground">
             {t('auth.have_account')}{" "}
-            <Link href="/login">
+            <Link href={loginUrl}>
               <span className="text-primary hover:underline cursor-pointer" data-testid="link-login">
                 {t('auth.sign_in')}
               </span>

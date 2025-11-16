@@ -510,15 +510,18 @@ export default function BookingCart({
                           }`}
                 </Button>
             ) : (
-                <div
-                    className="text-center py-4 px-4 bg-muted/50 rounded-lg border border-border"
-                    data-testid="login-required-message"
+                <Button
+                    onClick={() => {
+                        // Save current URL to redirect back after login
+                        const currentPath = window.location.pathname + window.location.search;
+                        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+                    }}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    size="lg"
+                    data-testid="book-button-login-required"
                 >
-                    <p className="text-sm font-medium mb-2">{t("booking_cart.login_required")}</p>
-                    <p className="text-xs text-muted-foreground">
-                        {t("booking_cart.please_login")}
-                    </p>
-                </div>
+                    {t("booking_cart.book_now")}
+                </Button>
             )}
 
             {/* Property Info */}

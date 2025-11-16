@@ -1,7 +1,7 @@
 # TravelHub - Production Dockerfile
 
 # Stage 1: Build
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install ALL dependencies (including devDependencies for build)
+# Don't set NODE_ENV=production here as it skips devDependencies
 RUN npm ci && npm cache clean --force
 
 # Copy all source files
@@ -19,7 +20,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Production
-FROM node:18-alpine AS production
+FROM node:20-alpine AS production
 
 # Set working directory
 WORKDIR /app
@@ -27,8 +28,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (needed for vite in production)
-RUN npm ci && npm cache clean --force
+# Install production dependencies only
+ENV NODE_ENV=production
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist

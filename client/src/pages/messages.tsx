@@ -367,13 +367,13 @@ export default function MessagesPage() {
                       <Avatar>
                         <AvatarFallback>{getInitials(conv.userName)}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-medium truncate" data-testid={`name-${conv.userId}`}>
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-medium truncate flex-1 min-w-0" data-testid={`name-${conv.userId}`}>
                             {conv.userName}
                           </p>
                           {conv.unreadCount > 0 && (
-                            <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5" data-testid={`unread-${conv.userId}`}>
+                            <span className="bg-primary text-primary-foreground text-xs rounded-full px-2 py-0.5 flex-shrink-0" data-testid={`unread-${conv.userId}`}>
                               {conv.unreadCount}
                             </span>
                           )}
@@ -381,7 +381,7 @@ export default function MessagesPage() {
                         <p className="text-sm text-muted-foreground truncate">
                           {conv.lastMessage}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1 truncate">
                           {format(new Date(conv.lastMessageTime), 'MMM d, h:mm a')}
                         </p>
                       </div>

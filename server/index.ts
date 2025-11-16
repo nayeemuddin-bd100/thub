@@ -59,7 +59,7 @@ app.post(
 
                         await db
                             .update(serviceOrders)
-                            .set({ stripePaymentIntentId: paymentIntent.id })
+                            .set({ paymentIntentId: paymentIntent.id })
                             .where(eq(serviceOrders.id, orderId));
 
                         const provider = await storage.getServiceProvider(order.serviceProviderId);
@@ -126,7 +126,7 @@ app.post(
                 const orders = await db
                     .select()
                     .from(serviceOrders)
-                    .where(eq(serviceOrders.stripePaymentIntentId, paymentIntentId));
+                    .where(eq(serviceOrders.paymentIntentId, paymentIntentId));
 
                 for (const order of orders) {
                     await storage.updateServiceOrderPaymentStatus(order.id, "refunded");
