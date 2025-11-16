@@ -11,6 +11,7 @@ import {
     serviceOrders,
     propertySeasonalPricing,
     properties,
+    cmsContent,
 } from "@shared/schema";
 import { and, desc, eq } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -3013,6 +3014,175 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error deleting seasonal pricing:", error);
             res.status(500).json({ message: "Failed to delete seasonal pricing" });
+        }
+    });
+
+    // CMS Content Management Routes (Admin only)
+    // Get all CMS content
+    app.get("/api/cms-content", async (req, res) => {
+        try {
+            const content = await db
+                .select()
+                .from(cmsContent)
+                .orderBy(cmsContent.pageName);
+            
+            res.json(content);
+        } catch (error) {
+            console.error("Error fetching CMS content:", error);
+            res.status(500).json({ message: "Failed to fetch CMS content" });
+        }
+    });
+
+    // Get CMS content by page key
+    app.get("/api/cms-content/:pageKey", async (req, res) => {
+        try {
+            const { pageKey } = req.params;
+            const content = await db
+                .select()
+                .from(cmsContent)
+                .where(eq(cmsContent.pageKey, pageKey))
+                .limit(1);
+
+            if (content.length === 0) {
+                return res.status(404).json({ message: "Page not found" });
+            }
+
+            res.json(content[0]);
+        } catch (error) {
+            console.error("Error fetching CMS content:", error);
+            res.status(500).json({ message: "Failed to fetch CMS content" });
+        }
+    });
+
+    // Create CMS content (Admin only)
+    app.post("/api/cms-content", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const { pageKey, pageName, title, content, metaDescription, metaKeywords, isPublished } = req.body;
+
+            // Validate required fields
+            if (!pageKey || !pageName || !title || !content) {
+                return res.status(400).json({ message: "Missing required fields" });
+            }
+
+            // Check if page key already exists
+            const existing = await db
+                .select()
+                .from(cmsContent)
+                .where(eq(cmsContent.pageKey, pageKey))
+                .limit(1);
+
+            if (existing.length > 0) {
+                return res.status(400).json({ message: "Page key already exists" });
+            }
+
+            // Create CMS content
+            const newContent = await db
+                .insert(cmsContent)
+                .values({
+                    pageKey,
+                    pageName,
+                    title,
+                    content,
+                    metaDescription,
+                    metaKeywords,
+                    isPublished: isPublished !== undefined ? isPublished : true,
+                    updatedBy: userId,
+                })
+                .returning();
+
+            res.status(201).json(newContent[0]);
+        } catch (error) {
+            console.error("Error creating CMS content:", error);
+            res.status(500).json({ message: "Failed to create CMS content" });
+        }
+    });
+
+    // Update CMS content (Admin only)
+    app.patch("/api/cms-content/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const { id } = req.params;
+            const { pageName, title, content, metaDescription, metaKeywords, isPublished } = req.body;
+
+            // Get existing content
+            const existing = await db
+                .select()
+                .from(cmsContent)
+                .where(eq(cmsContent.id, id))
+                .limit(1);
+
+            if (existing.length === 0) {
+                return res.status(404).json({ message: "CMS content not found" });
+            }
+
+            // Update content
+            const updated = await db
+                .update(cmsContent)
+                .set({
+                    pageName: pageName || existing[0].pageName,
+                    title: title || existing[0].title,
+                    content: content || existing[0].content,
+                    metaDescription: metaDescription !== undefined ? metaDescription : existing[0].metaDescription,
+                    metaKeywords: metaKeywords !== undefined ? metaKeywords : existing[0].metaKeywords,
+                    isPublished: isPublished !== undefined ? isPublished : existing[0].isPublished,
+                    updatedBy: userId,
+                    updatedAt: new Date(),
+                })
+                .where(eq(cmsContent.id, id))
+                .returning();
+
+            res.json(updated[0]);
+        } catch (error) {
+            console.error("Error updating CMS content:", error);
+            res.status(500).json({ message: "Failed to update CMS content" });
+        }
+    });
+
+    // Delete CMS content (Admin only)
+    app.delete("/api/cms-content/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            const { id } = req.params;
+
+            // Check if content exists
+            const existing = await db
+                .select()
+                .from(cmsContent)
+                .where(eq(cmsContent.id, id))
+                .limit(1);
+
+            if (existing.length === 0) {
+                return res.status(404).json({ message: "CMS content not found" });
+            }
+
+            // Delete content
+            await db
+                .delete(cmsContent)
+                .where(eq(cmsContent.id, id));
+
+            res.json({ message: "CMS content deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting CMS content:", error);
+            res.status(500).json({ message: "Failed to delete CMS content" });
         }
     });
 
