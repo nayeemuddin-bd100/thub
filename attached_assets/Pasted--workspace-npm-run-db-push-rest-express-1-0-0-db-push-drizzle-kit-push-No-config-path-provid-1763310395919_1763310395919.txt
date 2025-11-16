@@ -1,0 +1,48 @@
+~/workspace$ npm run db:push
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/home/runner/workspace/drizzle.config.ts'
+Using 'pg' driver for database querying
+[✓] Pulling schema from database...
+· You're about to add service_orders_order_code_unique unique constraint to the table, which contains 14 items. If this statement fails, you will receive an error from the database. Do you want to truncate service_orders table?
+
+· You're about to add promotional_codes_code_unique unique constraint to the table, which contains 3 items. If this statement fails, you will receive an error from the database. Do you want to truncate promotional_codes table?
+
+ Warning  Found data-loss statements:
+· You're about to change related_id column type from uuid to varchar with 10 items
+· You're about to change ingredients column type from text[] to jsonb with 6 items
+· You're about to change dietary_tags column type from text[] to jsonb with 6 items
+· You're about to change photo_url column type from text to varchar with 6 items
+· You're about to change id column type from varchar to uuid with 4 items
+
+THIS ACTION WILL CAUSE DATA LOSS AND CANNOT BE REVERTED
+
+Do you still want to push changes?
+error: column "ingredients" cannot be cast automatically to type jsonb
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:66575:26)
+    at async pgPush (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:70117:13)
+    at async Object.handler (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:79124:9)
+    at async run (/home/runner/workspace/node_modules/drizzle-kit/bin.cjs:78381:7) {
+  length: 189,
+  severity: 'ERROR',
+  code: '42804',
+  detail: undefined,
+  hint: 'You might need to specify "USING ingredients::jsonb".',
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'tablecmds.c',
+  line: '12561',
+  routine: 'ATPrepAlterColumnType'
+}
