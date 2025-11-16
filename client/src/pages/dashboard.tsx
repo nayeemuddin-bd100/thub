@@ -2025,6 +2025,42 @@ export default function Dashboard() {
                             </Card>
                         )}
 
+                        {/* Group Bookings Card */}
+                        <Card
+                            className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() =>
+                                (window.location.href = "/properties")
+                            }
+                            data-testid="card-group-booking"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <Users className="w-5 h-5" />
+                                        <h3 className="text-lg font-semibold">
+                                            {t("dashboard.group_bookings") || "Group Bookings"}
+                                        </h3>
+                                    </div>
+                                    <p className="text-purple-100 text-sm mb-3">
+                                        {t("dashboard.group_bookings_description") || "Book multiple rooms for groups, events, or large parties"}
+                                    </p>
+                                </div>
+                                <Building className="w-16 h-16 opacity-20" />
+                            </div>
+                            <Button
+                                variant="secondary"
+                                size="sm"
+                                className="mt-4"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    window.location.href = "/properties";
+                                }}
+                                data-testid="button-create-group-booking"
+                            >
+                                {t("dashboard.create_group_booking") || "Create Group Booking"} →
+                            </Button>
+                        </Card>
+
                         {/* Export Payment History Button */}
                         {bookings && bookings.length > 0 && (
                             <div className="flex justify-end mb-4">
