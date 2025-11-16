@@ -18,6 +18,21 @@ Preferred communication style: Simple, everyday language.
 - **Role-Based Access Control (RBAC)**: Ten distinct roles (Admin, Billing, Operation, Marketing, Property Owner, Service Provider, Client, Country Manager, City Manager, Operation Support) with specialized dashboards and granular permissions.
 - Public browsing is allowed; authentication is required for transactional operations.
 
+### Approval System (November 16, 2025)
+- **User Status**: All users have a status field: `approved`, `pending`, or `rejected`
+- **Admin Staff Creation**: Admin can create internal role accounts (Billing, Operation, Marketing, Accounts, Country Manager) with auto-generated credentials sent via Twilio SendGrid
+- **Work With Us Registration**: City Managers, Hosts, and Service Providers register via `/work-with-us` page with status=pending
+- **Approval Workflow**:
+  - Country Managers approve City Managers
+  - City Managers approve Hosts (Property Owners) and Service Providers
+  - Regular clients register with auto-approved status
+- **Security Enforcement**:
+  - `requireApprovedUser` middleware protects all approval and admin endpoints
+  - Pending users can log in but see "Awaiting Approval" screen in dashboard
+  - Rejected users cannot log in (403 error)
+  - Work-with-us registration does NOT auto-login users (they must wait for approval, then login manually)
+  - Only approved users with proper roles can approve others or create staff accounts
+
 ## Key Features
 - **Multi-role Dashboards**: Specialized dashboards for each user role (e.g., Billing, Operation, Marketing, City Manager).
 - **Two-Tier Approval System**: Workflow for provider onboarding and service approval by managers/admins.
