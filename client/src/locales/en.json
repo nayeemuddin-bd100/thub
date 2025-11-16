@@ -911,7 +911,22 @@
         "services_total": "Services Total",
         "discount_amount": "Discount Amount",
         "total_amount": "Total Amount",
-        "max_guests": "Max Guests"
+        "max_guests": "Max Guests",
+        "order": "Order",
+        "provider_id": "Provider ID",
+        "client_id": "Client ID",
+        "service_date": "Service Date",
+        "time": "Time",
+        "created": "Created",
+        "special_instructions": "Special Instructions",
+        "no_service_orders": "No Service Orders Yet",
+        "service_orders_appear": "Service orders will appear here once clients start booking services",
+        "internal_staff": "Internal Staff",
+        "deactivate": "Deactivate",
+        "activate": "Activate",
+        "account_status": "Account Status",
+        "active": "Active",
+        "inactive": "Inactive"
     },
     "admin_placeholders": {
         "describe_services": "Describe the services offered...",

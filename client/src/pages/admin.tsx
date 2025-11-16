@@ -3570,7 +3570,7 @@ export default function AdminDashboard() {
                                                             className="font-semibold text-lg text-foreground"
                                                             data-testid={`order-code-${order.id}`}
                                                         >
-                                                            Order:{" "}
+                                                            {t("admin_labels.order")}:{" "}
                                                             {order.orderCode}
                                                         </h3>
                                                         <Select
@@ -3629,7 +3629,7 @@ export default function AdminDashboard() {
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground">
                                                         <div>
                                                             <span className="font-medium">
-                                                                Provider ID:
+                                                                {t("admin_labels.provider_id")}:
                                                             </span>
                                                             <p className="text-foreground">
                                                                 {order.serviceProviderId?.substring(
@@ -3641,7 +3641,7 @@ export default function AdminDashboard() {
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">
-                                                                Client ID:
+                                                                {t("admin_labels.client_id")}:
                                                             </span>
                                                             <p className="text-foreground">
                                                                 {order.clientId?.substring(
@@ -3653,7 +3653,7 @@ export default function AdminDashboard() {
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">
-                                                                Service Date:
+                                                                {t("admin_labels.service_date")}:
                                                             </span>
                                                             <p className="text-foreground">
                                                                 {order.serviceDate
@@ -3682,7 +3682,7 @@ export default function AdminDashboard() {
                                                     <div className="mt-3 flex gap-6 text-sm text-muted-foreground">
                                                         <div>
                                                             <span className="font-medium">
-                                                                Time:
+                                                                {t("admin_labels.time")}:
                                                             </span>
                                                             <span className="ml-2 text-foreground">
                                                                 {
@@ -3717,7 +3717,7 @@ export default function AdminDashboard() {
                                                         </div>
                                                         <div>
                                                             <span className="font-medium">
-                                                                Created:
+                                                                {t("admin_labels.created")}:
                                                             </span>
                                                             <span className="ml-2 text-foreground">
                                                                 {new Date(
@@ -3730,8 +3730,7 @@ export default function AdminDashboard() {
                                                     {order.specialInstructions && (
                                                         <div className="mt-3 text-sm">
                                                             <span className="font-medium text-muted-foreground">
-                                                                Special
-                                                                Instructions:
+                                                                {t("admin_labels.special_instructions")}:
                                                             </span>
                                                             <p className="text-foreground mt-1">
                                                                 {
@@ -3749,11 +3748,10 @@ export default function AdminDashboard() {
                                 <Card className="p-12 text-center">
                                     <Briefcase className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                                     <h3 className="text-lg font-semibold text-foreground mb-2">
-                                        No Service Orders Yet
+                                        {t("admin_labels.no_service_orders")}
                                     </h3>
                                     <p className="text-muted-foreground">
-                                        Service orders will appear here once
-                                        clients start booking services
+                                        {t("admin_labels.service_orders_appear")}
                                     </p>
                                 </Card>
                             )}
@@ -3836,7 +3834,7 @@ export default function AdminDashboard() {
                                                 data-testid="tab-staff"
                                                 className="whitespace-nowrap"
                                             >
-                                                Internal Staff
+                                                {t("admin_labels.internal_staff")}
                                             </TabsTrigger>
                                         </TabsList>
                                     </div>

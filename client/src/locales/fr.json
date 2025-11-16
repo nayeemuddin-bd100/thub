@@ -642,7 +642,22 @@
         "services_total": "Total des Services",
         "discount_amount": "Montant de Réduction",
         "total_amount": "Montant Total",
-        "max_guests": "Invités Maximum"
+        "max_guests": "Invités Maximum",
+        "order": "Commande",
+        "provider_id": "ID du Fournisseur",
+        "client_id": "ID du Client",
+        "service_date": "Date du Service",
+        "time": "Heure",
+        "created": "Créé",
+        "special_instructions": "Instructions Spéciales",
+        "no_service_orders": "Pas encore de Commandes de Service",
+        "service_orders_appear": "Les commandes de service apparaîtront ici une fois que les clients commenceront à réserver des services",
+        "internal_staff": "Personnel Interne",
+        "deactivate": "Désactiver",
+        "activate": "Activer",
+        "account_status": "Statut du Compte",
+        "active": "Actif",
+        "inactive": "Inactif"
     },
     "admin_placeholders": {
         "describe_services": "Décrivez les services offerts...",
