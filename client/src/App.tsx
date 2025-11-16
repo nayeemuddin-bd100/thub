@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -53,6 +53,26 @@ import MarketingDashboard from "@/pages/marketing-dashboard";
 import CityManagerDashboard from "@/pages/city-manager-dashboard";
 import CountryManagerDashboard from "@/pages/country-manager-dashboard";
 
+// Protected route wrapper that redirects to login if not authenticated
+function ProtectedRoute({ component: Component, path }: { component: any; path: string }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+    </div>;
+  }
+
+  if (!isAuthenticated) {
+    // Redirect to login with the current path as redirect parameter
+    setLocation(`/login?redirect=${encodeURIComponent(path)}`);
+    return null;
+  }
+
+  return <Component />;
+}
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -94,29 +114,25 @@ function Router() {
       <Route path="/pay-service-order/:id" component={PayServiceOrder} />
       
       {/* Protected pages - authentication required */}
-      {isAuthenticated && (
-        <>
-          <Route path="/booking" component={Booking} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/favorites" component={Favorites} />
-          <Route path="/loyalty-points" component={LoyaltyPoints} />
-          <Route path="/trip-planning" component={TripPlanning} />
-          <Route path="/provider-earnings" component={ProviderEarnings} />
-          <Route path="/seasonal-pricing" component={SeasonalPricing} />
-          <Route path="/disputes" component={Disputes} />
-          <Route path="/messages" component={Messages} />
-          <Route path="/admin" component={AdminDashboard} />
-          <Route path="/support-dashboard" component={SupportDashboard} />
-          <Route path="/billing-dashboard" component={BillingDashboard} />
-          <Route path="/operation-dashboard" component={OperationDashboard} />
-          <Route path="/marketing-dashboard" component={MarketingDashboard} />
-          <Route path="/city-manager-dashboard" component={CityManagerDashboard} />
-          <Route path="/country-manager-dashboard" component={CountryManagerDashboard} />
-          <Route path="/provider-config" component={ProviderConfig} />
-          <Route path="/provider-orders" component={ProviderOrders} />
-          <Route path="/my-service-orders" component={MyServiceOrders} />
-        </>
-      )}
+      <Route path="/booking">{() => <ProtectedRoute component={Booking} path="/booking" />}</Route>
+      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} path="/dashboard" />}</Route>
+      <Route path="/favorites">{() => <ProtectedRoute component={Favorites} path="/favorites" />}</Route>
+      <Route path="/loyalty-points">{() => <ProtectedRoute component={LoyaltyPoints} path="/loyalty-points" />}</Route>
+      <Route path="/trip-planning">{() => <ProtectedRoute component={TripPlanning} path="/trip-planning" />}</Route>
+      <Route path="/provider-earnings">{() => <ProtectedRoute component={ProviderEarnings} path="/provider-earnings" />}</Route>
+      <Route path="/seasonal-pricing">{() => <ProtectedRoute component={SeasonalPricing} path="/seasonal-pricing" />}</Route>
+      <Route path="/disputes">{() => <ProtectedRoute component={Disputes} path="/disputes" />}</Route>
+      <Route path="/messages">{() => <ProtectedRoute component={Messages} path="/messages" />}</Route>
+      <Route path="/admin">{() => <ProtectedRoute component={AdminDashboard} path="/admin" />}</Route>
+      <Route path="/support-dashboard">{() => <ProtectedRoute component={SupportDashboard} path="/support-dashboard" />}</Route>
+      <Route path="/billing-dashboard">{() => <ProtectedRoute component={BillingDashboard} path="/billing-dashboard" />}</Route>
+      <Route path="/operation-dashboard">{() => <ProtectedRoute component={OperationDashboard} path="/operation-dashboard" />}</Route>
+      <Route path="/marketing-dashboard">{() => <ProtectedRoute component={MarketingDashboard} path="/marketing-dashboard" />}</Route>
+      <Route path="/city-manager-dashboard">{() => <ProtectedRoute component={CityManagerDashboard} path="/city-manager-dashboard" />}</Route>
+      <Route path="/country-manager-dashboard">{() => <ProtectedRoute component={CountryManagerDashboard} path="/country-manager-dashboard" />}</Route>
+      <Route path="/provider-config">{() => <ProtectedRoute component={ProviderConfig} path="/provider-config" />}</Route>
+      <Route path="/provider-orders">{() => <ProtectedRoute component={ProviderOrders} path="/provider-orders" />}</Route>
+      <Route path="/my-service-orders">{() => <ProtectedRoute component={MyServiceOrders} path="/my-service-orders" />}</Route>
       
       <Route component={NotFound} />
     </Switch>

@@ -714,20 +714,21 @@ export default function AdminDashboard() {
     // Service Task mutations
     const saveTaskMutation = useMutation({
         mutationFn: async (data: any) => {
-            const url = editingTask
-                ? `/api/admin/service-tasks/${editingTask.id}`
+            const isUpdate = data.id != null;
+            const url = isUpdate
+                ? `/api/admin/service-tasks/${data.id}`
                 : "/api/admin/service-tasks";
-            const method = editingTask ? "PUT" : "POST";
+            const method = isUpdate ? "PUT" : "POST";
             const response = await apiRequest(method, url, data);
             return await response.json();
         },
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["/api/admin/service-tasks"],
             });
             toast({
                 title: "Success",
-                description: editingTask
+                description: variables.id
                     ? "Task updated successfully"
                     : "Task created successfully",
             });
