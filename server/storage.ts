@@ -1,10 +1,13 @@
 import {
     blogPosts,
     bookingCancellations,
+    bookingModifications,
     bookings,
     contactSubmissions,
     disputes,
     favorites,
+    groupBookingItems,
+    groupBookings,
     jobApplications,
     jobAssignments,
     jobPostings,
@@ -42,14 +45,20 @@ import {
     type Booking,
     type BookingCancellation,
     type BookingCancellationWithBooking,
+    type BookingModification,
     type ContactSubmission,
     type Dispute,
     type Favorite,
+    type GroupBooking,
+    type GroupBookingItem,
     type InsertBlogPost,
     type InsertBooking,
+    type InsertBookingModification,
     type InsertContactSubmission,
     type InsertDispute,
     type InsertFavorite,
+    type InsertGroupBooking,
+    type InsertGroupBookingItem,
     type InsertJobApplication,
     type InsertJobAssignment,
     type InsertJobPosting,
@@ -2310,6 +2319,189 @@ export class DatabaseStorage implements IStorage {
             .orderBy(desc(bookingCancellations.createdAt));
         
         return results as BookingCancellationWithBooking[];
+    }
+
+    // NEW FEATURES - Booking Modifications
+    async requestBookingModification(
+        modification: InsertBookingModification
+    ): Promise<BookingModification> {
+        const [result] = await db
+            .insert(bookingModifications)
+            .values(modification)
+            .returning();
+
+        // Notify admins about the new modification request
+        const booking = await this.getBooking(modification.bookingId);
+        const allUsers = await this.getAllUsers();
+        const admins = allUsers.filter((u) => u.role === "admin");
+
+        for (const admin of admins) {
+            await this.createNotification({
+                userId: admin.id,
+                title: "New Booking Modification Request",
+                message: `A new booking modification request has been submitted for booking ${booking?.bookingCode}`,
+                type: "booking",
+                relatedId: result.id,
+            });
+        }
+
+        return result;
+    }
+
+    async updateModificationStatus(
+        id: string,
+        status: string,
+        approvedBy: string,
+        rejectionReason?: string
+    ): Promise<BookingModification> {
+        const [modification] = await db
+            .select()
+            .from(bookingModifications)
+            .where(eq(bookingModifications.id, id));
+
+        const updates: any = {
+            status,
+            approvedBy,
+            updatedAt: new Date(),
+        };
+
+        if (rejectionReason) {
+            updates.rejectionReason = rejectionReason;
+        }
+
+        const [result] = await db
+            .update(bookingModifications)
+            .set(updates)
+            .where(eq(bookingModifications.id, id))
+            .returning();
+
+        // If approved, update the actual booking
+        if (status === "approved" && modification) {
+            const updateData: any = {};
+            
+            if (modification.newCheckIn) {
+                updateData.checkIn = modification.newCheckIn;
+            }
+            if (modification.newCheckOut) {
+                updateData.checkOut = modification.newCheckOut;
+            }
+            if (modification.newGuests) {
+                updateData.guests = modification.newGuests;
+            }
+
+            if (Object.keys(updateData).length > 0) {
+                await db
+                    .update(bookings)
+                    .set(updateData)
+                    .where(eq(bookings.id, modification.bookingId));
+            }
+        }
+
+        // Notify the user
+        const booking = await this.getBooking(modification.bookingId);
+        if (status === "approved") {
+            await this.createNotification({
+                userId: modification.requestedBy,
+                title: "Modification Approved",
+                message: `Your modification request for booking ${booking?.bookingCode} has been approved.`,
+                type: "approval",
+                relatedId: id,
+            });
+        } else if (status === "rejected") {
+            await this.createNotification({
+                userId: modification.requestedBy,
+                title: "Modification Rejected",
+                message: `Your modification request for booking ${booking?.bookingCode} has been rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : ''}`,
+                type: "rejection",
+                relatedId: id,
+            });
+        }
+
+        return result;
+    }
+
+    async getAllModifications(): Promise<BookingModification[]> {
+        return await db
+            .select()
+            .from(bookingModifications)
+            .orderBy(desc(bookingModifications.createdAt));
+    }
+
+    async getUserModifications(userId: string): Promise<BookingModification[]> {
+        return await db
+            .select()
+            .from(bookingModifications)
+            .where(eq(bookingModifications.requestedBy, userId))
+            .orderBy(desc(bookingModifications.createdAt));
+    }
+
+    // NEW FEATURES - Group Bookings
+    async createGroupBooking(
+        groupBooking: InsertGroupBooking,
+        items: InsertGroupBookingItem[]
+    ): Promise<GroupBooking> {
+        const [result] = await db
+            .insert(groupBookings)
+            .values(groupBooking)
+            .returning();
+
+        // Insert all group booking items
+        if (items.length > 0) {
+            const itemsWithGroupId = items.map(item => ({
+                ...item,
+                groupBookingId: result.id,
+            }));
+            
+            await db.insert(groupBookingItems).values(itemsWithGroupId);
+        }
+
+        return result;
+    }
+
+    async getGroupBooking(id: string): Promise<GroupBooking | undefined> {
+        const [result] = await db
+            .select()
+            .from(groupBookings)
+            .where(eq(groupBookings.id, id));
+        return result;
+    }
+
+    async getGroupBookingWithItems(
+        id: string
+    ): Promise<GroupBooking & { items: GroupBookingItem[] }> {
+        const booking = await this.getGroupBooking(id);
+        
+        if (!booking) {
+            throw new Error("Group booking not found");
+        }
+
+        const items = await db
+            .select()
+            .from(groupBookingItems)
+            .where(eq(groupBookingItems.groupBookingId, id))
+            .orderBy(asc(groupBookingItems.roomNumber));
+
+        return { ...booking, items };
+    }
+
+    async getUserGroupBookings(userId: string): Promise<GroupBooking[]> {
+        return await db
+            .select()
+            .from(groupBookings)
+            .where(eq(groupBookings.groupLeaderId, userId))
+            .orderBy(desc(groupBookings.createdAt));
+    }
+
+    async updateGroupBookingStatus(
+        id: string,
+        status: "pending" | "confirmed" | "cancelled"
+    ): Promise<GroupBooking> {
+        const [result] = await db
+            .update(groupBookings)
+            .set({ status, updatedAt: new Date() })
+            .where(eq(groupBookings.id, id))
+            .returning();
+        return result;
     }
 
     // NEW FEATURES - Trip Plans
