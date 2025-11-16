@@ -36,6 +36,7 @@ COPY --from=builder /app/dist ./dist
 
 # Copy necessary files for database operations
 COPY drizzle.config.ts ./drizzle.config.ts
+COPY tsconfig.json ./tsconfig.json
 COPY shared ./shared
 COPY server ./server
 COPY start.sh ./start.sh
