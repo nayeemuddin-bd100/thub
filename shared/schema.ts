@@ -50,6 +50,19 @@ export const users = pgTable("users", {
     })
         .notNull()
         .default("client"),
+    
+    // Additional profile fields for hosts and service providers (all optional)
+    businessName: varchar("business_name"),
+    phone: varchar("phone"),
+    businessAddress: text("business_address"),
+    taxLicense: varchar("tax_license"),
+    bio: text("bio"),
+    certifications: text("certifications").array(),
+    portfolio: text("portfolio").array(),
+    hourlyRate: decimal("hourly_rate", { precision: 10, scale: 2 }),
+    fixedRate: decimal("fixed_rate", { precision: 10, scale: 2 }),
+    serviceArea: varchar("service_area"),
+    
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
