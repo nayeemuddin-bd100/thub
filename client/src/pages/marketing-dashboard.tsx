@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TrendingUp, Eye, Users, DollarSign, Home } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TrendingUp, Eye, Users, DollarSign, Home, BookOpen, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
+import BlogManagement from '@/components/shared/BlogManagement';
 
 interface MarketingStats {
   totalProperties: number;
@@ -55,7 +58,7 @@ export default function MarketingDashboard() {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold mb-2">Marketing Dashboard</h1>
-          <p className="text-muted-foreground">Manage campaigns, promotions, and featured content</p>
+          <p className="text-muted-foreground">Manage campaigns, promotions, blog, and featured content</p>
         </div>
         <Button variant="outline" onClick={() => navigate('/')}>
           <Home className="w-4 h-4 mr-2" />
@@ -63,7 +66,20 @@ export default function MarketingDashboard() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[400px]">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <LayoutDashboard className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="blog" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Blog Management
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
@@ -176,31 +192,37 @@ export default function MarketingDashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Featured Properties</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Manage featured property listings and promotions
-            </p>
-            <Button className="w-full">Manage Featured Properties</Button>
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Featured Properties</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-center py-8">
+                  Manage featured property listings and promotions
+                </p>
+                <Button className="w-full">Manage Featured Properties</Button>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Campaign Analytics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              View campaign performance and analytics
-            </p>
-            <Button className="w-full">View Analytics</Button>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Campaign Analytics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-center py-8">
+                  View campaign performance and analytics
+                </p>
+                <Button className="w-full">View Analytics</Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="blog">
+          <BlogManagement />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

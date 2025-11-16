@@ -9,6 +9,7 @@ import PromotionalCodes from "@/components/admin/PromotionalCodes";
 import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
 import RoleChangeRequests from "@/components/admin/RoleChangeRequests";
 import TerritoryManagement from "@/components/admin/TerritoryManagement";
+import BlogManagement from "@/components/shared/BlogManagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +43,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
     Activity,
     Ban,
+    BookOpen,
     Briefcase,
     Building,
     Calendar,
@@ -943,6 +945,21 @@ export default function AdminDashboard() {
 
                             <button
                                 onClick={() => {
+                                    setActiveSection("blog");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "blog"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <BookOpen className="w-5 h-5" />
+                                <span className="text-sm">Blog Management</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
                                     setActiveSection("cms");
                                     setSidebarOpen(false);
                                 }}
@@ -1240,6 +1257,19 @@ export default function AdminDashboard() {
                         <span className="text-sm">
                             {t("admin.service_orders")}
                         </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("blog")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "blog"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-blog"
+                    >
+                        <BookOpen className="w-5 h-5" />
+                        <span className="text-sm">Blog Management</span>
                     </button>
 
                     <button
@@ -3901,6 +3931,13 @@ export default function AdminDashboard() {
                                     </p>
                                 </Card>
                             )}
+                        </div>
+                    )}
+
+                    {/* Blog Management Section */}
+                    {activeSection === "blog" && (
+                        <div>
+                            <BlogManagement />
                         </div>
                     )}
 

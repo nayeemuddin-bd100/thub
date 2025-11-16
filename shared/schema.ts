@@ -1553,11 +1553,19 @@ export const insertJobApplicationSchema = createInsertSchema(
 export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
 
 export type BlogPost = typeof blogPosts.$inferSelect;
-export const insertBlogPostSchema = createInsertSchema(blogPosts).omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-});
+export const insertBlogPostSchema = createInsertSchema(blogPosts)
+    .omit({
+        id: true,
+        createdAt: true,
+        updatedAt: true,
+    })
+    .extend({
+        publishedAt: z.union([
+            z.date(),
+            z.string().transform((str) => new Date(str)),
+            z.null()
+        ]).optional(),
+    });
 export type InsertBlogPost = z.infer<typeof insertBlogPostSchema>;
 
 export type RoleChangeRequest = typeof roleChangeRequests.$inferSelect;

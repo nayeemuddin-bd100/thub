@@ -13,6 +13,7 @@ import {
     properties,
     cmsContent,
     userActivityLogs,
+    blogPosts,
 } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -7384,6 +7385,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // GET /api/blog/all - Get all blog posts including drafts (admin and marketing only)
+    // IMPORTANT: Must be defined before /api/blog/:slug to avoid matching "all" as a slug
+    app.get("/api/blog/all", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || (user.role !== "admin" && user.role !== "marketing")) {
+                return res
+                    .status(403)
+                    .json({ message: "Admin or Marketing privileges required" });
+            }
+
+            const posts = await db.select({
+                id: blogPosts.id,
+                title: blogPosts.title,
+                slug: blogPosts.slug,
+                excerpt: blogPosts.excerpt,
+                content: blogPosts.content,
+                featuredImage: blogPosts.featuredImage,
+                authorId: blogPosts.authorId,
+                category: blogPosts.category,
+                tags: blogPosts.tags,
+                status: blogPosts.status,
+                publishedAt: blogPosts.publishedAt,
+                createdAt: blogPosts.createdAt,
+                updatedAt: blogPosts.updatedAt,
+                author: {
+                    firstName: users.firstName,
+                    lastName: users.lastName,
+                    email: users.email,
+                }
+            })
+                .from(blogPosts)
+                .leftJoin(users, eq(blogPosts.authorId, users.id))
+                .orderBy(desc(blogPosts.createdAt));
+
+            res.json(posts);
+        } catch (error) {
+            console.error("Error fetching all blog posts:", error);
+            res.status(500).json({ message: "Failed to fetch blog posts" });
+        }
+    });
+
     // GET /api/blog/:slug - Get single blog post by slug (public)
     app.get("/api/blog/:slug", async (req, res) => {
         try {
@@ -7400,16 +7445,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // POST /api/blog - Create blog post (admin only)
+    // POST /api/blog - Create blog post (admin and marketing only)
     app.post("/api/blog", requireAuth, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const user = await storage.getUser(userId);
 
-            if (!user || user.role !== "admin") {
+            if (!user || (user.role !== "admin" && user.role !== "marketing")) {
                 return res
                     .status(403)
-                    .json({ message: "Admin privileges required" });
+                    .json({ message: "Admin or Marketing privileges required" });
             }
 
             const validatedData = insertBlogPostSchema.parse({
@@ -7431,16 +7476,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // PATCH /api/blog/:id - Update blog post (admin only)
+    // PATCH /api/blog/:id - Update blog post (admin and marketing only)
     app.patch("/api/blog/:id", requireAuth, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const user = await storage.getUser(userId);
 
-            if (!user || user.role !== "admin") {
+            if (!user || (user.role !== "admin" && user.role !== "marketing")) {
                 return res
                     .status(403)
-                    .json({ message: "Admin privileges required" });
+                    .json({ message: "Admin or Marketing privileges required" });
             }
 
             // If updating featured image, delete the old one
@@ -7460,16 +7505,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // DELETE /api/blog/:id - Delete blog post (admin only)
+    // DELETE /api/blog/:id - Delete blog post (admin and marketing only)
     app.delete("/api/blog/:id", requireAuth, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const user = await storage.getUser(userId);
 
-            if (!user || user.role !== "admin") {
+            if (!user || (user.role !== "admin" && user.role !== "marketing")) {
                 return res
                     .status(403)
-                    .json({ message: "Admin privileges required" });
+                    .json({ message: "Admin or Marketing privileges required" });
             }
 
             // Get blog post to access featured image URL before deletion
