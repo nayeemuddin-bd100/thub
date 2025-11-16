@@ -9,6 +9,8 @@ import {
     users,
     platformSettings,
     serviceOrders,
+    propertySeasonalPricing,
+    properties,
 } from "@shared/schema";
 import { and, desc, eq } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -2774,6 +2776,243 @@ export async function registerRoutes(app: Express): Promise<Server> {
             res.status(500).json({
                 message: "Failed to fetch service categories",
             });
+        }
+    });
+
+    // Seasonal Pricing Routes
+    // Get all seasonal pricing rules (for property owner or admin)
+    app.get("/api/seasonal-pricing", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            
+            if (!user) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            let seasonalPricing;
+
+            if (user.role === "admin") {
+                // Admin can see all seasonal pricing
+                seasonalPricing = await db
+                    .select()
+                    .from(propertySeasonalPricing)
+                    .orderBy(desc(propertySeasonalPricing.createdAt));
+            } else if (user.role === "property_owner") {
+                // Property owners see only their properties' seasonal pricing
+                const userProperties = await db
+                    .select()
+                    .from(properties)
+                    .where(eq(properties.ownerId, userId));
+
+                const propertyIds = userProperties.map(p => p.id);
+
+                if (propertyIds.length === 0) {
+                    return res.json([]);
+                }
+
+                seasonalPricing = await db
+                    .select()
+                    .from(propertySeasonalPricing)
+                    .where(
+                        propertyIds.length === 1
+                            ? eq(propertySeasonalPricing.propertyId, propertyIds[0])
+                            : propertyIds.length > 1
+                            ? propertyIds.map(id => eq(propertySeasonalPricing.propertyId, id)).reduce((a, b) => a)
+                            : eq(propertySeasonalPricing.propertyId, "")
+                    )
+                    .orderBy(desc(propertySeasonalPricing.createdAt));
+            } else {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            res.json(seasonalPricing);
+        } catch (error) {
+            console.error("Error fetching seasonal pricing:", error);
+            res.status(500).json({ message: "Failed to fetch seasonal pricing" });
+        }
+    });
+
+    // Get seasonal pricing for a specific property
+    app.get("/api/properties/:propertyId/seasonal-pricing", async (req, res) => {
+        try {
+            const { propertyId } = req.params;
+
+            const seasonalPricing = await db
+                .select()
+                .from(propertySeasonalPricing)
+                .where(eq(propertySeasonalPricing.propertyId, propertyId))
+                .orderBy(propertySeasonalPricing.startDate);
+
+            res.json(seasonalPricing);
+        } catch (error) {
+            console.error("Error fetching seasonal pricing for property:", error);
+            res.status(500).json({ message: "Failed to fetch seasonal pricing" });
+        }
+    });
+
+    // Create seasonal pricing rule
+    app.post("/api/seasonal-pricing", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            const { propertyId, name, startDate, endDate, pricePerNight, minimumStay, priority } = req.body;
+
+            // Validate required fields
+            if (!propertyId || !name || !startDate || !endDate || !pricePerNight) {
+                return res.status(400).json({ message: "Missing required fields" });
+            }
+
+            // Check property ownership
+            const property = await db.select().from(properties).where(eq(properties.id, propertyId)).limit(1);
+            
+            if (property.length === 0) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            const isOwner = property[0].ownerId === userId;
+            const isAdmin = user.role === "admin";
+
+            if (!isOwner && !isAdmin) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            // Create seasonal pricing
+            const newSeasonalPricing = await db
+                .insert(propertySeasonalPricing)
+                .values({
+                    propertyId,
+                    name,
+                    startDate,
+                    endDate,
+                    pricePerNight,
+                    minimumStay: minimumStay || 1,
+                    priority: priority || 0,
+                    isActive: true,
+                })
+                .returning();
+
+            res.status(201).json(newSeasonalPricing[0]);
+        } catch (error) {
+            console.error("Error creating seasonal pricing:", error);
+            res.status(500).json({ message: "Failed to create seasonal pricing" });
+        }
+    });
+
+    // Update seasonal pricing rule
+    app.patch("/api/seasonal-pricing/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            const { id } = req.params;
+
+            // Get the seasonal pricing rule
+            const seasonalPricingRule = await db
+                .select()
+                .from(propertySeasonalPricing)
+                .where(eq(propertySeasonalPricing.id, id))
+                .limit(1);
+
+            if (seasonalPricingRule.length === 0) {
+                return res.status(404).json({ message: "Seasonal pricing not found" });
+            }
+
+            // Check property ownership
+            const property = await db
+                .select()
+                .from(properties)
+                .where(eq(properties.id, seasonalPricingRule[0].propertyId))
+                .limit(1);
+
+            if (property.length === 0) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            const isOwner = property[0].ownerId === userId;
+            const isAdmin = user.role === "admin";
+
+            if (!isOwner && !isAdmin) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            // Update seasonal pricing
+            const updated = await db
+                .update(propertySeasonalPricing)
+                .set({
+                    ...req.body,
+                    // Prevent updating propertyId
+                    propertyId: seasonalPricingRule[0].propertyId,
+                })
+                .where(eq(propertySeasonalPricing.id, id))
+                .returning();
+
+            res.json(updated[0]);
+        } catch (error) {
+            console.error("Error updating seasonal pricing:", error);
+            res.status(500).json({ message: "Failed to update seasonal pricing" });
+        }
+    });
+
+    // Delete seasonal pricing rule
+    app.delete("/api/seasonal-pricing/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user) {
+                return res.status(401).json({ message: "User not found" });
+            }
+
+            const { id } = req.params;
+
+            // Get the seasonal pricing rule
+            const seasonalPricingRule = await db
+                .select()
+                .from(propertySeasonalPricing)
+                .where(eq(propertySeasonalPricing.id, id))
+                .limit(1);
+
+            if (seasonalPricingRule.length === 0) {
+                return res.status(404).json({ message: "Seasonal pricing not found" });
+            }
+
+            // Check property ownership
+            const property = await db
+                .select()
+                .from(properties)
+                .where(eq(properties.id, seasonalPricingRule[0].propertyId))
+                .limit(1);
+
+            if (property.length === 0) {
+                return res.status(404).json({ message: "Property not found" });
+            }
+
+            const isOwner = property[0].ownerId === userId;
+            const isAdmin = user.role === "admin";
+
+            if (!isOwner && !isAdmin) {
+                return res.status(403).json({ message: "Insufficient permissions" });
+            }
+
+            // Delete seasonal pricing
+            await db
+                .delete(propertySeasonalPricing)
+                .where(eq(propertySeasonalPricing.id, id));
+
+            res.json({ message: "Seasonal pricing deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting seasonal pricing:", error);
+            res.status(500).json({ message: "Failed to delete seasonal pricing" });
         }
     });
 

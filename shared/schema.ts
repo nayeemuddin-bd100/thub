@@ -938,6 +938,21 @@ export const emailTemplates = pgTable("email_templates", {
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// CMS Content Management
+export const cmsContent = pgTable("cms_content", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    pageKey: varchar("page_key").unique().notNull(),
+    pageName: varchar("page_name").notNull(),
+    title: varchar("title").notNull(),
+    content: text("content").notNull(),
+    metaDescription: text("meta_description"),
+    metaKeywords: varchar("meta_keywords"),
+    isPublished: boolean("is_published").default(true),
+    updatedBy: varchar("updated_by").references(() => users.id),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Disputes
 export const disputes = pgTable("disputes", {
     id: uuid("id").defaultRandom().primaryKey(),

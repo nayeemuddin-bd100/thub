@@ -65,8 +65,8 @@ async function seed() {
         await db.delete(providerMaterials);
         await db.delete(providerAvailability);
         await db.delete(providerPricing);
-        await db.delete(providerMenus);
         await db.delete(menuItems);
+        await db.delete(providerMenus);
         await db.delete(providerEarnings);
         await db.delete(providerPayouts);
         await db.delete(servicePackages);
@@ -605,6 +605,244 @@ async function seed() {
         await db
             .insert(properties)
             .values(sampleProperties)
+            .onConflictDoNothing();
+
+        // Create seasonal pricing for properties
+        console.log("Creating seasonal pricing rules...");
+        const seasonalPricingRules = [
+            // Miami Beach Villa - Winter Peak Season (Dec - Mar)
+            {
+                id: randomUUID(),
+                propertyId: prop1Id,
+                name: "Winter Peak Season",
+                startDate: "2025-12-15",
+                endDate: "2026-03-15",
+                pricePerNight: "650",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // Miami Beach Villa - Summer (High demand)
+            {
+                id: randomUUID(),
+                propertyId: prop1Id,
+                name: "Summer Season",
+                startDate: "2025-06-01",
+                endDate: "2025-08-31",
+                pricePerNight: "550",
+                minimumStay: 2,
+                priority: 2,
+                isActive: true,
+            },
+            // NYC Apartment - Holiday Season
+            {
+                id: randomUUID(),
+                propertyId: prop2Id,
+                name: "Holiday Season",
+                startDate: "2025-11-25",
+                endDate: "2026-01-05",
+                pricePerNight: "420",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // NYC Apartment - Spring Events
+            {
+                id: randomUUID(),
+                propertyId: prop2Id,
+                name: "Spring Events Season",
+                startDate: "2025-04-01",
+                endDate: "2025-05-31",
+                pricePerNight: "350",
+                minimumStay: 2,
+                priority: 2,
+                isActive: true,
+            },
+            // Mountain Cabin - Winter Ski Season
+            {
+                id: randomUUID(),
+                propertyId: prop3Id,
+                name: "Ski Season Peak",
+                startDate: "2025-12-20",
+                endDate: "2026-02-28",
+                pricePerNight: "480",
+                minimumStay: 5,
+                priority: 1,
+                isActive: true,
+            },
+            // Paris Apartment - Summer Tourist Season
+            {
+                id: randomUUID(),
+                propertyId: prop4Id,
+                name: "Summer Tourist Season",
+                startDate: "2025-06-15",
+                endDate: "2025-09-15",
+                pricePerNight: "280",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // Paris Apartment - Fashion Week
+            {
+                id: randomUUID(),
+                propertyId: prop4Id,
+                name: "Fashion Week",
+                startDate: "2025-09-25",
+                endDate: "2025-10-05",
+                pricePerNight: "350",
+                minimumStay: 2,
+                priority: 2,
+                isActive: true,
+            },
+            // Tokyo Condo - Cherry Blossom Season
+            {
+                id: randomUUID(),
+                propertyId: prop5Id,
+                name: "Cherry Blossom Season",
+                startDate: "2025-03-20",
+                endDate: "2025-04-15",
+                pricePerNight: "420",
+                minimumStay: 4,
+                priority: 1,
+                isActive: true,
+            },
+            // Tokyo Condo - Golden Week
+            {
+                id: randomUUID(),
+                propertyId: prop5Id,
+                name: "Golden Week",
+                startDate: "2025-04-29",
+                endDate: "2025-05-06",
+                pricePerNight: "450",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // London Flat - Summer Season
+            {
+                id: randomUUID(),
+                propertyId: prop6Id,
+                name: "London Summer",
+                startDate: "2025-06-01",
+                endDate: "2025-08-31",
+                pricePerNight: "320",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // Barcelona Loft - La Mercè Festival
+            {
+                id: randomUUID(),
+                propertyId: prop7Id,
+                name: "La Mercè Festival",
+                startDate: "2025-09-20",
+                endDate: "2025-09-26",
+                pricePerNight: "260",
+                minimumStay: 2,
+                priority: 1,
+                isActive: true,
+            },
+            // Dubai Penthouse - Winter Season
+            {
+                id: randomUUID(),
+                propertyId: prop8Id,
+                name: "Winter Luxury Season",
+                startDate: "2025-11-01",
+                endDate: "2026-03-31",
+                pricePerNight: "1400",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // Sydney Harbor View - New Year
+            {
+                id: randomUUID(),
+                propertyId: prop9Id,
+                name: "New Year's Eve Premium",
+                startDate: "2025-12-28",
+                endDate: "2026-01-03",
+                pricePerNight: "950",
+                minimumStay: 3,
+                priority: 1,
+                isActive: true,
+            },
+            // Rome Historic Apartment - Easter Season
+            {
+                id: randomUUID(),
+                propertyId: prop10Id,
+                name: "Easter Season",
+                startDate: "2025-04-10",
+                endDate: "2025-04-25",
+                pricePerNight: "280",
+                minimumStay: 2,
+                priority: 1,
+                isActive: true,
+            },
+            // Santorini Villa - Peak Summer
+            {
+                id: randomUUID(),
+                propertyId: prop11Id,
+                name: "Peak Summer Season",
+                startDate: "2025-07-01",
+                endDate: "2025-08-31",
+                pricePerNight: "1200",
+                minimumStay: 5,
+                priority: 1,
+                isActive: true,
+            },
+            // Bali Beachfront - Off-Peak Discount
+            {
+                id: randomUUID(),
+                propertyId: prop12Id,
+                name: "Monsoon Off-Peak",
+                startDate: "2025-11-01",
+                endDate: "2026-02-28",
+                pricePerNight: "350",
+                minimumStay: 4,
+                priority: 1,
+                isActive: true,
+            },
+            // Cape Town Mansion - Summer Season
+            {
+                id: randomUUID(),
+                propertyId: prop13Id,
+                name: "Southern Summer",
+                startDate: "2025-12-01",
+                endDate: "2026-02-28",
+                pricePerNight: "750",
+                minimumStay: 5,
+                priority: 1,
+                isActive: true,
+            },
+            // Iceland Glass Igloo - Northern Lights
+            {
+                id: randomUUID(),
+                propertyId: prop14Id,
+                name: "Northern Lights Season",
+                startDate: "2025-09-15",
+                endDate: "2026-03-31",
+                pricePerNight: "680",
+                minimumStay: 2,
+                priority: 1,
+                isActive: true,
+            },
+            // Phuket Resort Villa - High Season
+            {
+                id: randomUUID(),
+                propertyId: prop15Id,
+                name: "High Season",
+                startDate: "2025-11-01",
+                endDate: "2026-04-30",
+                pricePerNight: "900",
+                minimumStay: 4,
+                priority: 1,
+                isActive: true,
+            },
+        ];
+
+        await db
+            .insert(propertySeasonalPricing)
+            .values(seasonalPricingRules)
             .onConflictDoNothing();
 
         // Create service categories
