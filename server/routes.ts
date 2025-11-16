@@ -6657,6 +6657,217 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     );
 
+    // ============ BOOKING MODIFICATIONS ENDPOINTS ============
+    // Request booking modification
+    app.post("/api/bookings/:id/modify", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const { modificationType, newCheckIn, newCheckOut, newGuests, reason } = req.body;
+            
+            // Get the current booking
+            const booking = await storage.getBooking(req.params.id);
+            if (!booking) {
+                return res.status(404).json({ message: "Booking not found" });
+            }
+
+            // Verify the user owns this booking
+            if (booking.clientId !== userId) {
+                return res.status(403).json({ message: "Unauthorized" });
+            }
+
+            const modification = await storage.requestBookingModification({
+                bookingId: req.params.id,
+                requestedBy: userId,
+                modificationType,
+                currentCheckIn: booking.checkIn,
+                currentCheckOut: booking.checkOut,
+                currentGuests: booking.guests,
+                newCheckIn: newCheckIn || booking.checkIn,
+                newCheckOut: newCheckOut || booking.checkOut,
+                newGuests: newGuests || booking.guests,
+                reason,
+                priceDifference: "0", // Calculate this based on your pricing logic
+                status: "pending",
+            });
+
+            res.status(201).json(modification);
+        } catch (error) {
+            console.error("Error requesting modification:", error);
+            res.status(500).json({ message: "Failed to request modification" });
+        }
+    });
+
+    // Get user's modification requests
+    app.get("/api/bookings/modifications", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const modifications = await storage.getUserModifications(userId);
+            res.json(modifications);
+        } catch (error) {
+            console.error("Error getting modifications:", error);
+            res.status(500).json({ message: "Failed to get modifications" });
+        }
+    });
+
+    // Admin: Get all modification requests
+    app.get("/api/admin/modifications", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Unauthorized" });
+            }
+
+            const modifications = await storage.getAllModifications();
+            res.json(modifications);
+        } catch (error) {
+            console.error("Error getting modifications:", error);
+            res.status(500).json({ message: "Failed to get modifications" });
+        }
+    });
+
+    // Admin: Approve/reject modification
+    app.patch("/api/admin/modifications/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+            if (!user || user.role !== "admin") {
+                return res.status(403).json({ message: "Unauthorized" });
+            }
+
+            const { status, rejectionReason } = req.body;
+            const modification = await storage.updateModificationStatus(
+                req.params.id,
+                status,
+                userId,
+                rejectionReason
+            );
+
+            res.json(modification);
+        } catch (error) {
+            console.error("Error updating modification:", error);
+            res.status(500).json({ message: "Failed to update modification" });
+        }
+    });
+
+    // ============ GROUP BOOKINGS ENDPOINTS ============
+    // Create group booking
+    app.post("/api/group-bookings", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const { groupName, propertyId, numberOfRooms, totalGuests, checkIn, checkOut, 
+                    totalAmount, discountAmount, finalAmount, specialRequests, items } = req.body;
+
+            const groupBooking = await storage.createGroupBooking(
+                {
+                    groupName,
+                    groupLeaderId: userId,
+                    propertyId,
+                    numberOfRooms,
+                    totalGuests,
+                    checkIn,
+                    checkOut,
+                    totalAmount,
+                    discountAmount: discountAmount || "0",
+                    finalAmount,
+                    status: "pending",
+                    paymentStatus: "pending",
+                    specialRequests,
+                },
+                items || []
+            );
+
+            res.status(201).json(groupBooking);
+        } catch (error) {
+            console.error("Error creating group booking:", error);
+            res.status(500).json({ message: "Failed to create group booking" });
+        }
+    });
+
+    // Get user's group bookings
+    app.get("/api/group-bookings", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const groupBookings = await storage.getUserGroupBookings(userId);
+            res.json(groupBookings);
+        } catch (error) {
+            console.error("Error getting group bookings:", error);
+            res.status(500).json({ message: "Failed to get group bookings" });
+        }
+    });
+
+    // Get group booking details with items
+    app.get("/api/group-bookings/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const groupBooking = await storage.getGroupBookingWithItems(req.params.id);
+            
+            // Verify the user is the group leader
+            if (groupBooking.groupLeaderId !== userId) {
+                const user = await storage.getUser(userId);
+                if (!user || user.role !== "admin") {
+                    return res.status(403).json({ message: "Unauthorized" });
+                }
+            }
+
+            res.json(groupBooking);
+        } catch (error) {
+            console.error("Error getting group booking:", error);
+            res.status(500).json({ message: "Failed to get group booking" });
+        }
+    });
+
+    // ============ PAYMENT HISTORY EXPORT ============
+    // Export payment history
+    app.get("/api/payments/export", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            
+            // Get all user's bookings and service orders
+            const bookings = await storage.getUserBookings(userId);
+            const serviceOrders = await storage.getUserServiceOrders(userId);
+
+            // Format data for CSV
+            const csvRows = [];
+            csvRows.push(['Date', 'Type', 'Description', 'Amount', 'Status', 'Payment Method']);
+
+            // Add bookings
+            for (const booking of bookings) {
+                csvRows.push([
+                    new Date(booking.createdAt).toLocaleDateString(),
+                    'Property Booking',
+                    `Booking ${booking.bookingCode}`,
+                    booking.totalAmount,
+                    booking.paymentStatus || 'N/A',
+                    booking.paymentMethod || 'N/A'
+                ]);
+            }
+
+            // Add service orders
+            for (const order of serviceOrders) {
+                csvRows.push([
+                    new Date(order.createdAt).toLocaleDateString(),
+                    'Service Order',
+                    `Order ${order.orderCode}`,
+                    order.totalAmount,
+                    order.paymentStatus || 'N/A',
+                    order.paymentMethod || 'N/A'
+                ]);
+            }
+
+            // Convert to CSV string
+            const csvContent = csvRows.map(row => row.join(',')).join('\n');
+
+            // Set headers for download
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=payment-history.csv');
+            res.send(csvContent);
+        } catch (error) {
+            console.error("Error exporting payment history:", error);
+            res.status(500).json({ message: "Failed to export payment history" });
+        }
+    });
+
     // ============ TRIP PLANS ENDPOINTS ============
     // Create trip plan
     app.post("/api/trip-plans", requireAuth, async (req: any, res) => {
