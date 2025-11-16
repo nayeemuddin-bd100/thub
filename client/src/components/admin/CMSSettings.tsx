@@ -52,7 +52,7 @@ export default function CMSSettings() {
     const { data: cmsContentList, isLoading } = useQuery<CMSContent[]>({
         queryKey: ["cmsContent"],
         queryFn: async () => {
-            const response = await apiRequest("/api/cms-content");
+            const response = await apiRequest("GET", "/api/cms-content");
             return response.json();
         },
     });
@@ -65,17 +65,7 @@ export default function CMSSettings() {
                 : "/api/cms-content";
             const method = editingContent ? "PATCH" : "POST";
             
-            const response = await apiRequest(url, {
-                method,
-                body: JSON.stringify(data),
-                headers: { "Content-Type": "application/json" },
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || "Failed to save CMS content");
-            }
-            
+            const response = await apiRequest(method, url, data);
             return response.json();
         },
         onSuccess: () => {
@@ -102,15 +92,7 @@ export default function CMSSettings() {
     // Delete CMS content mutation
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            const response = await apiRequest(`/api/cms-content/${id}`, {
-                method: "DELETE",
-            });
-            
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || "Failed to delete CMS content");
-            }
-            
+            const response = await apiRequest("DELETE", `/api/cms-content/${id}`);
             return response.json();
         },
         onSuccess: () => {
