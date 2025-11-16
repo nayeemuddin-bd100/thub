@@ -5,7 +5,7 @@ echo "🚀 Starting TravelHub..."
 
 # Drop all existing tables for fresh deployment
 echo "🗑️  Dropping all tables..."
-tsx server/drop-tables.ts
+npx tsx server/drop-tables.ts
 
 # Push database schema
 echo "📊 Pushing database schema..."
