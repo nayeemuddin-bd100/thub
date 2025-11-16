@@ -49,6 +49,7 @@ import {
     blogPosts,
     sessions,
     roleChangeRequests,
+    cmsContent,
 } from "../shared/schema";
 import { db } from "./db";
 
@@ -102,6 +103,7 @@ async function seed() {
         await db.delete(platformSettings);
         await db.delete(emailTemplates);
         await db.delete(blogPosts);
+        await db.delete(cmsContent);
         await db.delete(sessions);
         await db.delete(roleChangeRequests);
         await db.delete(users);
@@ -1999,6 +2001,719 @@ async function seed() {
             await db.insert(serviceOrders).values(sampleServiceOrders).onConflictDoNothing();
             console.log(`✓ Created ${sampleServiceOrders.length} service orders with diverse statuses and locations`);
         }
+
+        // Insert CMS Content for informational pages
+        console.log("Creating CMS content pages...");
+        const cmsPages = [
+            {
+                pageKey: "about",
+                pageName: "About Us",
+                title: "About TravelHub - Your Global Travel Companion",
+                content: `<div class="prose max-w-none">
+                    <h2>Welcome to TravelHub</h2>
+                    <p>TravelHub is your comprehensive platform for discovering and booking unique accommodations and services around the world. We connect travelers with property owners, service providers, and local experiences to create unforgettable journeys.</p>
+                    
+                    <h3>Our Mission</h3>
+                    <p>We believe travel should be accessible, authentic, and enriching. Our mission is to empower travelers to explore the world with confidence while supporting local communities and businesses.</p>
+                    
+                    <h3>What We Offer</h3>
+                    <ul>
+                        <li><strong>Unique Accommodations:</strong> From cozy apartments to luxurious villas, find the perfect place to stay</li>
+                        <li><strong>Local Services:</strong> Connect with trusted service providers for cleaning, maintenance, tours, and more</li>
+                        <li><strong>Secure Booking:</strong> Safe and secure payment processing with Stripe integration</li>
+                        <li><strong>24/7 Support:</strong> Our dedicated support team is always here to help</li>
+                        <li><strong>Global Reach:</strong> Properties and services in major cities worldwide</li>
+                    </ul>
+                    
+                    <h3>Our Community</h3>
+                    <p>TravelHub is built on trust and community. We carefully vet all property owners and service providers to ensure quality and reliability. Our platform supports multiple languages and currencies, making it easy for anyone to join our global community.</p>
+                    
+                    <h3>Sustainability & Responsibility</h3>
+                    <p>We are committed to sustainable travel practices and supporting local economies. When you book through TravelHub, you're not just finding a place to stay—you're contributing to local communities and helping preserve unique cultural experiences.</p>
+                </div>`,
+                metaDescription: "Learn about TravelHub - your trusted platform for global accommodations and local services. Connecting travelers with unique experiences worldwide.",
+                metaKeywords: "about travelhub, travel platform, accommodation booking, local services, global travel",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "careers",
+                pageName: "Careers",
+                title: "Join the TravelHub Team",
+                content: `<div class="prose max-w-none">
+                    <h2>Build Your Career with TravelHub</h2>
+                    <p>We're always looking for passionate, talented individuals to join our growing team. At TravelHub, you'll have the opportunity to shape the future of travel while working with a diverse, global team.</p>
+                    
+                    <h3>Why Work at TravelHub?</h3>
+                    <ul>
+                        <li><strong>Global Impact:</strong> Your work affects travelers and hosts around the world</li>
+                        <li><strong>Innovation:</strong> We encourage creative thinking and new ideas</li>
+                        <li><strong>Growth:</strong> Professional development and learning opportunities</li>
+                        <li><strong>Culture:</strong> Inclusive, collaborative work environment</li>
+                        <li><strong>Benefits:</strong> Competitive salary, health insurance, travel perks</li>
+                        <li><strong>Flexibility:</strong> Remote work options available</li>
+                    </ul>
+                    
+                    <h3>Current Openings</h3>
+                    <p>We have positions available in various departments including engineering, customer support, marketing, and operations. Check our job board for current openings that match your skills and interests.</p>
+                    
+                    <h3>Our Values</h3>
+                    <ul>
+                        <li>Customer First - We prioritize user experience in everything we do</li>
+                        <li>Innovation - We embrace change and continuous improvement</li>
+                        <li>Integrity - We build trust through transparency and honesty</li>
+                        <li>Collaboration - We work together to achieve great things</li>
+                        <li>Diversity - We celebrate different perspectives and backgrounds</li>
+                    </ul>
+                    
+                    <h3>Application Process</h3>
+                    <p>Browse our current job openings, submit your application with your resume and cover letter, and our hiring team will review your qualifications. Qualified candidates will be contacted for interviews.</p>
+                    
+                    <p><strong>Ready to join us?</strong> Visit our careers page to view and apply for open positions.</p>
+                </div>`,
+                metaDescription: "Join TravelHub's team! Explore career opportunities in a global travel platform. Remote positions available.",
+                metaKeywords: "travelhub careers, jobs, employment, travel industry jobs, remote work",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "press",
+                pageName: "Press & Media",
+                title: "TravelHub Press & Media Center",
+                content: `<div class="prose max-w-none">
+                    <h2>Press & Media Resources</h2>
+                    <p>Welcome to TravelHub's press center. Here you'll find the latest news, press releases, media kits, and contact information for media inquiries.</p>
+                    
+                    <h3>Latest News</h3>
+                    <p>TravelHub continues to expand globally, connecting travelers with unique accommodations and local services in over 50 countries. Our platform has facilitated thousands of successful bookings and helped local service providers grow their businesses.</p>
+                    
+                    <h3>Key Milestones</h3>
+                    <ul>
+                        <li>50+ countries with active listings</li>
+                        <li>100,000+ successful bookings</li>
+                        <li>5,000+ verified service providers</li>
+                        <li>4.8/5 average customer rating</li>
+                        <li>24/7 multilingual customer support</li>
+                    </ul>
+                    
+                    <h3>Press Kit</h3>
+                    <p>Our press kit includes:</p>
+                    <ul>
+                        <li>Company logos and brand assets</li>
+                        <li>Executive bios and photos</li>
+                        <li>Product screenshots</li>
+                        <li>Company fact sheet</li>
+                        <li>Recent press releases</li>
+                    </ul>
+                    
+                    <h3>Media Contact</h3>
+                    <p>For press inquiries, interviews, or additional information:</p>
+                    <ul>
+                        <li><strong>Email:</strong> press@travelhub.com</li>
+                        <li><strong>Phone:</strong> +1 (555) 123-4567</li>
+                        <li><strong>Response Time:</strong> Within 24 hours</li>
+                    </ul>
+                    
+                    <h3>Featured Coverage</h3>
+                    <p>TravelHub has been featured in leading travel and technology publications. We're always happy to share our insights on the future of travel, marketplace technology, and the sharing economy.</p>
+                </div>`,
+                metaDescription: "TravelHub press center with latest news, media resources, and contact information for journalists and media professionals.",
+                metaKeywords: "travelhub press, media center, press releases, travel news, media kit",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "help",
+                pageName: "Help Center",
+                title: "TravelHub Help Center - Get Support",
+                content: `<div class="prose max-w-none">
+                    <h2>How Can We Help You?</h2>
+                    <p>Welcome to the TravelHub Help Center. Find answers to common questions or contact our support team for assistance.</p>
+                    
+                    <h3>Getting Started</h3>
+                    <h4>For Travelers</h4>
+                    <ul>
+                        <li>How to search and book properties</li>
+                        <li>Understanding pricing and fees</li>
+                        <li>Managing your bookings</li>
+                        <li>Cancellation and refund policies</li>
+                        <li>Leaving reviews</li>
+                    </ul>
+                    
+                    <h4>For Property Owners</h4>
+                    <ul>
+                        <li>How to list your property</li>
+                        <li>Setting seasonal pricing</li>
+                        <li>Managing bookings and availability</li>
+                        <li>Understanding payouts</li>
+                        <li>Property requirements and standards</li>
+                    </ul>
+                    
+                    <h4>For Service Providers</h4>
+                    <ul>
+                        <li>Registering as a service provider</li>
+                        <li>Managing service categories</li>
+                        <li>Pricing and packages</li>
+                        <li>Order management</li>
+                        <li>Earnings and payouts</li>
+                    </ul>
+                    
+                    <h3>Account & Settings</h3>
+                    <ul>
+                        <li>Creating and verifying your account</li>
+                        <li>Updating profile information</li>
+                        <li>Password and security settings</li>
+                        <li>Payment methods</li>
+                        <li>Notification preferences</li>
+                    </ul>
+                    
+                    <h3>Payments & Billing</h3>
+                    <ul>
+                        <li>Accepted payment methods</li>
+                        <li>Understanding charges and fees</li>
+                        <li>Refunds and disputes</li>
+                        <li>Payment security</li>
+                        <li>Invoices and receipts</li>
+                    </ul>
+                    
+                    <h3>Safety & Trust</h3>
+                    <ul>
+                        <li>Verified properties and providers</li>
+                        <li>Safety tips for travelers</li>
+                        <li>Reporting concerns</li>
+                        <li>Privacy protection</li>
+                        <li>Dispute resolution</li>
+                    </ul>
+                    
+                    <h3>Contact Support</h3>
+                    <p>Can't find what you're looking for? Our support team is available 24/7:</p>
+                    <ul>
+                        <li><strong>Live Chat:</strong> Available in your dashboard</li>
+                        <li><strong>Email:</strong> support@travelhub.com</li>
+                        <li><strong>Phone:</strong> +1 (555) 987-6543</li>
+                    </ul>
+                </div>`,
+                metaDescription: "TravelHub Help Center - Find answers to common questions about bookings, properties, services, and more. 24/7 support available.",
+                metaKeywords: "travelhub help, support center, customer service, faq, how to book",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "safety",
+                pageName: "Safety Center",
+                title: "Your Safety is Our Priority",
+                content: `<div class="prose max-w-none">
+                    <h2>TravelHub Safety Center</h2>
+                    <p>Your safety and security are our top priorities. We've implemented comprehensive measures to ensure safe experiences for all users.</p>
+                    
+                    <h3>Verified Properties & Providers</h3>
+                    <p>All properties and service providers on TravelHub undergo verification:</p>
+                    <ul>
+                        <li>Identity verification for all hosts and providers</li>
+                        <li>Property inspection and quality checks</li>
+                        <li>Background checks for service providers</li>
+                        <li>Review and rating system</li>
+                        <li>Ongoing monitoring and compliance</li>
+                    </ul>
+                    
+                    <h3>Secure Payments</h3>
+                    <p>All transactions are processed securely through Stripe:</p>
+                    <ul>
+                        <li>PCI-compliant payment processing</li>
+                        <li>Encrypted data transmission</li>
+                        <li>Fraud detection and prevention</li>
+                        <li>Secure refund process</li>
+                        <li>No stored credit card details</li>
+                    </ul>
+                    
+                    <h3>Privacy Protection</h3>
+                    <p>We protect your personal information:</p>
+                    <ul>
+                        <li>GDPR and data protection compliance</li>
+                        <li>Secure data storage and encryption</li>
+                        <li>Limited information sharing</li>
+                        <li>Privacy-first communication</li>
+                        <li>Right to data access and deletion</li>
+                    </ul>
+                    
+                    <h3>Travel Safety Tips</h3>
+                    <h4>Before Booking</h4>
+                    <ul>
+                        <li>Read property reviews and ratings</li>
+                        <li>Verify property photos and descriptions</li>
+                        <li>Check host/provider response time</li>
+                        <li>Review cancellation policies</li>
+                        <li>Communicate through our platform</li>
+                    </ul>
+                    
+                    <h4>During Your Stay</h4>
+                    <ul>
+                        <li>Keep emergency contact information handy</li>
+                        <li>Know local emergency services numbers</li>
+                        <li>Document property condition upon arrival</li>
+                        <li>Report any safety concerns immediately</li>
+                        <li>Keep communication on platform</li>
+                    </ul>
+                    
+                    <h3>24/7 Safety Support</h3>
+                    <p>Our trust and safety team is available around the clock:</p>
+                    <ul>
+                        <li><strong>Emergency Line:</strong> +1 (555) 911-SAFE</li>
+                        <li><strong>Safety Email:</strong> safety@travelhub.com</li>
+                        <li><strong>Report Issues:</strong> Use in-app reporting</li>
+                    </ul>
+                    
+                    <h3>COVID-19 Safety</h3>
+                    <p>Enhanced cleaning protocols and safety guidelines are in place to protect guests and hosts during the pandemic.</p>
+                    
+                    <h3>Report a Safety Concern</h3>
+                    <p>If you experience or witness anything that makes you feel unsafe, please report it immediately. We take all reports seriously and investigate promptly.</p>
+                </div>`,
+                metaDescription: "TravelHub Safety Center - Learn about our safety measures, verified properties, secure payments, and 24/7 support to ensure your protection.",
+                metaKeywords: "travelhub safety, secure booking, verified properties, travel safety tips, payment security",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "cancellation",
+                pageName: "Cancellation Policy",
+                title: "Cancellation Policy - Flexible Options",
+                content: `<div class="prose max-w-none">
+                    <h2>Cancellation Policy</h2>
+                    <p>We understand plans change. TravelHub offers flexible cancellation options to accommodate your needs while protecting property owners and service providers.</p>
+                    
+                    <h3>Property Booking Cancellations</h3>
+                    
+                    <h4>Flexible Cancellation</h4>
+                    <ul>
+                        <li><strong>Full refund:</strong> Cancel up to 24 hours before check-in</li>
+                        <li><strong>50% refund:</strong> Cancel within 24 hours of check-in</li>
+                        <li><strong>No refund:</strong> Cancel after check-in</li>
+                        <li><strong>Service fee:</strong> Non-refundable service fees apply</li>
+                    </ul>
+                    
+                    <h4>Moderate Cancellation</h4>
+                    <ul>
+                        <li><strong>Full refund:</strong> Cancel up to 5 days before check-in</li>
+                        <li><strong>50% refund:</strong> Cancel within 5 days of check-in</li>
+                        <li><strong>No refund:</strong> Cancel within 48 hours or after check-in</li>
+                        <li><strong>Service fee:</strong> Non-refundable in all cases</li>
+                    </ul>
+                    
+                    <h4>Strict Cancellation</h4>
+                    <ul>
+                        <li><strong>Full refund:</strong> Cancel up to 14 days before check-in</li>
+                        <li><strong>50% refund:</strong> Cancel 7-14 days before check-in</li>
+                        <li><strong>No refund:</strong> Cancel within 7 days or after check-in</li>
+                        <li><strong>Service fee:</strong> Non-refundable in all cases</li>
+                    </ul>
+                    
+                    <h3>Service Order Cancellations</h3>
+                    
+                    <h4>Client Cancellations</h4>
+                    <ul>
+                        <li><strong>Full refund:</strong> Cancel 24+ hours before service</li>
+                        <li><strong>50% refund:</strong> Cancel 12-24 hours before service</li>
+                        <li><strong>No refund:</strong> Cancel within 12 hours or after start</li>
+                    </ul>
+                    
+                    <h4>Provider Cancellations</h4>
+                    <ul>
+                        <li>Providers who cancel receive penalties</li>
+                        <li>Clients receive full refunds for provider cancellations</li>
+                        <li>Emergency cancellations may be exempt from penalties</li>
+                    </ul>
+                    
+                    <h3>How to Cancel</h3>
+                    <ol>
+                        <li>Log in to your TravelHub account</li>
+                        <li>Go to "My Bookings" or "My Orders"</li>
+                        <li>Select the booking/order to cancel</li>
+                        <li>Click "Cancel" and follow the prompts</li>
+                        <li>Review refund amount and confirm</li>
+                    </ol>
+                    
+                    <h3>Refund Processing</h3>
+                    <ul>
+                        <li>Refunds processed within 5-10 business days</li>
+                        <li>Original payment method receives refund</li>
+                        <li>Email confirmation sent upon processing</li>
+                        <li>Service fees are non-refundable</li>
+                    </ul>
+                    
+                    <h3>Extenuating Circumstances</h3>
+                    <p>In cases of unforeseen events (natural disasters, serious illness, travel restrictions), we may provide exceptions to our standard policy. Contact support with documentation for review.</p>
+                    
+                    <h3>Dispute Resolution</h3>
+                    <p>If you disagree with a cancellation decision, you can file a dispute through your account. Our team will review and respond within 48 hours.</p>
+                    
+                    <h3>Questions?</h3>
+                    <p>Contact our support team at support@travelhub.com or call +1 (555) 987-6543 for assistance with cancellations.</p>
+                </div>`,
+                metaDescription: "TravelHub cancellation policy - Flexible options for property bookings and service orders with clear refund guidelines.",
+                metaKeywords: "cancellation policy, refund policy, booking cancellation, flexible cancellation, travelhub terms",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "contact",
+                pageName: "Contact Us",
+                title: "Get in Touch with TravelHub",
+                content: `<div class="prose max-w-none">
+                    <h2>Contact TravelHub</h2>
+                    <p>We're here to help! Reach out to us through any of the following channels.</p>
+                    
+                    <h3>Customer Support</h3>
+                    <p><strong>Available 24/7</strong></p>
+                    <ul>
+                        <li><strong>Live Chat:</strong> Click the chat icon in your dashboard</li>
+                        <li><strong>Email:</strong> support@travelhub.com</li>
+                        <li><strong>Phone:</strong> +1 (555) 987-6543</li>
+                        <li><strong>Response Time:</strong> Within 2 hours</li>
+                    </ul>
+                    
+                    <h3>Department Contacts</h3>
+                    
+                    <h4>General Inquiries</h4>
+                    <p>Email: info@travelhub.com<br/>Phone: +1 (555) 123-4567</p>
+                    
+                    <h4>Press & Media</h4>
+                    <p>Email: press@travelhub.com<br/>Phone: +1 (555) 123-4567</p>
+                    
+                    <h4>Partnerships</h4>
+                    <p>Email: partnerships@travelhub.com<br/>Phone: +1 (555) 234-5678</p>
+                    
+                    <h4>Safety & Trust</h4>
+                    <p>Email: safety@travelhub.com<br/>Emergency: +1 (555) 911-SAFE</p>
+                    
+                    <h4>Legal & Compliance</h4>
+                    <p>Email: legal@travelhub.com<br/>Phone: +1 (555) 345-6789</p>
+                    
+                    <h3>Office Locations</h3>
+                    
+                    <h4>Headquarters</h4>
+                    <p>
+                        TravelHub Inc.<br/>
+                        123 Travel Plaza, Suite 500<br/>
+                        San Francisco, CA 94102<br/>
+                        United States
+                    </p>
+                    
+                    <h4>European Office</h4>
+                    <p>
+                        TravelHub Europe<br/>
+                        456 Tourism Boulevard<br/>
+                        London EC1A 1BB<br/>
+                        United Kingdom
+                    </p>
+                    
+                    <h4>Asia-Pacific Office</h4>
+                    <p>
+                        TravelHub APAC<br/>
+                        789 Hospitality Street<br/>
+                        Singapore 018956<br/>
+                        Singapore
+                    </p>
+                    
+                    <h3>Social Media</h3>
+                    <ul>
+                        <li>Facebook: /travelhub</li>
+                        <li>Twitter: @travelhub</li>
+                        <li>Instagram: @travelhub</li>
+                        <li>LinkedIn: /company/travelhub</li>
+                    </ul>
+                    
+                    <h3>For Urgent Issues</h3>
+                    <p>If you have an urgent safety concern or emergency:</p>
+                    <ul>
+                        <li>Call our 24/7 emergency line: +1 (555) 911-SAFE</li>
+                        <li>Use the in-app emergency reporting feature</li>
+                        <li>Contact local authorities if necessary</li>
+                    </ul>
+                    
+                    <h3>Feedback & Suggestions</h3>
+                    <p>We value your feedback! Share your ideas and suggestions at feedback@travelhub.com</p>
+                </div>`,
+                metaDescription: "Contact TravelHub - 24/7 customer support, office locations, and department contacts. We're here to help!",
+                metaKeywords: "contact travelhub, customer support, help desk, phone number, email support",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "resources",
+                pageName: "Resources",
+                title: "TravelHub Resources for Travelers and Hosts",
+                content: `<div class="prose max-w-none">
+                    <h2>Resources & Guides</h2>
+                    <p>Helpful resources to make the most of your TravelHub experience.</p>
+                    
+                    <h3>For Travelers</h3>
+                    <h4>Travel Guides</h4>
+                    <ul>
+                        <li>Destination guides and local insights</li>
+                        <li>Packing tips and travel essentials</li>
+                        <li>Cultural etiquette and customs</li>
+                        <li>Transportation and getting around</li>
+                        <li>Budget travel tips</li>
+                    </ul>
+                    
+                    <h4>Booking Resources</h4>
+                    <ul>
+                        <li>How to find the perfect property</li>
+                        <li>Reading reviews effectively</li>
+                        <li>Understanding pricing and fees</li>
+                        <li>Communicating with hosts</li>
+                        <li>Making special requests</li>
+                    </ul>
+                    
+                    <h3>For Property Owners</h3>
+                    <h4>Hosting Guides</h4>
+                    <ul>
+                        <li>Creating an attractive listing</li>
+                        <li>Professional photography tips</li>
+                        <li>Pricing strategies and optimization</li>
+                        <li>Seasonal pricing best practices</li>
+                        <li>Managing bookings efficiently</li>
+                    </ul>
+                    
+                    <h4>Property Management</h4>
+                    <ul>
+                        <li>Maintenance and upkeep</li>
+                        <li>Guest communication templates</li>
+                        <li>House rules and guidelines</li>
+                        <li>Emergency preparedness</li>
+                        <li>Insurance and protection</li>
+                    </ul>
+                    
+                    <h3>For Service Providers</h3>
+                    <h4>Provider Success</h4>
+                    <ul>
+                        <li>Building your service profile</li>
+                        <li>Setting competitive pricing</li>
+                        <li>Managing service categories</li>
+                        <li>Creating service packages</li>
+                        <li>Maximizing bookings</li>
+                    </ul>
+                    
+                    <h4>Service Excellence</h4>
+                    <ul>
+                        <li>Quality standards and requirements</li>
+                        <li>Customer service best practices</li>
+                        <li>Handling special requests</li>
+                        <li>Building positive reviews</li>
+                        <li>Growing your business</li>
+                    </ul>
+                    
+                    <h3>Downloads & Templates</h3>
+                    <ul>
+                        <li>Guest welcome letter template</li>
+                        <li>House rules template</li>
+                        <li>Cleaning checklist</li>
+                        <li>Property inspection form</li>
+                        <li>Service agreement template</li>
+                    </ul>
+                    
+                    <h3>Video Tutorials</h3>
+                    <ul>
+                        <li>Getting started with TravelHub</li>
+                        <li>Creating your first listing</li>
+                        <li>Managing bookings and calendar</li>
+                        <li>Using the messaging system</li>
+                        <li>Understanding analytics</li>
+                    </ul>
+                    
+                    <h3>Community Forum</h3>
+                    <p>Connect with other hosts and providers, share experiences, and get advice from the TravelHub community.</p>
+                    
+                    <h3>Blog & Updates</h3>
+                    <p>Stay informed with our latest blog posts featuring travel tips, industry insights, and platform updates.</p>
+                </div>`,
+                metaDescription: "TravelHub resources - Guides, templates, and tutorials for travelers, property owners, and service providers.",
+                metaKeywords: "travelhub resources, travel guides, hosting tips, service provider guides, tutorials",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "community",
+                pageName: "Community",
+                title: "TravelHub Community - Connect and Share",
+                content: `<div class="prose max-w-none">
+                    <h2>Join the TravelHub Community</h2>
+                    <p>TravelHub is more than a platform—it's a global community of travelers, hosts, and service providers sharing experiences and creating connections.</p>
+                    
+                    <h3>Community Guidelines</h3>
+                    <p>Our community thrives on mutual respect, trust, and kindness. All members are expected to:</p>
+                    <ul>
+                        <li>Treat others with respect and courtesy</li>
+                        <li>Communicate honestly and transparently</li>
+                        <li>Respect property and privacy</li>
+                        <li>Follow local laws and regulations</li>
+                        <li>Report concerns promptly</li>
+                    </ul>
+                    
+                    <h3>Community Events</h3>
+                    <h4>Host Meetups</h4>
+                    <p>Connect with fellow hosts in your area to share tips, experiences, and best practices. Regular meetups are organized in major cities worldwide.</p>
+                    
+                    <h4>Provider Workshops</h4>
+                    <p>Educational workshops and training sessions help service providers improve their skills and grow their businesses.</p>
+                    
+                    <h4>Travel Experiences</h4>
+                    <p>Join group travel experiences and events organized by community members around the world.</p>
+                    
+                    <h3>Community Programs</h3>
+                    
+                    <h4>Superhosts Program</h4>
+                    <p>Recognition for hosts who consistently provide exceptional experiences. Benefits include:</p>
+                    <ul>
+                        <li>Special badge on your listing</li>
+                        <li>Priority customer support</li>
+                        <li>Exclusive resources and tips</li>
+                        <li>Networking opportunities</li>
+                        <li>Annual recognition events</li>
+                    </ul>
+                    
+                    <h4>Community Champions</h4>
+                    <p>Active community members who help others and contribute to platform improvement. Champions receive:</p>
+                    <ul>
+                        <li>Early access to new features</li>
+                        <li>Direct communication with TravelHub team</li>
+                        <li>Exclusive community events</li>
+                        <li>Recognition and rewards</li>
+                    </ul>
+                    
+                    <h3>Success Stories</h3>
+                    <p>Read inspiring stories from our community members who have built successful hosting businesses, traveled the world, and created lasting connections.</p>
+                    
+                    <h3>Forum & Discussions</h3>
+                    <p>Participate in community discussions on topics including:</p>
+                    <ul>
+                        <li>Hosting tips and tricks</li>
+                        <li>Travel recommendations</li>
+                        <li>Service provider best practices</li>
+                        <li>Platform feedback and suggestions</li>
+                        <li>Local insights and guides</li>
+                    </ul>
+                    
+                    <h3>Give Back</h3>
+                    <h4>Social Impact</h4>
+                    <p>TravelHub partners with local organizations to support communities through:</p>
+                    <ul>
+                        <li>Sustainable tourism initiatives</li>
+                        <li>Local business support programs</li>
+                        <li>Cultural preservation projects</li>
+                        <li>Educational opportunities</li>
+                        <li>Environmental protection</li>
+                    </ul>
+                    
+                    <h4>Volunteer Opportunities</h4>
+                    <p>Join community service projects and volunteer programs in destinations around the world.</p>
+                    
+                    <h3>Connect with Us</h3>
+                    <ul>
+                        <li>Join our community forum</li>
+                        <li>Follow us on social media</li>
+                        <li>Attend local events</li>
+                        <li>Share your story</li>
+                        <li>Provide feedback</li>
+                    </ul>
+                </div>`,
+                metaDescription: "Join the TravelHub community - Connect with travelers, hosts, and providers worldwide. Participate in events, programs, and discussions.",
+                metaKeywords: "travelhub community, host meetups, travel community, superhosts, community events",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+            {
+                pageKey: "sitemap",
+                pageName: "Sitemap",
+                title: "TravelHub Sitemap - Navigate Our Platform",
+                content: `<div class="prose max-w-none">
+                    <h2>Site Navigation</h2>
+                    <p>Complete guide to all pages and features on TravelHub.</p>
+                    
+                    <h3>Main Pages</h3>
+                    <ul>
+                        <li><a href="/">Home</a> - Explore destinations and search properties</li>
+                        <li><a href="/about">About Us</a> - Learn about TravelHub</li>
+                        <li><a href="/contact">Contact</a> - Get in touch with us</li>
+                    </ul>
+                    
+                    <h3>For Travelers</h3>
+                    <ul>
+                        <li><a href="/properties">Browse Properties</a> - Search accommodations</li>
+                        <li><a href="/services">Services</a> - Find local service providers</li>
+                        <li><a href="/my-bookings">My Bookings</a> - Manage your reservations</li>
+                        <li><a href="/favorites">Favorites</a> - Saved properties and services</li>
+                        <li><a href="/trip-planner">Trip Planner</a> - Plan your journey</li>
+                    </ul>
+                    
+                    <h3>For Property Owners</h3>
+                    <ul>
+                        <li><a href="/host-dashboard">Host Dashboard</a> - Manage your listings</li>
+                        <li><a href="/add-property">List Property</a> - Create new listing</li>
+                        <li><a href="/seasonal-pricing">Seasonal Pricing</a> - Manage pricing</li>
+                        <li><a href="/host-bookings">Bookings</a> - View reservations</li>
+                    </ul>
+                    
+                    <h3>For Service Providers</h3>
+                    <ul>
+                        <li><a href="/provider-dashboard">Provider Dashboard</a> - Manage services</li>
+                        <li><a href="/service-orders">Service Orders</a> - View and manage orders</li>
+                        <li><a href="/provider-earnings">Earnings</a> - Track your income</li>
+                        <li><a href="/provider-schedule">Schedule</a> - Manage availability</li>
+                    </ul>
+                    
+                    <h3>Account & Settings</h3>
+                    <ul>
+                        <li><a href="/login">Login</a> - Access your account</li>
+                        <li><a href="/register">Register</a> - Create new account</li>
+                        <li><a href="/profile">Profile</a> - Update your information</li>
+                        <li><a href="/settings">Settings</a> - Account preferences</li>
+                        <li><a href="/messages">Messages</a> - Communication center</li>
+                        <li><a href="/notifications">Notifications</a> - View alerts</li>
+                    </ul>
+                    
+                    <h3>Information & Support</h3>
+                    <ul>
+                        <li><a href="/help">Help Center</a> - FAQs and support</li>
+                        <li><a href="/safety">Safety</a> - Safety guidelines</li>
+                        <li><a href="/cancellation">Cancellation Policy</a> - Refund information</li>
+                        <li><a href="/resources">Resources</a> - Guides and tutorials</li>
+                        <li><a href="/community">Community</a> - Connect with others</li>
+                    </ul>
+                    
+                    <h3>Company</h3>
+                    <ul>
+                        <li><a href="/about">About Us</a> - Company information</li>
+                        <li><a href="/careers">Careers</a> - Job opportunities</li>
+                        <li><a href="/press">Press</a> - Media resources</li>
+                        <li><a href="/blog">Blog</a> - News and updates</li>
+                    </ul>
+                    
+                    <h3>Legal</h3>
+                    <ul>
+                        <li><a href="/terms">Terms of Service</a> - User agreement</li>
+                        <li><a href="/privacy">Privacy Policy</a> - Data protection</li>
+                        <li><a href="/cookie-policy">Cookie Policy</a> - Cookie usage</li>
+                    </ul>
+                    
+                    <h3>Admin (Restricted)</h3>
+                    <ul>
+                        <li>Admin Dashboard - Platform management</li>
+                        <li>User Management - Approve and manage users</li>
+                        <li>Content Management - CMS settings</li>
+                        <li>Analytics - Platform statistics</li>
+                    </ul>
+                </div>`,
+                metaDescription: "TravelHub sitemap - Complete navigation guide to all pages, features, and sections of our platform.",
+                metaKeywords: "travelhub sitemap, site navigation, page directory, platform guide",
+                isPublished: true,
+                updatedBy: adminId,
+            },
+        ];
+
+        await db.insert(cmsContent).values(cmsPages).onConflictDoNothing();
+        console.log(`✓ Created ${cmsPages.length} CMS content pages`);
 
         console.log("✅ Database seeding completed successfully!");
         console.log("\n🔐 Sample Credentials:");

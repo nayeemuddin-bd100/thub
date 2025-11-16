@@ -52,6 +52,7 @@ import OperationDashboard from "@/pages/operation-dashboard";
 import MarketingDashboard from "@/pages/marketing-dashboard";
 import CityManagerDashboard from "@/pages/city-manager-dashboard";
 import CountryManagerDashboard from "@/pages/country-manager-dashboard";
+import Settings from "@/pages/settings";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -106,6 +107,7 @@ function Router() {
           <Route path="/disputes" component={Disputes} />
           <Route path="/messages" component={Messages} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/settings" component={Settings} />
           <Route path="/support-dashboard" component={SupportDashboard} />
           <Route path="/billing-dashboard" component={BillingDashboard} />
           <Route path="/operation-dashboard" component={OperationDashboard} />

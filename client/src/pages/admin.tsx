@@ -1,12 +1,4 @@
-import ActivityLogs from "@/components/admin/ActivityLogs";
-import CancellationManagement from "@/components/admin/CancellationManagement";
-import EmailTemplates from "@/components/admin/EmailTemplates";
-import PlatformSettings from "@/components/admin/PlatformSettings";
-import PromotionalCodes from "@/components/admin/PromotionalCodes";
-import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
-import TerritoryManagement from "@/components/admin/TerritoryManagement";
 import RoleChangeRequests from "@/components/admin/RoleChangeRequests";
-import CreateStaffAccount from "@/components/admin/CreateStaffAccount";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -931,23 +923,6 @@ export default function AdminDashboard() {
                                     {t("admin.service_orders")}
                                 </span>
                             </button>
-
-                            <button
-                                onClick={() => {
-                                    setActiveSection("settings");
-                                    setSidebarOpen(false);
-                                }}
-                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                                    activeSection === "settings"
-                                        ? "bg-primary text-primary-foreground"
-                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                }`}
-                            >
-                                <Settings className="w-5 h-5" />
-                                <span className="text-sm">
-                                    {t("dashboard.settings")}
-                                </span>
-                            </button>
                         </nav>
 
                         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
@@ -1112,21 +1087,6 @@ export default function AdminDashboard() {
                         <Briefcase className="w-5 h-5" />
                         <span className="text-sm">
                             {t("admin.service_orders")}
-                        </span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSection("settings")}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                            activeSection === "settings"
-                                ? "bg-primary text-primary-foreground"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                        data-testid="nav-settings"
-                    >
-                        <Settings className="w-5 h-5" />
-                        <span className="text-sm">
-                            {t("dashboard.settings")}
                         </span>
                     </button>
                 </nav>
@@ -3759,151 +3719,6 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Settings Section */}
-                    {activeSection === "settings" && (
-                        <div>
-                            <h2 className="text-3xl font-bold text-foreground mb-8">
-                                {t("admin.settings_management")}
-                            </h2>
-
-                            <Tabs defaultValue="platform" className="space-y-6">
-                                <div className="relative flex items-center gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="shrink-0 h-10 w-10"
-                                        onClick={() => {
-                                            const container = document.getElementById('settings-tabs-container');
-                                            if (container) container.scrollBy({ left: -200, behavior: 'smooth' });
-                                        }}
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                    </Button>
-                                    <div id="settings-tabs-container" className="overflow-x-auto scrollbar-hide flex-1">
-                                        <TabsList className="inline-flex w-max">
-                                            <TabsTrigger
-                                                value="platform"
-                                                data-testid="tab-platform-settings"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.platform_settings")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="associations"
-                                                data-testid="tab-associations"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.property_service_assoc")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="promocodes"
-                                                data-testid="tab-promocodes"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.promo_codes")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="cancellations"
-                                                data-testid="tab-cancellations"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.cancellations")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="territories"
-                                                data-testid="tab-territories"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.territories")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="emails"
-                                                data-testid="tab-emails"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.email_templates")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="logs"
-                                                data-testid="tab-logs"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin.activity_logs")}
-                                            </TabsTrigger>
-                                            <TabsTrigger
-                                                value="staff"
-                                                data-testid="tab-staff"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {t("admin_labels.internal_staff")}
-                                            </TabsTrigger>
-                                        </TabsList>
-                                    </div>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        className="shrink-0 h-10 w-10"
-                                        onClick={() => {
-                                            const container = document.getElementById('settings-tabs-container');
-                                            if (container) container.scrollBy({ left: 200, behavior: 'smooth' });
-                                        }}
-                                    >
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
-                                </div>
-
-                                <TabsContent
-                                    value="platform"
-                                    className="space-y-4"
-                                >
-                                    <PlatformSettings />
-                                </TabsContent>
-
-                                <TabsContent
-                                    value="associations"
-                                    className="space-y-4"
-                                >
-                                    <PropertyServiceAssociation />
-                                </TabsContent>
-
-                                <TabsContent
-                                    value="promocodes"
-                                    className="space-y-4"
-                                >
-                                    <PromotionalCodes />
-                                </TabsContent>
-
-                                <TabsContent
-                                    value="cancellations"
-                                    className="space-y-4"
-                                >
-                                    <CancellationManagement />
-                                </TabsContent>
-
-                                <TabsContent
-                                    value="territories"
-                                    className="space-y-4"
-                                >
-                                    <TerritoryManagement />
-                                </TabsContent>
-
-                                <TabsContent
-                                    value="emails"
-                                    className="space-y-4"
-                                >
-                                    <EmailTemplates />
-                                </TabsContent>
-
-                                <TabsContent value="logs" className="space-y-4">
-                                    <ActivityLogs />
-                                </TabsContent>
-
-                                <TabsContent value="staff" className="space-y-4">
-                                    <CreateStaffAccount />
-                                </TabsContent>
-                            </Tabs>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
