@@ -1,0 +1,38 @@
+8:08:06 PM [express] GET /api/notifications 304 in 24ms :: []
+8:08:15 PM [express] POST /api/bookings 500 in 32ms :: {"message":"Failed to create booking"}
+8:08:36 PM [express] GET /api/ 200 in 2ms
+8:09:06 PM [express] GET /api/ 200 in 2ms
+8:09:36 PM [express] GET /api/ 200 in 2ms
+Error creating booking: TypeError: value.toISOString is not a function
+    at PgTimestamp.mapToDriverValue (file:///app/node_modules/drizzle-orm/pg-core/columns/timestamp.js:34:18)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:131:73
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:92:21
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:95:21
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+Error creating booking: TypeError: value.toISOString is not a function
+    at PgTimestamp.mapToDriverValue (file:///app/node_modules/drizzle-orm/pg-core/columns/timestamp.js:34:18)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:131:73
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:92:21
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+    at file:///app/node_modules/drizzle-orm/sql/sql.js:95:21
+    at Array.map (<anonymous>)
+    at SQL.buildQueryFromSourceParams (file:///app/node_modules/drizzle-orm/sql/sql.js:73:32)
+8:10:06 PM [express] GET /api/ 200 in 2ms
+8:10:06 PM [express] GET /api/notifications 304 in 23ms :: []
+8:10:06 PM [express] GET /api/notifications/unread-count 304 in 23ms :: {"count":"0"}
+8:10:24 PM [express] POST /api/reviews 500 in 38ms :: {"message":"Failed to create review"}
+8:10:36 PM [express] GET /api/ 200 in 2ms
+8:11:07 PM [express] GET /api/ 200 in 1ms
+Error creating review: TypeError: result[0].avgRating.toFixed is not a function
+    at DatabaseStorage.updatePropertyRating (file:///app/dist/index.js:1843:37)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async DatabaseStorage.createReview (file:///app/dist/index.js:1823:7)
+    at async file:///app/dist/index.js:7607:22

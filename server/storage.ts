@@ -292,7 +292,16 @@ export interface IStorage {
     deleteProviderMaterial(id: string): Promise<void>;
 
     // Service Tasks
+    getAllServiceTasks(): Promise<ServiceTask[]>;
     getServiceTasks(categoryId: string): Promise<ServiceTask[]>;
+    createServiceTask(
+        task: Omit<ServiceTask, "id" | "createdAt">
+    ): Promise<ServiceTask>;
+    updateServiceTask(
+        id: string,
+        updates: Partial<Omit<ServiceTask, "id" | "createdAt">>
+    ): Promise<ServiceTask>;
+    deleteServiceTask(id: string): Promise<void>;
 
     // Service Orders
     createServiceOrder(
@@ -1645,12 +1654,45 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Service Tasks
+    async getAllServiceTasks(): Promise<ServiceTask[]> {
+        return await db
+            .select()
+            .from(serviceTasks)
+            .orderBy(asc(serviceTasks.sortOrder), asc(serviceTasks.taskName));
+    }
+
     async getServiceTasks(categoryId: string): Promise<ServiceTask[]> {
         return await db
             .select()
             .from(serviceTasks)
             .where(eq(serviceTasks.categoryId, categoryId))
-            .orderBy(asc(serviceTasks.taskName));
+            .orderBy(asc(serviceTasks.sortOrder), asc(serviceTasks.taskName));
+    }
+
+    async createServiceTask(
+        task: Omit<ServiceTask, "id" | "createdAt">
+    ): Promise<ServiceTask> {
+        const [newTask] = await db
+            .insert(serviceTasks)
+            .values(task)
+            .returning();
+        return newTask;
+    }
+
+    async updateServiceTask(
+        id: string,
+        updates: Partial<Omit<ServiceTask, "id" | "createdAt">>
+    ): Promise<ServiceTask> {
+        const [updatedTask] = await db
+            .update(serviceTasks)
+            .set(updates)
+            .where(eq(serviceTasks.id, id))
+            .returning();
+        return updatedTask;
+    }
+
+    async deleteServiceTask(id: string): Promise<void> {
+        await db.delete(serviceTasks).where(eq(serviceTasks.id, id));
     }
 
     // Service Orders

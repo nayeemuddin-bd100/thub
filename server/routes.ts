@@ -2900,6 +2900,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Service Tasks routes
+    app.get("/api/admin/service-tasks", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            const tasks = await storage.getAllServiceTasks();
+            res.json(tasks);
+        } catch (error) {
+            console.error("Error fetching service tasks:", error);
+            res.status(500).json({
+                message: "Failed to fetch service tasks",
+            });
+        }
+    });
+
+    app.get("/api/service-tasks/:categoryId", async (req, res) => {
+        try {
+            const tasks = await storage.getServiceTasks(req.params.categoryId);
+            res.json(tasks);
+        } catch (error) {
+            console.error("Error fetching service tasks:", error);
+            res.status(500).json({
+                message: "Failed to fetch service tasks",
+            });
+        }
+    });
+
+    app.post("/api/admin/service-tasks", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            // Validate request body
+            const taskSchema = z.object({
+                categoryId: z.string().uuid(),
+                taskCode: z.string().min(1),
+                taskName: z.string().min(1),
+                description: z.string().optional(),
+                isRequired: z.boolean().optional(),
+                defaultDuration: z.coerce.number().int().positive().optional(),
+                sortOrder: z.coerce.number().int().optional(),
+            });
+
+            const validatedData = taskSchema.parse(req.body);
+
+            const task = await storage.createServiceTask(validatedData);
+            res.status(201).json(task);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    message: "Invalid request data",
+                    errors: error.errors,
+                });
+            }
+            console.error("Error creating service task:", error);
+            res.status(500).json({
+                message: "Failed to create service task",
+            });
+        }
+    });
+
+    app.put("/api/admin/service-tasks/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            // Validate request body
+            const taskUpdateSchema = z.object({
+                categoryId: z.string().uuid().optional(),
+                taskCode: z.string().min(1).optional(),
+                taskName: z.string().min(1).optional(),
+                description: z.string().optional(),
+                isRequired: z.boolean().optional(),
+                defaultDuration: z.coerce.number().int().positive().optional(),
+                sortOrder: z.coerce.number().int().optional(),
+            });
+
+            const validatedData = taskUpdateSchema.parse(req.body);
+
+            const task = await storage.updateServiceTask(req.params.id, validatedData);
+            res.json(task);
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return res.status(400).json({
+                    message: "Invalid request data",
+                    errors: error.errors,
+                });
+            }
+            console.error("Error updating service task:", error);
+            res.status(500).json({
+                message: "Failed to update service task",
+            });
+        }
+    });
+
+    app.delete("/api/admin/service-tasks/:id", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "admin") {
+                return res
+                    .status(403)
+                    .json({ message: "Admin privileges required" });
+            }
+
+            await storage.deleteServiceTask(req.params.id);
+            res.json({ message: "Service task deleted successfully" });
+        } catch (error) {
+            console.error("Error deleting service task:", error);
+            res.status(500).json({
+                message: "Failed to delete service task",
+            });
+        }
+    });
+
     // Seasonal Pricing Routes
     // Get all seasonal pricing rules (for property owner or admin)
     app.get("/api/seasonal-pricing", requireAuth, async (req: any, res) => {

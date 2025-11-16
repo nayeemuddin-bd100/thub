@@ -206,6 +206,9 @@ export default function AdminDashboard() {
     const [editingProvider, setEditingProvider] = useState<any>(null);
     const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<any>(null);
+    const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+    const [editingTask, setEditingTask] = useState<any>(null);
+    const [taskCategoryFilter, setTaskCategoryFilter] = useState("all");
 
     // Redirect if not admin
     if (user?.role !== "admin") {
@@ -252,6 +255,10 @@ export default function AdminDashboard() {
 
     const { data: serviceCategories } = useQuery<ServiceCategory[]>({
         queryKey: ["/api/service-categories"],
+    });
+
+    const { data: serviceTasks, isLoading: tasksLoading } = useQuery<any[]>({
+        queryKey: ["/api/admin/service-tasks"],
     });
 
     // Update booking status mutation
@@ -704,6 +711,64 @@ export default function AdminDashboard() {
         },
     });
 
+    // Service Task mutations
+    const saveTaskMutation = useMutation({
+        mutationFn: async (data: any) => {
+            const url = editingTask
+                ? `/api/admin/service-tasks/${editingTask.id}`
+                : "/api/admin/service-tasks";
+            const method = editingTask ? "PUT" : "POST";
+            const response = await apiRequest(method, url, data);
+            return await response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["/api/admin/service-tasks"],
+            });
+            toast({
+                title: "Success",
+                description: editingTask
+                    ? "Task updated successfully"
+                    : "Task created successfully",
+            });
+            setTaskDialogOpen(false);
+            setEditingTask(null);
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to save task",
+                variant: "destructive",
+            });
+        },
+    });
+
+    const deleteTaskMutation = useMutation({
+        mutationFn: async (id: string) => {
+            const response = await apiRequest(
+                "DELETE",
+                `/api/admin/service-tasks/${id}`
+            );
+            return await response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["/api/admin/service-tasks"],
+            });
+            toast({
+                title: "Success",
+                description: "Task deleted successfully",
+            });
+        },
+        onError: (error: any) => {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to delete task",
+                variant: "destructive",
+            });
+        },
+    });
+
     const resetProviderForm = () => {
         setProviderForm({
             userId: "",
@@ -775,6 +840,25 @@ export default function AdminDashboard() {
         resetCategoryForm();
         setCategoryDialogOpen(true);
     };
+
+    // Service Task handlers
+    const handleNewTask = () => {
+        setEditingTask(null);
+        setTaskDialogOpen(true);
+    };
+
+    const handleEditTask = (task: any) => {
+        setEditingTask(task);
+        setTaskDialogOpen(true);
+    };
+
+    // Filter tasks by category
+    const filteredTasks =
+        taskCategoryFilter === "all"
+            ? serviceTasks
+            : serviceTasks?.filter(
+                  (task: any) => task.categoryId === taskCategoryFilter
+              );
 
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
@@ -2999,6 +3083,7 @@ export default function AdminDashboard() {
                                         </h3>
                                         <Button
                                             size="sm"
+                                            onClick={handleNewTask}
                                             data-testid="button-add-task"
                                         >
                                             <Plus className="w-4 h-4 mr-2" />
@@ -3007,7 +3092,10 @@ export default function AdminDashboard() {
                                     </div>
 
                                     <div className="flex gap-4 mb-4">
-                                        <Select defaultValue="all">
+                                        <Select
+                                            value={taskCategoryFilter}
+                                            onValueChange={setTaskCategoryFilter}
+                                        >
                                             <SelectTrigger className="w-[200px]">
                                                 <SelectValue
                                                     placeholder={t(
@@ -3033,16 +3121,208 @@ export default function AdminDashboard() {
                                         </Select>
                                     </div>
 
-                                    <Card className="p-8 text-center">
-                                        <p className="text-muted-foreground">
-                                            Service tasks management coming soon
-                                        </p>
-                                        <p className="text-sm text-muted-foreground mt-2">
-                                            This will display all 36+ predefined
-                                            maid service tasks and other
-                                            service-specific tasks
-                                        </p>
-                                    </Card>
+                                    {/* Task Create/Edit Dialog */}
+                                    <Dialog
+                                        open={taskDialogOpen}
+                                        onOpenChange={setTaskDialogOpen}
+                                    >
+                                        <DialogContent className="max-w-md">
+                                            <DialogHeader>
+                                                <DialogTitle>
+                                                    {editingTask ? "Edit Task" : "New Task"}
+                                                </DialogTitle>
+                                            </DialogHeader>
+                                            <div className="space-y-4 py-4">
+                                                <div>
+                                                    <Label>Category</Label>
+                                                    <Select
+                                                        defaultValue={editingTask?.categoryId}
+                                                        onValueChange={(value) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, categoryId: value });
+                                                            } else {
+                                                                setEditingTask({ categoryId: value });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select category" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {serviceCategories?.map((cat) => (
+                                                                <SelectItem key={cat.id} value={cat.id}>
+                                                                    {cat.name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <Label>Task Code</Label>
+                                                    <Input
+                                                        placeholder="CLEAN_KITCHEN"
+                                                        defaultValue={editingTask?.taskCode}
+                                                        onChange={(e) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, taskCode: e.target.value });
+                                                            } else {
+                                                                setEditingTask({ taskCode: e.target.value });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Task Name</Label>
+                                                    <Input
+                                                        placeholder="Deep Clean Kitchen"
+                                                        defaultValue={editingTask?.taskName}
+                                                        onChange={(e) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, taskName: e.target.value });
+                                                            } else {
+                                                                setEditingTask({ taskName: e.target.value });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Description</Label>
+                                                    <Textarea
+                                                        placeholder="Complete kitchen deep cleaning..."
+                                                        defaultValue={editingTask?.description}
+                                                        onChange={(e) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, description: e.target.value });
+                                                            } else {
+                                                                setEditingTask({ description: e.target.value });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Default Duration (minutes)</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="90"
+                                                        defaultValue={editingTask?.defaultDuration}
+                                                        onChange={(e) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, defaultDuration: parseInt(e.target.value) });
+                                                            } else {
+                                                                setEditingTask({ defaultDuration: parseInt(e.target.value) });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label>Sort Order</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="1"
+                                                        defaultValue={editingTask?.sortOrder}
+                                                        onChange={(e) => {
+                                                            if (editingTask) {
+                                                                setEditingTask({ ...editingTask, sortOrder: parseInt(e.target.value) });
+                                                            } else {
+                                                                setEditingTask({ sortOrder: parseInt(e.target.value) });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                        setTaskDialogOpen(false);
+                                                        setEditingTask(null);
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    onClick={() => saveTaskMutation.mutate(editingTask)}
+                                                    disabled={!editingTask?.taskName || !editingTask?.categoryId || saveTaskMutation.isPending}
+                                                >
+                                                    {saveTaskMutation.isPending ? "Saving..." : (editingTask?.id ? "Update" : "Create")}
+                                                </Button>
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    {tasksLoading ? (
+                                        <div className="space-y-4">
+                                            {[1, 2, 3].map((i) => (
+                                                <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
+                                            ))}
+                                        </div>
+                                    ) : filteredTasks && filteredTasks.length > 0 ? (
+                                        <div className="grid gap-4">
+                                            {filteredTasks.map((task: any) => {
+                                                const category = serviceCategories?.find(c => c.id === task.categoryId);
+                                                return (
+                                                    <Card key={task.id} className="p-4" data-testid={`task-card-${task.id}`}>
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <h4 className="font-semibold text-foreground">
+                                                                        {task.taskName}
+                                                                    </h4>
+                                                                    <Badge variant="outline" className="text-xs">
+                                                                        {task.taskCode}
+                                                                    </Badge>
+                                                                </div>
+                                                                <p className="text-sm text-muted-foreground mb-2">
+                                                                    {task.description}
+                                                                </p>
+                                                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                                    <span>Category: {category?.name || "N/A"}</span>
+                                                                    {task.defaultDuration && (
+                                                                        <span>Duration: {task.defaultDuration}min</span>
+                                                                    )}
+                                                                    <span>Order: {task.sortOrder}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => handleEditTask(task)}
+                                                                    data-testid={`button-edit-task-${task.id}`}
+                                                                >
+                                                                    <Edit className="w-4 h-4" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    onClick={() => {
+                                                                        if (confirm("Are you sure you want to delete this task?")) {
+                                                                            deleteTaskMutation.mutate(task.id);
+                                                                        }
+                                                                    }}
+                                                                    disabled={deleteTaskMutation.isPending}
+                                                                    data-testid={`button-delete-task-${task.id}`}
+                                                                >
+                                                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    </Card>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <Card className="p-8 text-center">
+                                            <p className="text-muted-foreground">
+                                                No service tasks found
+                                            </p>
+                                            <p className="text-sm text-muted-foreground mt-2">
+                                                {taskCategoryFilter === "all" 
+                                                    ? "Add your first service task to get started" 
+                                                    : "No tasks found for the selected category"}
+                                            </p>
+                                        </Card>
+                                    )}
                                 </TabsContent>
                             </Tabs>
                         </div>
