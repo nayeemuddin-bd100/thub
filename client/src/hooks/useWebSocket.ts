@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface WebSocketMessage {
-  type: 'auth_success' | 'new_message' | 'notification' | 'error';
+  type: 'auth_success' | 'new_message' | 'notification' | 'error' | 'typing_start' | 'typing_stop' | 'message_delivered' | 'message_read' | 'user_online' | 'user_offline';
   message?: any;
   data?: any;
   unreadCount?: number;
   error?: string;
+  userId?: string;
+  messageId?: string;
+  timestamp?: string;
 }
 
 interface UseWebSocketReturn {
@@ -14,6 +17,12 @@ interface UseWebSocketReturn {
   lastMessage: any | null;
   lastNotification: any | null;
   unreadCount: number | null;
+  typingUsers: Set<string>;
+  sendTypingStart: (receiverId: string) => void;
+  sendTypingStop: (receiverId: string) => void;
+  sendMessageDelivered: (messageId: string) => void;
+  sendMessageRead: (messageId: string) => void;
+  onlineUsers: Set<string>;
 }
 
 export function useWebSocket(userId: string | null): UseWebSocketReturn {
@@ -21,10 +30,13 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
   const [lastMessage, setLastMessage] = useState<any | null>(null);
   const [lastNotification, setLastNotification] = useState<any | null>(null);
   const [unreadCount, setUnreadCount] = useState<number | null>(null);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
+  const typingTimeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
 
   useEffect(() => {
     if (!userId) {
@@ -68,6 +80,57 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
               });
               if (data.unreadCount !== undefined) {
                 setUnreadCount(data.unreadCount);
+              }
+            } else if (data.type === 'typing_start') {
+              if (data.userId) {
+                setTypingUsers(prev => new Set(prev).add(data.userId!));
+                
+                // Clear any existing timeout for this user
+                if (typingTimeoutRef.current[data.userId]) {
+                  clearTimeout(typingTimeoutRef.current[data.userId]);
+                }
+                
+                // Auto-stop typing after 5 seconds
+                typingTimeoutRef.current[data.userId] = setTimeout(() => {
+                  setTypingUsers(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(data.userId!);
+                    return newSet;
+                  });
+                  delete typingTimeoutRef.current[data.userId!];
+                }, 5000);
+              }
+            } else if (data.type === 'typing_stop') {
+              if (data.userId) {
+                setTypingUsers(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(data.userId!);
+                  return newSet;
+                });
+                
+                // Clear timeout
+                if (typingTimeoutRef.current[data.userId]) {
+                  clearTimeout(typingTimeoutRef.current[data.userId]);
+                  delete typingTimeoutRef.current[data.userId];
+                }
+              }
+            } else if (data.type === 'message_delivered' || data.type === 'message_read') {
+              // Trigger a message status update
+              setLastMessage({ 
+                ...data, 
+                _statusUpdate: Date.now() 
+              });
+            } else if (data.type === 'user_online') {
+              if (data.userId) {
+                setOnlineUsers(prev => new Set(prev).add(data.userId!));
+              }
+            } else if (data.type === 'user_offline') {
+              if (data.userId) {
+                setOnlineUsers(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(data.userId!);
+                  return newSet;
+                });
               }
             } else if (data.type === 'error') {
               console.error('WebSocket error:', data.error);
@@ -123,11 +186,33 @@ export function useWebSocket(userId: string | null): UseWebSocketReturn {
     }
   };
 
+  const sendTypingStart = (receiverId: string) => {
+    sendMessage({ type: 'typing_start', receiverId });
+  };
+
+  const sendTypingStop = (receiverId: string) => {
+    sendMessage({ type: 'typing_stop', receiverId });
+  };
+
+  const sendMessageDelivered = (messageId: string) => {
+    sendMessage({ type: 'message_delivered', messageId });
+  };
+
+  const sendMessageRead = (messageId: string) => {
+    sendMessage({ type: 'message_read', messageId });
+  };
+
   return {
     isConnected,
     sendMessage,
     lastMessage,
     lastNotification,
     unreadCount,
+    typingUsers,
+    sendTypingStart,
+    sendTypingStop,
+    sendMessageDelivered,
+    sendMessageRead,
+    onlineUsers,
   };
 }

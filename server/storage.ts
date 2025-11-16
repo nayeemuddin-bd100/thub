@@ -207,10 +207,12 @@ export interface IStorage {
 
     // Message operations
     sendMessage(
-        message: Omit<Message, "id" | "createdAt" | "isRead">
+        message: Omit<Message, "id" | "createdAt" | "isRead" | "deliveredAt" | "readAt">
     ): Promise<Message>;
     getConversation(userId1: string, userId2: string): Promise<Message[]>;
     markMessagesAsRead(userId: string, senderId: string): Promise<void>;
+    markMessageAsDelivered(messageId: string): Promise<void>;
+    markMessageAsRead(messageId: string): Promise<void>;
     getUserConversations(userId: string): Promise<any[]>;
 
     // Notification operations
@@ -1118,7 +1120,7 @@ export class DatabaseStorage implements IStorage {
 
     // Message operations
     async sendMessage(
-        message: Omit<Message, "id" | "createdAt" | "isRead">
+        message: Omit<Message, "id" | "createdAt" | "isRead" | "deliveredAt" | "readAt">
     ): Promise<Message> {
         const [newMessage] = await db
             .insert(messages)
@@ -1155,7 +1157,7 @@ export class DatabaseStorage implements IStorage {
     async markMessagesAsRead(userId: string, senderId: string): Promise<void> {
         await db
             .update(messages)
-            .set({ isRead: true })
+            .set({ isRead: true, readAt: new Date() })
             .where(
                 and(
                     eq(messages.receiverId, userId),
@@ -1163,6 +1165,20 @@ export class DatabaseStorage implements IStorage {
                     eq(messages.isRead, false)
                 )
             );
+    }
+
+    async markMessageAsDelivered(messageId: string): Promise<void> {
+        await db
+            .update(messages)
+            .set({ deliveredAt: new Date() })
+            .where(eq(messages.id, messageId));
+    }
+
+    async markMessageAsRead(messageId: string): Promise<void> {
+        await db
+            .update(messages)
+            .set({ isRead: true, readAt: new Date() })
+            .where(eq(messages.id, messageId));
     }
 
     async getUserConversations(userId: string): Promise<any[]> {

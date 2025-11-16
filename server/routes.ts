@@ -16,6 +16,7 @@ import {
     blogPosts,
     serviceBookings,
     bookings,
+    messages,
 } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -8419,6 +8420,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Export helper for use in notification creation
     (storage as any).sendNotificationToUser = sendNotificationToUser;
 
+    // Helper function to broadcast user online status
+    const broadcastUserOnline = (userId: string) => {
+        connectedClients.forEach((ws, clientId) => {
+            if (clientId !== userId && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: "user_online",
+                    userId: userId,
+                }));
+            }
+        });
+    };
+
+    // Helper function to broadcast user offline status
+    const broadcastUserOffline = (userId: string) => {
+        connectedClients.forEach((ws, clientId) => {
+            if (clientId !== userId && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: "user_offline",
+                    userId: userId,
+                }));
+            }
+        });
+    };
+
     wss.on("connection", async (ws, req) => {
         let userId: string | null = null;
         let authenticated = false;
@@ -8484,9 +8509,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
         }
 
+        // Broadcast online status to all connected clients
+        broadcastUserOnline(userId);
+
+        ws.on("message", async (data) => {
+            try {
+                const message = JSON.parse(data.toString());
+
+                if (message.type === "typing_start" && message.receiverId) {
+                    const receiverWs = connectedClients.get(message.receiverId);
+                    if (receiverWs && receiverWs.readyState === 1) {
+                        receiverWs.send(JSON.stringify({
+                            type: "typing_start",
+                            userId: userId,
+                        }));
+                    }
+                } else if (message.type === "typing_stop" && message.receiverId) {
+                    const receiverWs = connectedClients.get(message.receiverId);
+                    if (receiverWs && receiverWs.readyState === 1) {
+                        receiverWs.send(JSON.stringify({
+                            type: "typing_stop",
+                            userId: userId,
+                        }));
+                    }
+                } else if (message.type === "message_delivered" && message.messageId) {
+                    await storage.markMessageAsDelivered(message.messageId);
+                    
+                    // Notify sender that message was delivered
+                    const msg = await db.select().from(messages).where(eq(messages.id, message.messageId)).limit(1);
+                    if (msg.length > 0) {
+                        const senderWs = connectedClients.get(msg[0].senderId);
+                        if (senderWs && senderWs.readyState === 1) {
+                            senderWs.send(JSON.stringify({
+                                type: "message_delivered",
+                                messageId: message.messageId,
+                                timestamp: new Date().toISOString(),
+                            }));
+                        }
+                    }
+                } else if (message.type === "message_read" && message.messageId) {
+                    await storage.markMessageAsRead(message.messageId);
+                    
+                    // Notify sender that message was read
+                    const msg = await db.select().from(messages).where(eq(messages.id, message.messageId)).limit(1);
+                    if (msg.length > 0) {
+                        const senderWs = connectedClients.get(msg[0].senderId);
+                        if (senderWs && senderWs.readyState === 1) {
+                            senderWs.send(JSON.stringify({
+                                type: "message_read",
+                                messageId: message.messageId,
+                                timestamp: new Date().toISOString(),
+                            }));
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Error processing WebSocket message:", error);
+            }
+        });
+
         ws.on("close", () => {
             if (userId) {
                 connectedClients.delete(userId);
+                // Broadcast offline status to all connected clients
+                broadcastUserOffline(userId);
             }
         });
 

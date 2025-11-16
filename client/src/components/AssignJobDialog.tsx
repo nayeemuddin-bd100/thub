@@ -109,7 +109,7 @@ export default function AssignJobDialog({
   });
 
   const availableProviders = providers.filter(
-    (p) => p.approvalStatus === "approved" && p.availability === "available"
+    (p) => p.approvalStatus === "approved"
   );
 
   return (

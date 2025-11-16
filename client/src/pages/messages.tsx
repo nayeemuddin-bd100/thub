@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, ArrowLeft, Plus, Home } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Plus, Home, Check, CheckCheck } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -21,6 +21,8 @@ interface Message {
   receiverId: string;
   content: string;
   isRead: boolean;
+  deliveredAt: string | null;
+  readAt: string | null;
   createdAt: string;
 }
 
@@ -68,8 +70,11 @@ export default function MessagesPage() {
     queryKey: ['/api/auth/user'],
   });
 
-  // WebSocket connection
-  const { isConnected, lastMessage } = useWebSocket(currentUser?.id || null);
+  // WebSocket connection with typing and online status
+  const { isConnected, lastMessage, typingUsers, sendTypingStart, sendTypingStop, sendMessageDelivered, sendMessageRead, onlineUsers } = useWebSocket(currentUser?.id || null);
+  
+  // Typing indicator timeout
+  const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Fetch conversations list
   const { data: conversations = [], isLoading: loadingConversations } = useQuery<Conversation[]>({
@@ -125,28 +130,40 @@ export default function MessagesPage() {
     },
   });
 
-  // Handle new WebSocket messages
+  // Handle new WebSocket messages and status updates
   useEffect(() => {
     if (lastMessage) {
       const msg = lastMessage;
       
-      // If message is for current conversation, add it
-      if (msg.senderId === selectedUserId || msg.receiverId === selectedUserId) {
-        queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
+      // Handle status updates (message_delivered, message_read)
+      if (msg._statusUpdate) {
+        // Just refresh the messages to show updated status
+        if (selectedUserId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
+        }
+        return;
       }
       
-      // Update conversations list
-      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
-      
-      // Show notification if not in current conversation
-      if (msg.senderId !== selectedUserId) {
-        toast({
-          title: t('messages.new_message'),
-          description: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
-        });
+      // Handle regular new messages
+      if (msg.id && msg.content) {
+        // If message is for current conversation, add it
+        if (msg.senderId === selectedUserId || msg.receiverId === selectedUserId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/messages', selectedUserId] });
+        }
+        
+        // Update conversations list
+        queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+        
+        // Show notification if not in current conversation
+        if (msg.senderId !== selectedUserId && msg.senderId !== currentUser?.id) {
+          toast({
+            title: t('messages.new_message'),
+            description: msg.content.substring(0, 50) + (msg.content.length > 50 ? '...' : ''),
+          });
+        }
       }
     }
-  }, [lastMessage, selectedUserId, toast]);
+  }, [lastMessage, selectedUserId, toast, currentUser?.id]);
 
   // Mark messages as read when conversation is opened
   useEffect(() => {
@@ -425,11 +442,19 @@ export default function MessagesPage() {
                           ? `${selectedUser.firstName} ${selectedUser.lastName}`
                           : 'User'}
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedConversation 
-                        ? selectedConversation.userEmail
-                        : selectedUser?.email || ''}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-muted-foreground">
+                        {selectedConversation 
+                          ? selectedConversation.userEmail
+                          : selectedUser?.email || ''}
+                      </p>
+                      {selectedUserId && onlineUsers.has(selectedUserId) && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="text-xs text-green-600 font-medium">Online</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -447,6 +472,22 @@ export default function MessagesPage() {
                     <div className="space-y-4">
                       {messages.map((msg) => {
                         const isSent = msg.senderId === currentUser.id;
+                        
+                        // Determine message status for sent messages
+                        let statusIcon = null;
+                        if (isSent) {
+                          if (msg.readAt) {
+                            // Read - double blue checkmarks
+                            statusIcon = <CheckCheck className="w-4 h-4 text-blue-500" />;
+                          } else if (msg.deliveredAt) {
+                            // Delivered - double gray checkmarks
+                            statusIcon = <CheckCheck className="w-4 h-4" />;
+                          } else {
+                            // Sent - single gray checkmark
+                            statusIcon = <Check className="w-4 h-4" />;
+                          }
+                        }
+                        
                         return (
                           <div
                             key={msg.id}
@@ -461,13 +502,14 @@ export default function MessagesPage() {
                               }`}
                             >
                               <p className="break-words">{msg.content}</p>
-                              <p
-                                className={`text-xs mt-1 ${
+                              <div
+                                className={`flex items-center gap-1 justify-end mt-1 text-xs ${
                                   isSent ? 'text-primary-foreground/70' : 'text-muted-foreground'
                                 }`}
                               >
-                                {format(new Date(msg.createdAt), 'h:mm a')}
-                              </p>
+                                <span>{format(new Date(msg.createdAt), 'h:mm a')}</span>
+                                {statusIcon}
+                              </div>
                             </div>
                           </div>
                         );
@@ -477,10 +519,31 @@ export default function MessagesPage() {
                   )}
                 </ScrollArea>
                 <div className="p-4 border-t">
+                  {typingUsers.has(selectedUserId || '') && (
+                    <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                      <span>typing...</span>
+                    </div>
+                  )}
                   <form onSubmit={handleSendMessage} className="flex gap-2">
                     <Input
                       value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
+                      onChange={(e) => {
+                        setMessageText(e.target.value);
+                        if (selectedUserId && e.target.value.length > 0) {
+                          sendTypingStart(selectedUserId);
+                          if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                          typingTimeoutRef.current = setTimeout(() => {
+                            sendTypingStop(selectedUserId);
+                          }, 3000);
+                        } else if (selectedUserId) {
+                          sendTypingStop(selectedUserId);
+                        }
+                      }}
                       placeholder={t('messages.type_message')}
                       disabled={sendMessageMutation.isPending}
                       data-testid="input-message"

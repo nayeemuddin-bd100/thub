@@ -291,6 +291,8 @@ export const messages = pgTable("messages", {
         enum: ["text", "image", "file"],
     }).default("text"),
     isRead: boolean("is_read").default(false),
+    deliveredAt: timestamp("delivered_at"),
+    readAt: timestamp("read_at"),
     createdAt: timestamp("created_at").defaultNow(),
 });
 
