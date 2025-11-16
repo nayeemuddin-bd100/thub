@@ -12,8 +12,9 @@ import {
     propertySeasonalPricing,
     properties,
     cmsContent,
+    userActivityLogs,
 } from "@shared/schema";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { format } from "date-fns";
 import express, { type Express } from "express";
