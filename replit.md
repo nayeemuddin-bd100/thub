@@ -50,3 +50,20 @@ Preferred communication style: Simple, everyday language.
 - **File Management**: Uppy (file uploads), AWS S3 (media storage).
 - **UI/UX Libraries**: Radix UI, Lucide React, TailwindCSS, Recharts.
 - **Development Tools**: TypeScript, Drizzle Kit, ESBuild.
+
+# Recent Changes
+
+## November 16, 2025 - Mobile Responsiveness Improvements
+- **Header Component**: Added comprehensive mobile navigation
+  - Mobile menu with hamburger icon using Sheet component
+  - Shows on screens <768px with full search, navigation, and user profile
+  - Responsive text sizing (text-lg sm:text-xl) and button layouts
+- **Manager Dashboards**: Enhanced mobile layouts
+  - Country Manager Dashboard: Responsive header (flex-col sm:flex-row), flexible sizing
+  - City Manager Dashboard: Responsive header with stacking layout
+  - Stats cards use responsive grids (grid-cols-1 md:grid-cols-2 lg:grid-cols-4)
+- **Messages Page**: Already mobile-optimized
+  - Conversation list/chat view toggle on mobile (<768px)
+  - Back button for navigation between views
+- **Tables**: All tables wrapped in responsive containers with horizontal scrolling
+- **General Mobile Enhancements**: Reduced padding on mobile (py-4 sm:py-8), full-width buttons on small screens
