@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import HeroSection from "@/components/HeroSection";
 import ServiceCategories from "@/components/ServiceCategories";
 import ServiceProviders from "@/components/ServiceProviders";
+import BlogSection from "@/components/BlogSection";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Plus } from "lucide-react";
@@ -157,6 +158,8 @@ export default function Home() {
                     </div>
                 </div>
             </section>
+
+            <BlogSection />
 
             <Footer />
 

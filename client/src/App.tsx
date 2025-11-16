@@ -32,8 +32,8 @@ import Privacy from "@/pages/privacy";
 import Terms from "@/pages/terms";
 import Host from "@/pages/host";
 import Provider from "@/pages/provider";
-import Press from "@/pages/press";
 import Blog from "@/pages/blog";
+import BlogDetail from "@/pages/blog-detail";
 import Safety from "@/pages/safety";
 import Cancellation from "@/pages/cancellation";
 import Resources from "@/pages/resources";
@@ -81,7 +81,7 @@ function Router() {
       <Route path="/terms" component={Terms} />
       <Route path="/host" component={Host} />
       <Route path="/provider" component={Provider} />
-      <Route path="/press" component={Press} />
+      <Route path="/blog/:slug" component={BlogDetail} />
       <Route path="/blog" component={Blog} />
       <Route path="/safety" component={Safety} />
       <Route path="/cancellation" component={Cancellation} />

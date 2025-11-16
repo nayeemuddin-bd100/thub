@@ -8,6 +8,10 @@ import {
     TrendingUp,
     Users,
     Briefcase,
+    Calendar,
+    ShoppingCart,
+    Star,
+    BarChart3,
 } from "lucide-react";
 import {
     Area,
@@ -36,13 +40,6 @@ interface DashboardStats {
     monthlyRevenue: Array<{ month: string; revenue: number }>;
     bookingTrends: Array<{ month: string; bookings: number }>;
     userRoleDistribution: Array<{ role: string; count: number }>;
-    recentActivities: Array<{
-        id: string;
-        activityType: string;
-        description: string;
-        createdAt: string;
-        user?: { firstName?: string; lastName?: string; email: string };
-    }>;
     topProperties: Array<{
         id: string;
         title: string;
@@ -50,6 +47,10 @@ interface DashboardStats {
         bookingCount: number;
         revenue: number;
     }>;
+    bookingStatusDistribution?: Array<{ status: string; count: number; percentage: number }>;
+    serviceProviderPerformance?: Array<{ name: string; orders: number; revenue: number }>;
+    revenueByCategory?: Array<{ category: string; revenue: number }>;
+    dailyBookings?: Array<{ date: string; bookings: number }>;
 }
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0'];
@@ -273,38 +274,142 @@ export default function EnhancedOverview() {
                 </Card>
             </div>
 
-            {/* Recent Activity */}
-            <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-primary" />
-                    Recent Activity
-                </h3>
-                <div className="space-y-3">
-                    {(stats?.recentActivities || []).slice(0, 10).map((activity) => (
-                        <div
-                            key={activity.id}
-                            className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
+            {/* Charts Row 3 - Additional Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Booking Status Distribution */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <ShoppingCart className="w-5 h-5 text-primary" />
+                        Booking Status Distribution
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie
+                                data={stats?.bookingStatusDistribution || [
+                                    { status: 'Confirmed', count: 45, percentage: 45 },
+                                    { status: 'Pending', count: 25, percentage: 25 },
+                                    { status: 'Completed', count: 20, percentage: 20 },
+                                    { status: 'Cancelled', count: 10, percentage: 10 }
+                                ]}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={100}
+                                fill="#8884d8"
+                                dataKey="count"
+                                label={({ status, percentage }) => `${status}: ${percentage}%`}
+                            >
+                                {(stats?.bookingStatusDistribution || []).map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </Card>
+
+                {/* Service Provider Performance */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Star className="w-5 h-5 text-primary" />
+                        Top Service Providers
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                            data={stats?.serviceProviderPerformance || [
+                                { name: 'Premium Cleaning', orders: 45, revenue: 3200 },
+                                { name: 'Luxury Transport', orders: 38, revenue: 2800 },
+                                { name: 'Elite Concierge', orders: 32, revenue: 2400 },
+                                { name: 'Gourmet Dining', orders: 28, revenue: 2100 },
+                                { name: 'City Transport', orders: 22, revenue: 1600 }
+                            ]}
+                            layout="vertical"
                         >
-                            <div className="w-2 h-2 rounded-full bg-primary mt-2"></div>
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">{activity.description}</p>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <p className="text-xs text-muted-foreground">
-                                        {activity.user?.firstName || activity.user?.email}
-                                    </p>
-                                    <span className="text-xs text-muted-foreground">•</span>
-                                    <p className="text-xs text-muted-foreground">
-                                        {new Date(activity.createdAt).toLocaleString()}
-                                    </p>
-                                </div>
-                            </div>
-                            <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded">
-                                {activity.activityType}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </Card>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis dataKey="name" type="category" width={120} />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="orders" fill="#8884d8" name="Orders" />
+                            <Bar dataKey="revenue" fill="#82ca9d" name="Revenue ($)" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </Card>
+            </div>
+
+            {/* Charts Row 4 - More Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Revenue by Category */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-primary" />
+                        Revenue by Service Category
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart
+                            data={stats?.revenueByCategory || [
+                                { category: 'Housekeeping', revenue: 8500 },
+                                { category: 'Transportation', revenue: 7200 },
+                                { category: 'Dining', revenue: 6800 },
+                                { category: 'Concierge', revenue: 5400 },
+                                { category: 'Tours', revenue: 4200 },
+                                { category: 'Entertainment', revenue: 3800 }
+                            ]}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="category" angle={-45} textAnchor="end" height={80} />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="revenue" name="Revenue ($)">
+                                {(stats?.revenueByCategory || []).map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </Card>
+
+                {/* Daily Bookings Trend */}
+                <Card className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-primary" />
+                        Daily Booking Activity (Last 7 Days)
+                    </h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart
+                            data={stats?.dailyBookings || [
+                                { date: 'Mon', bookings: 12 },
+                                { date: 'Tue', bookings: 19 },
+                                { date: 'Wed', bookings: 15 },
+                                { date: 'Thu', bookings: 22 },
+                                { date: 'Fri', bookings: 28 },
+                                { date: 'Sat', bookings: 35 },
+                                { date: 'Sun', bookings: 24 }
+                            ]}
+                        >
+                            <defs>
+                                <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Area
+                                type="monotone"
+                                dataKey="bookings"
+                                stroke="#82ca9d"
+                                fillOpacity={1}
+                                fill="url(#colorBookings)"
+                                strokeWidth={2}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </Card>
+            </div>
         </div>
     );
 }

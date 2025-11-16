@@ -95,6 +95,7 @@ async function seed() {
         await db.delete(contactSubmissions);
         await db.delete(bookings);
         await db.delete(serviceTasks);
+        await db.delete(providerServiceCategories);
         await db.delete(serviceProviders);
         await db.delete(properties);
         await db.delete(serviceCategories);
@@ -1110,6 +1111,80 @@ async function seed() {
             ];
             
             await db.insert(territories).values(sampleTerritories).onConflictDoNothing();
+            console.log(`✓ Created ${sampleTerritories.length} territories`);
+
+            // Create property-service associations (recommended services for properties)
+            console.log("Creating property-service associations...");
+            const propertyServiceAssociations = [
+                // Luxury Beachfront Villa (Miami) - Premium services
+                { propertyId: prop1Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop1Id, serviceProviderId: serviceProvider4Id, isRecommended: true }, // Luxury Transport
+                { propertyId: prop1Id, serviceProviderId: serviceProvider5Id, isRecommended: false }, // Gourmet Dining
+                
+                // Modern Downtown Apartment (NYC) - Urban services
+                { propertyId: prop2Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop2Id, serviceProviderId: serviceProvider3Id, isRecommended: true }, // City Transport
+                { propertyId: prop2Id, serviceProviderId: serviceProvider6Id, isRecommended: false }, // Elite Concierge
+                
+                // Mountain Cabin Retreat - Nature focused
+                { propertyId: prop3Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop3Id, serviceProviderId: serviceProvider3Id, isRecommended: false }, // City Transport
+                
+                // Urban Loft Studio - Compact urban
+                { propertyId: prop4Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop4Id, serviceProviderId: serviceProvider4Id, isRecommended: false }, // Luxury Transport
+                
+                // Coastal Cottage - Seaside services
+                { propertyId: prop5Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop5Id, serviceProviderId: serviceProvider5Id, isRecommended: true }, // Gourmet Dining
+                { propertyId: prop5Id, serviceProviderId: serviceProvider3Id, isRecommended: false }, // City Transport
+                
+                // Historic Townhouse - Heritage focused
+                { propertyId: prop6Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop6Id, serviceProviderId: serviceProvider6Id, isRecommended: true }, // Elite Concierge
+                
+                // Penthouse Suite - Ultra luxury
+                { propertyId: prop7Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop7Id, serviceProviderId: serviceProvider4Id, isRecommended: true }, // Luxury Transport
+                { propertyId: prop7Id, serviceProviderId: serviceProvider5Id, isRecommended: true }, // Gourmet Dining
+                { propertyId: prop7Id, serviceProviderId: serviceProvider6Id, isRecommended: true }, // Elite Concierge
+                
+                // Garden Bungalow - Family friendly
+                { propertyId: prop8Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop8Id, serviceProviderId: serviceProvider3Id, isRecommended: false }, // City Transport
+                
+                // Waterfront Condo - Waterfront services
+                { propertyId: prop9Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop9Id, serviceProviderId: serviceProvider4Id, isRecommended: false }, // Luxury Transport
+                
+                // Desert Oasis Villa - Remote luxury
+                { propertyId: prop10Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop10Id, serviceProviderId: serviceProvider4Id, isRecommended: true }, // Luxury Transport
+                { propertyId: prop10Id, serviceProviderId: serviceProvider5Id, isRecommended: false }, // Gourmet Dining
+                
+                // Riverside Retreat - Nature retreat
+                { propertyId: prop11Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop11Id, serviceProviderId: serviceProvider3Id, isRecommended: false }, // City Transport
+                
+                // City Center Studio - Budget urban
+                { propertyId: prop12Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop12Id, serviceProviderId: serviceProvider3Id, isRecommended: true }, // City Transport
+                
+                // Lakeside Cabin - Lakefront services
+                { propertyId: prop13Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop13Id, serviceProviderId: serviceProvider5Id, isRecommended: false }, // Gourmet Dining
+                
+                // Suburban Family Home - Family services
+                { propertyId: prop14Id, serviceProviderId: serviceProvider2Id, isRecommended: true }, // Sparkle Clean
+                { propertyId: prop14Id, serviceProviderId: serviceProvider3Id, isRecommended: false }, // City Transport
+                
+                // Ski Chalet - Mountain services
+                { propertyId: prop15Id, serviceProviderId: serviceProvider1Id, isRecommended: true }, // Premium Cleaning
+                { propertyId: prop15Id, serviceProviderId: serviceProvider4Id, isRecommended: false }, // Luxury Transport
+            ];
+            
+            await db.insert(propertyServices).values(propertyServiceAssociations).onConflictDoNothing();
+            console.log(`✓ Created ${propertyServiceAssociations.length} property-service associations`);
 
             // Create service tasks for each category
             console.log("Creating service tasks...");
@@ -1170,7 +1245,7 @@ async function seed() {
             const maidProvider2Id = sampleProviders.find(p => p.businessName.includes("Sparkle Clean"))?.id;
 
             if (maidProvider1Id || maidProvider2Id) {
-                const taskConfigs = [];
+                const taskConfigs: any[] = [];
                 
                 // Configure tasks for first maid provider
                 if (maidProvider1Id) {
@@ -2795,6 +2870,526 @@ async function seed() {
 
         await db.insert(cmsContent).values(cmsPages).onConflictDoNothing();
         console.log(`✓ Created ${cmsPages.length} CMS content pages`);
+
+        // Create blog posts
+        console.log("Creating blog posts...");
+        const blogPostsData = [
+            {
+                title: "Top 10 Hidden Gems for Your Next Beach Vacation",
+                slug: "top-10-hidden-gems-beach-vacation",
+                excerpt: "Discover breathtaking beaches away from the crowds. From secluded coves to pristine coastlines, we've curated a list of the world's best-kept beach secrets that will make your next vacation unforgettable.",
+                content: `<h2>Introduction</h2>
+                <p>Are you tired of overcrowded beaches and tourist traps? We've scoured the globe to find the most stunning, lesser-known beach destinations that offer crystal-clear waters, pristine sands, and the peaceful escape you've been dreaming of.</p>
+                
+                <h3>1. Navagio Beach, Zakynthos, Greece</h3>
+                <p>Also known as Shipwreck Beach, this stunning cove is only accessible by boat. The dramatic limestone cliffs and the famous shipwreck create an unforgettable backdrop for your beach day.</p>
+                
+                <h3>2. Anse Source d'Argent, Seychelles</h3>
+                <p>With its unique granite boulders and shallow turquoise waters, this beach is a photographer's paradise. The calm lagoons make it perfect for families with children.</p>
+                
+                <h3>3. Whitehaven Beach, Australia</h3>
+                <p>Located in the Whitsunday Islands, this 7km stretch of pristine silica sand is consistently rated as one of the world's best beaches. The sand is so pure it doesn't retain heat!</p>
+                
+                <h3>4. Pink Sands Beach, Bahamas</h3>
+                <p>This three-mile stretch of pink sand gets its unique color from tiny coral insects. The calm waters and gentle surf make it ideal for swimming and snorkeling.</p>
+                
+                <h3>5. El Nido, Palawan, Philippines</h3>
+                <p>Hidden lagoons, secret beaches, and towering limestone cliffs create a dramatic landscape. Island hopping tours reveal one stunning beach after another.</p>
+                
+                <h2>Planning Your Trip</h2>
+                <p>When planning your visit to these hidden gems, consider traveling during shoulder seasons (April-May or September-October) to avoid crowds while still enjoying great weather. Book accommodations well in advance, especially for remote locations.</p>
+                
+                <h2>Essential Tips</h2>
+                <ul>
+                    <li>Research local regulations and protected areas</li>
+                    <li>Pack reef-safe sunscreen to protect marine ecosystems</li>
+                    <li>Bring a waterproof camera for unforgettable memories</li>
+                    <li>Respect local communities and their customs</li>
+                    <li>Leave no trace - take all trash with you</li>
+                </ul>
+                
+                <p>Ready to explore these hidden paradise beaches? Start planning your dream vacation today and experience the magic of uncrowded, pristine coastlines that few travelers get to see.</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1200&h=800&fit=crop",
+                authorId: marketingId,
+                category: "Destinations",
+                tags: ["beaches", "travel tips", "hidden gems", "vacation planning", "tropical destinations"],
+                status: "published" as const,
+                publishedAt: new Date("2024-11-01T10:00:00Z"),
+            },
+            {
+                title: "How to Travel on a Budget: 15 Money-Saving Tips",
+                slug: "travel-on-budget-money-saving-tips",
+                excerpt: "Travel doesn't have to break the bank. Learn practical strategies to explore the world without emptying your wallet, from finding cheap flights to scoring free accommodations.",
+                content: `<h2>Travel More, Spend Less</h2>
+                <p>Traveling on a budget doesn't mean sacrificing experiences. With smart planning and insider knowledge, you can explore amazing destinations while keeping your expenses low. Here are our top 15 money-saving tips for budget-conscious travelers.</p>
+                
+                <h3>1. Be Flexible with Your Dates</h3>
+                <p>Flying mid-week (Tuesday or Wednesday) is often significantly cheaper than weekend travel. Use flight comparison tools to see price differences across multiple days.</p>
+                
+                <h3>2. Book in Advance (But Not Too Early)</h3>
+                <p>The sweet spot for booking flights is typically 6-8 weeks before departure for domestic trips and 2-3 months for international travel.</p>
+                
+                <h3>3. Use Budget Accommodations</h3>
+                <p>Consider hostels, vacation rentals, or home exchanges instead of hotels. Platforms like TravelHub offer great deals on unique properties that cost less than traditional hotels.</p>
+                
+                <h3>4. Eat Like a Local</h3>
+                <p>Skip touristy restaurants and eat where locals eat. Street food, local markets, and neighborhood cafes offer authentic experiences at fraction of the cost.</p>
+                
+                <h3>5. Walk or Use Public Transportation</h3>
+                <p>Explore cities on foot or use public transit instead of taxis. You'll save money while getting a more authentic feel for the destination.</p>
+                
+                <h3>6. Travel During Shoulder Season</h3>
+                <p>Visit popular destinations during their shoulder seasons (just before or after peak season) for better prices and fewer crowds.</p>
+                
+                <h3>7. Take Advantage of Free Activities</h3>
+                <p>Most cities offer free walking tours, museums with free admission days, parks, beaches, and cultural events.</p>
+                
+                <h3>8. Pack Light to Avoid Baggage Fees</h3>
+                <p>Travel with carry-on only to save on checked bag fees. This also saves time at the airport and reduces the risk of lost luggage.</p>
+                
+                <h2>Additional Money-Saving Strategies</h2>
+                <ul>
+                    <li>Sign up for airline newsletters for exclusive deals</li>
+                    <li>Use credit card rewards and points strategically</li>
+                    <li>Cook some meals if your accommodation has a kitchen</li>
+                    <li>Buy tickets and tours locally rather than online</li>
+                    <li>Stay connected with free WiFi instead of buying data plans</li>
+                    <li>Bring a reusable water bottle to avoid buying bottled water</li>
+                    <li>Research free entertainment options before you go</li>
+                </ul>
+                
+                <h2>Conclusion</h2>
+                <p>Budget travel is about making smart choices, not missing out on experiences. With these tips, you can explore more destinations, stay longer, and create unforgettable memories without financial stress. Start planning your next adventure today!</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&h=800&fit=crop",
+                authorId: adminId,
+                category: "Travel Tips",
+                tags: ["budget travel", "money saving", "travel hacks", "planning", "backpacking"],
+                status: "published" as const,
+                publishedAt: new Date("2024-11-10T14:30:00Z"),
+            },
+            {
+                title: "The Ultimate Guide to Sustainable Tourism",
+                slug: "ultimate-guide-sustainable-tourism",
+                excerpt: "Learn how to travel responsibly and minimize your environmental impact. Discover eco-friendly accommodations, sustainable activities, and ways to give back to local communities.",
+                content: `<h2>Why Sustainable Tourism Matters</h2>
+                <p>As global tourism continues to grow, so does its impact on the environment and local communities. Sustainable tourism isn't just a trend—it's a necessity. Here's how you can make a positive difference while exploring the world.</p>
+                
+                <h3>Choose Eco-Friendly Accommodations</h3>
+                <p>Look for properties with green certifications, solar power, water conservation systems, and waste reduction programs. Many accommodations on TravelHub are committed to sustainable practices.</p>
+                
+                <h3>Support Local Businesses</h3>
+                <p>Shop at local markets, eat at family-owned restaurants, and book tours with local guides. Your spending directly benefits the community and provides authentic cultural experiences.</p>
+                
+                <h3>Reduce Your Carbon Footprint</h3>
+                <p>Consider train travel over flights when possible, offset your carbon emissions, pack light to reduce fuel consumption, and choose direct flights to minimize emissions.</p>
+                
+                <h3>Respect Wildlife and Nature</h3>
+                <p>Never touch or feed wildlife, stay on designated trails, avoid attractions that exploit animals, and choose responsible wildlife tours that prioritize animal welfare.</p>
+                
+                <h3>Minimize Plastic Waste</h3>
+                <p>Bring reusable water bottles, shopping bags, and utensils. Refuse single-use plastics and properly dispose of or recycle waste according to local guidelines.</p>
+                
+                <h3>Learn About Local Culture</h3>
+                <p>Research cultural norms and etiquette before visiting. Show respect for local traditions, dress codes, and customs. Learn a few phrases in the local language.</p>
+                
+                <h2>Sustainable Activities to Consider</h2>
+                <ul>
+                    <li>Volunteer with local conservation projects</li>
+                    <li>Participate in beach or trail cleanups</li>
+                    <li>Visit community-based tourism initiatives</li>
+                    <li>Take cooking classes with local families</li>
+                    <li>Support artisan cooperatives and fair trade shops</li>
+                    <li>Choose eco-tours and nature education programs</li>
+                </ul>
+                
+                <h2>Making a Long-Term Impact</h2>
+                <p>Sustainable tourism is about making conscious choices that benefit destinations for generations to come. By traveling responsibly, you help preserve natural wonders, support local economies, and ensure that these incredible places remain accessible for future travelers.</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1200&h=800&fit=crop",
+                authorId: marketingId,
+                category: "Sustainable Travel",
+                tags: ["sustainable tourism", "eco-friendly", "responsible travel", "environment", "conservation"],
+                status: "published" as const,
+                publishedAt: new Date("2024-11-15T09:00:00Z"),
+            },
+            {
+                title: "Digital Nomad Destinations 2025: Where to Work Remotely",
+                slug: "digital-nomad-destinations-2025",
+                excerpt: "Discover the best cities for remote workers with great WiFi, affordable living costs, thriving communities, and amazing lifestyles. Your guide to working while traveling in 2025.",
+                content: `<h2>The Rise of Digital Nomadism</h2>
+                <p>With remote work becoming the norm, more professionals are choosing to work from anywhere. Here are the top destinations for digital nomads in 2025, combining excellent infrastructure, affordable living, and vibrant communities.</p>
+                
+                <h3>1. Lisbon, Portugal</h3>
+                <p><strong>Why it's great:</strong> Affordable cost of living, excellent coworking spaces, strong digital nomad community, year-round sunshine, and a special digital nomad visa program.</p>
+                <p><strong>Average monthly cost:</strong> $2,000-$3,000</p>
+                <p><strong>Best neighborhoods:</strong> Principe Real, Santos, Chiado</p>
+                
+                <h3>2. Bali, Indonesia</h3>
+                <p><strong>Why it's great:</strong> Ultra-affordable, stunning beaches, yoga and wellness culture, massive expat community, and countless coworking spaces.</p>
+                <p><strong>Average monthly cost:</strong> $1,200-$2,000</p>
+                <p><strong>Best areas:</strong> Canggu, Ubud, Seminyak</p>
+                
+                <h3>3. Medellín, Colombia</h3>
+                <p><strong>Why it's great:</strong> Perfect climate (City of Eternal Spring), low cost of living, growing tech scene, friendly locals, and improving safety.</p>
+                <p><strong>Average monthly cost:</strong> $1,500-$2,500</p>
+                <p><strong>Best neighborhoods:</strong> El Poblado, Laureles, Envigado</p>
+                
+                <h3>4. Chiang Mai, Thailand</h3>
+                <p><strong>Why it's great:</strong> Very affordable, incredible food scene, beautiful temples, mountain scenery, and one of the world's oldest digital nomad hubs.</p>
+                <p><strong>Average monthly cost:</strong> $1,000-$1,800</p>
+                <p><strong>Best areas:</strong> Nimman, Old City, Riverside</p>
+                
+                <h3>5. Mexico City, Mexico</h3>
+                <p><strong>Why it's great:</strong> World-class cuisine, rich culture, excellent coworking spaces, favorable time zone for US clients, and affordable living.</p>
+                <p><strong>Average monthly cost:</strong> $1,800-$2,800</p>
+                <p><strong>Best neighborhoods:</strong> Roma, Condesa, Polanco</p>
+                
+                <h2>Essential Considerations</h2>
+                <h3>Internet Speed</h3>
+                <p>All recommended destinations offer reliable high-speed internet (50+ Mbps) in coworking spaces and many accommodations.</p>
+                
+                <h3>Visa Requirements</h3>
+                <p>Research visa options carefully. Many countries now offer specific digital nomad visas with extended stays and tax benefits.</p>
+                
+                <h3>Time Zones</h3>
+                <p>Consider your work hours and client locations when choosing a destination. Time zone differences can be challenging.</p>
+                
+                <h2>Tips for Success</h2>
+                <ul>
+                    <li>Join coworking spaces to network and stay productive</li>
+                    <li>Maintain a routine despite location changes</li>
+                    <li>Invest in travel insurance with health coverage</li>
+                    <li>Set up reliable banking and payment systems</li>
+                    <li>Stay longer (3+ months) to reduce travel fatigue</li>
+                    <li>Build emergency funds for unexpected situations</li>
+                </ul>`,
+                featuredImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&h=800&fit=crop",
+                authorId: adminId,
+                category: "Digital Nomad",
+                tags: ["digital nomad", "remote work", "coworking", "expat life", "work from anywhere"],
+                status: "published" as const,
+                publishedAt: new Date("2024-11-20T11:00:00Z"),
+            },
+            {
+                title: "Family Travel Made Easy: Tips for Stress-Free Vacations",
+                slug: "family-travel-tips-stress-free-vacations",
+                excerpt: "Planning a family vacation can be overwhelming. From packing hacks to keeping kids entertained, here's everything you need to know for a smooth and memorable family trip.",
+                content: `<h2>Making Family Travel Enjoyable for Everyone</h2>
+                <p>Traveling with children doesn't have to be stressful. With proper planning and the right mindset, family vacations can create lifelong memories. Here's your comprehensive guide to stress-free family travel.</p>
+                
+                <h3>Pre-Trip Planning</h3>
+                <h4>Choose Family-Friendly Destinations</h4>
+                <p>Look for destinations with activities suitable for all ages, good healthcare facilities, safe neighborhoods, and family-friendly accommodations with kitchen facilities and separate bedrooms.</p>
+                
+                <h4>Involve Kids in Planning</h4>
+                <p>Let children help choose activities and destinations. This builds excitement and gives them ownership of the trip, reducing complaints later.</p>
+                
+                <h4>Book Kid-Friendly Accommodations</h4>
+                <p>Look for properties on TravelHub that offer:</p>
+                <ul>
+                    <li>Multiple bedrooms for privacy</li>
+                    <li>Kitchen or kitchenette for preparing meals</li>
+                    <li>Pool or playground facilities</li>
+                    <li>Cribs and high chairs available</li>
+                    <li>Washer/dryer for longer stays</li>
+                </ul>
+                
+                <h3>Packing Smart</h3>
+                <h4>Create a Packing List</h4>
+                <p>Start your list two weeks before departure. Include essentials like:</p>
+                <ul>
+                    <li>Medications and first-aid supplies</li>
+                    <li>Comfort items (favorite blanket, stuffed animal)</li>
+                    <li>Snacks and sippy cups</li>
+                    <li>Entertainment (books, tablets, games)</li>
+                    <li>Extra clothes and diapers</li>
+                </ul>
+                
+                <h4>Pack a Day Bag</h4>
+                <p>Always have a bag with snacks, water, sunscreen, hand sanitizer, wipes, change of clothes, and entertainment for unexpected delays.</p>
+                
+                <h3>During the Trip</h3>
+                <h4>Maintain Routines</h4>
+                <p>Try to keep regular meal and sleep times. Tired, hungry kids are unhappy kids. Build in rest time during busy days.</p>
+                
+                <h4>Be Flexible</h4>
+                <p>Don't over-schedule. Allow for spontaneity and downtime. It's okay to skip an activity if everyone's tired.</p>
+                
+                <h4>Take Breaks</h4>
+                <p>Schedule downtime between activities. Let kids run around at parks or playgrounds to burn energy.</p>
+                
+                <h3>Entertainment Strategies</h3>
+                <ul>
+                    <li>Create travel journals or scrapbooks</li>
+                    <li>Play travel games (I Spy, license plate bingo)</li>
+                    <li>Download offline content before trips</li>
+                    <li>Bring new small toys or activities for surprises</li>
+                    <li>Use travel time for audiobooks or podcasts</li>
+                </ul>
+                
+                <h2>Safety First</h2>
+                <p>Always have emergency contacts, copies of important documents, and travel insurance. Teach kids your phone number and hotel name. Use GPS tracking devices for young children in crowded places.</p>
+                
+                <h2>Creating Memories</h2>
+                <p>Take lots of photos, collect souvenirs, and talk about experiences during and after the trip. Remember, the best family vacations aren't perfect—they're the ones where you're together making memories.</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1200&h=800&fit=crop",
+                authorId: marketingId,
+                category: "Family Travel",
+                tags: ["family travel", "kids", "vacation planning", "parenting", "travel with children"],
+                status: "published" as const,
+                publishedAt: new Date("2024-11-25T08:30:00Z"),
+            },
+            {
+                title: "Adventure Travel: Thrilling Experiences Around the World",
+                slug: "adventure-travel-thrilling-experiences",
+                excerpt: "From bungee jumping to shark diving, discover the world's most exhilarating adventure activities. Push your limits and create unforgettable adrenaline-pumping memories.",
+                content: `<h2>For the Thrill-Seekers</h2>
+                <p>If you crave adventure and excitement, these experiences will get your heart racing. From sky-high thrills to underwater adventures, here are the world's most exciting activities for adventure travelers.</p>
+                
+                <h3>Sky Adventures</h3>
+                <h4>Skydiving in Dubai, UAE</h4>
+                <p>Jump from 13,000 feet with views of the Palm Jumeirah and Dubai skyline. This is one of the world's most scenic skydiving experiences.</p>
+                
+                <h4>Paragliding in Interlaken, Switzerland</h4>
+                <p>Soar over stunning Swiss Alps with crystal-clear lakes below. Tandem flights available for beginners.</p>
+                
+                <h4>Hot Air Ballooning in Cappadocia, Turkey</h4>
+                <p>Float over fairy chimneys and ancient rock formations at sunrise. A surreal and magical experience.</p>
+                
+                <h3>Water Adventures</h3>
+                <h4>Shark Cage Diving in South Africa</h4>
+                <p>Come face-to-face with great white sharks off the coast of Cape Town. Safe, thrilling, and unforgettable.</p>
+                
+                <h4>White Water Rafting in Costa Rica</h4>
+                <p>Navigate Class III and IV rapids through lush rainforest on the Pacuare River.</p>
+                
+                <h4>Surfing in Hawaii</h4>
+                <p>Learn to surf on legendary waves at Waikiki or challenge yourself with the North Shore's big waves.</p>
+                
+                <h3>Land Adventures</h3>
+                <h4>Hiking to Machu Picchu, Peru</h4>
+                <p>Trek the famous Inca Trail through cloud forests and mountain passes to reach the ancient citadel.</p>
+                
+                <h4>Safari in Tanzania</h4>
+                <p>Witness the Great Migration in Serengeti or track the Big Five in Ngorongoro Crater.</p>
+                
+                <h4>Rock Climbing in Yosemite, USA</h4>
+                <p>Scale granite walls in one of the world's premier climbing destinations. Routes for all skill levels.</p>
+                
+                <h3>Extreme Adventures</h3>
+                <h4>Bungee Jumping in New Zealand</h4>
+                <p>Leap from the Kawarau Bridge where commercial bungee jumping began, or try the 134m Nevis Bungy.</p>
+                
+                <h4>Ice Climbing in Iceland</h4>
+                <p>Climb frozen waterfalls and glacial walls in one of the world's most dramatic landscapes.</p>
+                
+                <h4>Volcano Boarding in Nicaragua</h4>
+                <p>Speed down the active Cerro Negro volcano on a wooden board reaching speeds up to 50 mph.</p>
+                
+                <h2>Safety Considerations</h2>
+                <ul>
+                    <li>Always use licensed, reputable operators</li>
+                    <li>Check safety records and equipment</li>
+                    <li>Get proper travel insurance covering adventure activities</li>
+                    <li>Be honest about your fitness level and experience</li>
+                    <li>Follow all safety instructions carefully</li>
+                    <li>Know your limits and don't be pressured into anything</li>
+                </ul>
+                
+                <h2>Preparation Tips</h2>
+                <p>Research activities thoroughly, build up fitness gradually, practice skills beforehand if possible, and pack appropriate gear. Most importantly, embrace the challenge and enjoy the adrenaline rush!</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=800&fit=crop",
+                authorId: adminId,
+                category: "Adventure",
+                tags: ["adventure travel", "extreme sports", "adrenaline", "outdoor activities", "bucket list"],
+                status: "published" as const,
+                publishedAt: new Date("2024-12-01T10:00:00Z"),
+            },
+            {
+                title: "Cultural Immersion: Authentic Local Experiences",
+                slug: "cultural-immersion-authentic-local-experiences",
+                excerpt: "Move beyond tourist attractions and truly connect with local culture. Learn how to find authentic experiences, meet locals, and gain deeper understanding of the places you visit.",
+                content: `<h2>Travel Deeper, Not Just Wider</h2>
+                <p>The most memorable travel experiences come from genuine cultural connections. Here's how to move beyond tourist traps and immerse yourself in authentic local culture.</p>
+                
+                <h3>Stay with Locals</h3>
+                <p>Choose homestays, farm stays, or local guesthouses over chain hotels. Living with local families provides insights into daily life, traditions, and customs you'd never experience otherwise.</p>
+                
+                <h3>Learn the Language</h3>
+                <p>Even basic phrases show respect and open doors to conversations. Use language apps before your trip and practice with locals. Most people appreciate the effort, even if your pronunciation isn't perfect.</p>
+                
+                <h3>Take Cooking Classes</h3>
+                <p>Food is at the heart of culture. Take classes with local cooks, visit markets together, and learn family recipes passed down through generations.</p>
+                
+                <h3>Participate in Local Festivals</h3>
+                <p>Time your visit with traditional celebrations, religious festivals, or cultural events. These provide incredible insights into local traditions and community values.</p>
+                
+                <h3>Shop at Local Markets</h3>
+                <p>Skip the tourist souvenir shops. Visit neighborhood markets where locals shop. Interact with vendors, try street food, and observe daily commerce.</p>
+                
+                <h3>Use Public Transportation</h3>
+                <p>Buses, trains, and shared taxis offer opportunities to interact with locals and see neighborhoods tourists rarely visit.</p>
+                
+                <h2>Authentic Experiences by Region</h2>
+                
+                <h3>Asia</h3>
+                <ul>
+                    <li>Stay in a Buddhist monastery in Thailand</li>
+                    <li>Learn calligraphy in Japan</li>
+                    <li>Take a yoga retreat in India</li>
+                    <li>Participate in a tea ceremony in China</li>
+                </ul>
+                
+                <h3>Europe</h3>
+                <ul>
+                    <li>Work on a vineyard in France</li>
+                    <li>Learn flamenco in Spain</li>
+                    <li>Take a pasta-making class in Italy</li>
+                    <li>Visit a local sauna in Finland</li>
+                </ul>
+                
+                <h3>Latin America</h3>
+                <ul>
+                    <li>Learn salsa in Cuba</li>
+                    <li>Participate in a traditional temazcal ceremony in Mexico</li>
+                    <li>Work on a coffee farm in Colombia</li>
+                    <li>Learn tango in Argentina</li>
+                </ul>
+                
+                <h3>Africa</h3>
+                <ul>
+                    <li>Visit a Maasai village in Kenya</li>
+                    <li>Learn traditional drumming in Ghana</li>
+                    <li>Participate in a township tour in South Africa</li>
+                    <li>Stay in a Berber village in Morocco</li>
+                </ul>
+                
+                <h2>Cultural Etiquette</h2>
+                <p>Research customs before visiting. Dress appropriately for religious sites, learn greeting customs, understand tipping practices, and be mindful of photography restrictions. When in doubt, observe locals and ask permission.</p>
+                
+                <h2>Building Connections</h2>
+                <p>Be open, curious, and respectful. Ask questions, share about your culture, and truly listen to people's stories. The relationships you build will be the most valuable souvenirs you take home.</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200&h=800&fit=crop",
+                authorId: marketingId,
+                category: "Culture",
+                tags: ["cultural travel", "local experiences", "authentic travel", "cultural immersion", "traditions"],
+                status: "published" as const,
+                publishedAt: new Date("2024-12-05T09:30:00Z"),
+            },
+            {
+                title: "Photography Tips for Travel: Capture Stunning Memories",
+                slug: "travel-photography-tips-stunning-memories",
+                excerpt: "Transform your vacation photos from snapshots to stunning images. Learn composition, lighting, and editing techniques to capture your travels beautifully.",
+                content: `<h2>Elevate Your Travel Photography</h2>
+                <p>You don't need expensive equipment to take amazing travel photos. With these techniques, you can capture professional-quality images with just your smartphone or basic camera.</p>
+                
+                <h3>Essential Composition Techniques</h3>
+                
+                <h4>Rule of Thirds</h4>
+                <p>Divide your frame into a 3x3 grid. Place key elements along these lines or at their intersections for more dynamic compositions.</p>
+                
+                <h4>Leading Lines</h4>
+                <p>Use roads, rivers, fences, or architectural elements to draw viewers' eyes into your image and create depth.</p>
+                
+                <h4>Framing</h4>
+                <p>Use natural frames like doorways, windows, or tree branches to focus attention on your subject and add context.</p>
+                
+                <h4>Negative Space</h4>
+                <p>Don't fill every inch of your frame. Empty space can create dramatic impact and emphasize your subject.</p>
+                
+                <h3>Lighting is Everything</h3>
+                
+                <h4>Golden Hour Magic</h4>
+                <p>Shoot during the hour after sunrise or before sunset for warm, soft, flattering light. This is the secret to professional-looking photos.</p>
+                
+                <h4>Blue Hour Drama</h4>
+                <p>The 20-30 minutes after sunset create moody, atmospheric images with rich blue tones and city lights.</p>
+                
+                <h4>Avoid Harsh Midday Sun</h4>
+                <p>Strong overhead sun creates harsh shadows and washed-out colors. If you must shoot at midday, find shade or use it for dramatic shadows.</p>
+                
+                <h3>Subject and Storytelling</h3>
+                
+                <h4>Include People</h4>
+                <p>Photos with people tell better stories and create scale. Ask permission respectfully before photographing locals.</p>
+                
+                <h4>Capture Details</h4>
+                <p>Don't just photograph landmarks. Close-ups of food, textures, street signs, and small moments tell richer stories.</p>
+                
+                <h4>Show Scale</h4>
+                <p>Include people or familiar objects to show the size of landscapes or architecture.</p>
+                
+                <h3>Camera Settings for Beginners</h3>
+                
+                <h4>For Smartphones</h4>
+                <ul>
+                    <li>Clean your lens regularly</li>
+                    <li>Use HDR mode for high-contrast scenes</li>
+                    <li>Enable gridlines for composition</li>
+                    <li>Avoid digital zoom - move closer instead</li>
+                    <li>Lock focus and exposure before shooting</li>
+                </ul>
+                
+                <h4>For DSLR/Mirrorless</h4>
+                <ul>
+                    <li>Shoot in RAW format for maximum editing flexibility</li>
+                    <li>Use Aperture Priority mode (A/Av) for control over depth of field</li>
+                    <li>Keep ISO as low as possible for cleaner images</li>
+                    <li>Use a tripod for low-light and long exposures</li>
+                </ul>
+                
+                <h3>Essential Gear</h3>
+                
+                <h4>Minimal Setup</h4>
+                <ul>
+                    <li>Phone or camera</li>
+                    <li>Extra batteries and memory cards</li>
+                    <li>Portable charger</li>
+                    <li>Lens cleaning cloth</li>
+                    <li>Simple phone tripod</li>
+                </ul>
+                
+                <h4>Advanced Kit</h4>
+                <ul>
+                    <li>Camera body</li>
+                    <li>Versatile zoom lens (24-70mm or 18-55mm)</li>
+                    <li>Wide-angle lens for landscapes</li>
+                    <li>Sturdy travel tripod</li>
+                    <li>Polarizing filter for outdoor shots</li>
+                </ul>
+                
+                <h3>Editing Tips</h3>
+                
+                <h4>Smartphone Apps</h4>
+                <p>Snapseed, VSCO, and Adobe Lightroom Mobile offer powerful editing tools. Adjust exposure, contrast, vibrance, and sharpness subtly.</p>
+                
+                <h4>Desktop Software</h4>
+                <p>Adobe Lightroom is industry standard. Learn basic adjustments: white balance, exposure, highlights/shadows, and clarity.</p>
+                
+                <h4>Editing Philosophy</h4>
+                <p>Less is more. Subtle adjustments look professional. Over-editing looks amateur. Aim to enhance, not transform.</p>
+                
+                <h2>Photography Etiquette</h2>
+                <ul>
+                    <li>Always ask permission before photographing people</li>
+                    <li>Respect no-photography signs and sacred spaces</li>
+                    <li>Don't obstruct others or dangerous locations for photos</li>
+                    <li>Be mindful of local sensitivities</li>
+                    <li>Share photos with subjects when possible</li>
+                </ul>
+                
+                <h2>Practice Makes Perfect</h2>
+                <p>The best camera is the one you have with you. Practice these techniques regularly, experiment with different angles and lighting, and most importantly, don't let photography distract you from experiencing the moment. Sometimes the best memories aren't captured—they're lived.</p>`,
+                featuredImage: "https://images.unsplash.com/photo-1452421822248-d4c2b47f0c81?w=1200&h=800&fit=crop",
+                authorId: adminId,
+                category: "Photography",
+                tags: ["travel photography", "photography tips", "camera techniques", "photo editing", "visual storytelling"],
+                status: "published" as const,
+                publishedAt: new Date("2024-12-10T13:00:00Z"),
+            },
+        ];
+
+        await db.insert(blogPosts).values(blogPostsData).onConflictDoNothing();
+        console.log(`✓ Created ${blogPostsData.length} blog posts`);
 
         // Create user activity logs
         console.log("Creating user activity logs...");

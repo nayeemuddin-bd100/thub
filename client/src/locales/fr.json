@@ -39,7 +39,9 @@
         "try_again": "Réessayer",
         "refresh": "Actualiser",
         "home": "Accueil",
-        "discount": "Réduction"
+        "discount": "Réduction",
+        "view_all": "Voir Tout",
+        "view_all_blog": "Voir Tous les Articles de Blog"
     },
     "auth": {
         "login_title": "Se connecter à TravelHub",
@@ -101,7 +103,8 @@
         "support": "Support",
         "company": "Entreprise",
         "hosting": "Hébergement",
-        "quick_links": "Liens rapides"
+        "quick_links": "Liens rapides",
+        "legal": "Légal"
     },
     "home": {
         "welcome_back": "Bon retour, {{name}}!",
@@ -119,7 +122,9 @@
         "verified_hosts": "Hôtes vérifiés",
         "secure_booking": "Réservation sécurisée",
         "24_7_support": "Support 24/7",
-        "best_prices": "Meilleurs prix"
+        "best_prices": "Meilleurs prix",
+        "latest_stories": "Dernières Histoires",
+        "travel_tips_insights": "Conseils de voyage, guides de destination et informations d'initiés"
     },
     "properties": {
         "title": "Trouvez votre séjour parfait",
@@ -354,11 +359,13 @@
         "pending": "En attente",
         "pending_payment": "Paiement en attente",
         "confirmed": "Confirmé",
+        "in_progress": "En Cours",
         "total_bookings": "Total des réservations",
         "total_earnings": "Gains totaux",
         "active_listings": "Annonces actives",
         "pending_reviews": "Avis en attente",
         "view_all": "Voir tout",
+        "view_all_blog": "Voir Tous les Articles de Blog",
         "manage": "Gérer",
         "analytics": "Analytiques",
         "notifications": "Notifications",
@@ -574,7 +581,12 @@
         "read_more": "Lire la suite",
         "no_posts_filter": "Aucun article ne correspond à vos critères de recherche",
         "no_posts": "Aucun article publié pour le moment. Revenez bientôt!",
-        "clear_filters": "Effacer les filtres"
+        "clear_filters": "Effacer les filtres",
+        "post_not_found": "Article Non Trouvé",
+        "post_not_found_message": "L'article que vous recherchez n'existe pas ou a été supprimé.",
+        "back_to_blog": "Retour au Blog",
+        "back_to_all_posts": "Retour à Tous les Articles",
+        "tags": "Étiquettes"
     },
     "forms": {
         "first_name_label": "Prénom",
@@ -685,7 +697,8 @@
         "select_dates": "Sélectionner les Dates",
         "processing": "Traitement en cours...",
         "free": "Gratuit",
-        "please_login": "Veuillez vous connecter pour réserver cette propriété"
+        "please_login": "Veuillez vous connecter pour réserver cette propriété",
+        "book_now": "Réserver Maintenant"
     },
     "reviews": {
         "review_submitted": "Avis Soumis",

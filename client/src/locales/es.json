@@ -39,7 +39,9 @@
         "try_again": "Intentar de nuevo",
         "refresh": "Actualizar",
         "home": "Inicio",
-        "discount": "Descuento"
+        "discount": "Descuento",
+        "view_all": "Ver Todo",
+        "view_all_blog": "Ver Todas las Publicaciones del Blog"
     },
     "auth": {
         "login_title": "Iniciar sesión en TravelHub",
@@ -101,7 +103,8 @@
         "support": "Soporte",
         "company": "Empresa",
         "hosting": "Alojamiento",
-        "quick_links": "Enlaces rápidos"
+        "quick_links": "Enlaces rápidos",
+        "legal": "Legal"
     },
     "home": {
         "welcome_back": "¡Bienvenido de nuevo, {{name}}!",
@@ -119,7 +122,9 @@
         "verified_hosts": "Anfitriones verificados",
         "secure_booking": "Reserva segura",
         "24_7_support": "Soporte 24/7",
-        "best_prices": "Mejores precios"
+        "best_prices": "Mejores precios",
+        "latest_stories": "Últimas Historias",
+        "travel_tips_insights": "Consejos de viaje, guías de destinos y conocimientos internos"
     },
     "properties": {
         "title": "Encuentra tu estancia perfecta",
@@ -354,11 +359,13 @@
         "pending": "Pendientes",
         "pending_payment": "Pago Pendiente",
         "confirmed": "Confirmado",
+        "in_progress": "En Progreso",
         "total_bookings": "Total de reservas",
         "total_earnings": "Ganancias totales",
         "active_listings": "Anuncios activos",
         "pending_reviews": "Reseñas pendientes",
         "view_all": "Ver todo",
+        "view_all_blog": "Ver Todas las Publicaciones del Blog",
         "manage": "Administrar",
         "analytics": "Analíticas",
         "notifications": "Notificaciones",
@@ -574,7 +581,12 @@
         "read_more": "Leer más",
         "no_posts_filter": "No se encontraron publicaciones que coincidan con tu búsqueda",
         "no_posts": "Aún no hay publicaciones publicadas. ¡Vuelve pronto!",
-        "clear_filters": "Limpiar filtros"
+        "clear_filters": "Limpiar filtros",
+        "post_not_found": "Publicación No Encontrada",
+        "post_not_found_message": "La publicación que buscas no existe o ha sido eliminada.",
+        "back_to_blog": "Volver al Blog",
+        "back_to_all_posts": "Volver a Todas las Publicaciones",
+        "tags": "Etiquetas"
     },
     "forms": {
         "first_name_label": "Nombre",
@@ -685,7 +697,8 @@
         "select_dates": "Seleccionar Fechas",
         "processing": "Procesando...",
         "free": "Gratis",
-        "please_login": "Por favor inicia sesión para reservar esta propiedad"
+        "please_login": "Por favor inicia sesión para reservar esta propiedad",
+        "book_now": "Reservar Ahora"
     },
     "reviews": {
         "review_submitted": "Reseña Enviada",

@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import RoleSwitcher from "@/components/RoleSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Dialog,
@@ -52,6 +52,10 @@ import {
     Users,
     X,
     XCircle,
+    TrendingUp,
+    TrendingDown,
+    Activity,
+    Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -600,6 +604,13 @@ export default function Dashboard() {
     // Admin stats query
     const { data: adminStats, isLoading: statsLoading } = useQuery<AdminStats>({
         queryKey: ["/api/admin/stats"],
+        enabled: isAuthenticated && user?.role === "admin",
+        retry: false,
+    });
+
+    // Dashboard analytics query
+    const { data: dashboardStats, isLoading: dashboardStatsLoading } = useQuery<any>({
+        queryKey: ["/api/admin/dashboard-stats"],
         enabled: isAuthenticated && user?.role === "admin",
         retry: false,
     });
@@ -1419,10 +1430,199 @@ export default function Dashboard() {
                                 </div>
                             )}
 
-                            <div className="mt-8">
-                                <p className="text-muted-foreground text-center">
-                                    {t("dashboard.admin_welcome_message")}
-                                </p>
+                            {/* Analytics Cards */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                                {/* Revenue Trend Card */}
+                                <Card className="overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-b">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <TrendingUp className="w-5 h-5 text-green-600" />
+                                            Revenue Overview
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        {dashboardStatsLoading ? (
+                                            <div className="space-y-4">
+                                                <div className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                                                <div className="h-12 bg-muted rounded-lg animate-pulse"></div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">Total Revenue</p>
+                                                        <p className="text-3xl font-bold text-foreground">
+                                                            ${dashboardStats?.totalRevenue?.toLocaleString() || '0'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+                                                        <DollarSign className="w-8 h-8 text-green-600" />
+                                                    </div>
+                                                </div>
+                                                {dashboardStats?.monthlyRevenue && dashboardStats.monthlyRevenue.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm font-medium text-muted-foreground">Last 6 Months</p>
+                                                        <div className="grid grid-cols-6 gap-2">
+                                                            {dashboardStats.monthlyRevenue.slice(-6).map((data: any, idx: number) => (
+                                                                <div key={idx} className="text-center">
+                                                                    <div 
+                                                                        className="h-20 bg-gradient-to-t from-green-500 to-emerald-400 rounded-lg mb-1 flex items-end justify-center"
+                                                                        style={{ 
+                                                                            height: `${Math.min((parseFloat(data.revenue) / Math.max(...dashboardStats.monthlyRevenue.map((d: any) => parseFloat(d.revenue)))) * 80, 80)}px`
+                                                                        }}
+                                                                    >
+                                                                        <span className="text-xs font-bold text-white pb-1">
+                                                                            ${(parseFloat(data.revenue) / 1000).toFixed(0)}k
+                                                                        </span>
+                                                                    </div>
+                                                                    <p className="text-xs text-muted-foreground">{data.month}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Booking Trends Card */}
+                                <Card className="overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-b">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Activity className="w-5 h-5 text-blue-600" />
+                                            Booking Activity
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        {dashboardStatsLoading ? (
+                                            <div className="space-y-4">
+                                                <div className="h-24 bg-muted rounded-lg animate-pulse"></div>
+                                                <div className="h-12 bg-muted rounded-lg animate-pulse"></div>
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-sm text-muted-foreground">Total Bookings</p>
+                                                        <p className="text-3xl font-bold text-foreground">
+                                                            {adminStats?.totalBookings || 0}
+                                                        </p>
+                                                    </div>
+                                                    <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                                        <Calendar className="w-8 h-8 text-blue-600" />
+                                                    </div>
+                                                </div>
+                                                {dashboardStats?.bookingTrends && dashboardStats.bookingTrends.length > 0 && (
+                                                    <div className="space-y-2">
+                                                        <p className="text-sm font-medium text-muted-foreground">Monthly Trend</p>
+                                                        <div className="grid grid-cols-6 gap-2">
+                                                            {dashboardStats.bookingTrends.slice(-6).map((data: any, idx: number) => (
+                                                                <div key={idx} className="text-center">
+                                                                    <div 
+                                                                        className="h-20 bg-gradient-to-t from-blue-500 to-cyan-400 rounded-lg mb-1 flex items-end justify-center"
+                                                                        style={{ 
+                                                                            height: `${Math.min((parseInt(data.bookings) / Math.max(...dashboardStats.bookingTrends.map((d: any) => parseInt(d.bookings)))) * 80, 80)}px`
+                                                                        }}
+                                                                    >
+                                                                        <span className="text-xs font-bold text-white pb-1">{data.bookings}</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-muted-foreground">{data.month}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* Top Properties Card */}
+                                <Card className="overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-b">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Star className="w-5 h-5 text-purple-600" />
+                                            Top Performing Properties
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        {dashboardStatsLoading ? (
+                                            <div className="space-y-3">
+                                                {[1, 2, 3].map((i) => (
+                                                    <div key={i} className="h-16 bg-muted rounded-lg animate-pulse"></div>
+                                                ))}
+                                            </div>
+                                        ) : dashboardStats?.topProperties && dashboardStats.topProperties.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {dashboardStats.topProperties.slice(0, 5).map((property: any, idx: number) => (
+                                                    <div key={property.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+                                                                <span className="text-sm font-bold text-white">#{idx + 1}</span>
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className="font-semibold text-sm truncate">{property.title}</p>
+                                                                <p className="text-xs text-muted-foreground truncate">{property.location}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-right flex-shrink-0 ml-2">
+                                                            <p className="text-sm font-bold text-foreground">${parseFloat(property.revenue || 0).toLocaleString()}</p>
+                                                            <p className="text-xs text-muted-foreground">{property.booking_count} bookings</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-center text-muted-foreground py-8">No property data available</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
+
+                                {/* User Distribution Card */}
+                                <Card className="overflow-hidden">
+                                    <CardHeader className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-b">
+                                        <CardTitle className="flex items-center gap-2 text-lg">
+                                            <Users className="w-5 h-5 text-orange-600" />
+                                            User Distribution
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6">
+                                        {dashboardStatsLoading ? (
+                                            <div className="space-y-3">
+                                                {[1, 2, 3, 4].map((i) => (
+                                                    <div key={i} className="h-12 bg-muted rounded-lg animate-pulse"></div>
+                                                ))}
+                                            </div>
+                                        ) : dashboardStats?.roleDistribution && dashboardStats.roleDistribution.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {dashboardStats.roleDistribution.slice(0, 6).map((role: any) => {
+                                                    const percentage = (parseInt(role.count) / adminStats.totalUsers * 100).toFixed(1);
+                                                    return (
+                                                        <div key={role.role} className="space-y-1">
+                                                            <div className="flex items-center justify-between text-sm">
+                                                                <span className="font-medium capitalize">
+                                                                    {role.role.replace('_', ' ')}
+                                                                </span>
+                                                                <span className="text-muted-foreground">
+                                                                    {role.count} ({percentage}%)
+                                                                </span>
+                                                            </div>
+                                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                                <div 
+                                                                    className="h-full bg-gradient-to-r from-orange-500 to-red-500 rounded-full transition-all duration-500"
+                                                                    style={{ width: `${percentage}%` }}
+                                                                ></div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <p className="text-center text-muted-foreground py-8">No user data available</p>
+                                        )}
+                                    </CardContent>
+                                </Card>
                             </div>
                         </TabsContent>
                     )}

@@ -2,7 +2,6 @@ import ActivityLogs from "@/components/admin/ActivityLogs";
 import CancellationManagement from "@/components/admin/CancellationManagement";
 import CMSSettings from "@/components/admin/CMSSettings";
 import CreateStaffAccount from "@/components/admin/CreateStaffAccount";
-import EmailTemplates from "@/components/admin/EmailTemplates";
 import EnhancedOverview from "@/components/admin/EnhancedOverview";
 import PlatformSettings from "@/components/admin/PlatformSettings";
 import PromotionalCodes from "@/components/admin/PromotionalCodes";
@@ -1050,21 +1049,6 @@ export default function AdminDashboard() {
 
                             <button
                                 onClick={() => {
-                                    setActiveSection("emails");
-                                    setSidebarOpen(false);
-                                }}
-                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                                    activeSection === "emails"
-                                        ? "bg-primary text-primary-foreground"
-                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                }`}
-                            >
-                                <Mail className="w-5 h-5" />
-                                <span className="text-sm">{t("admin.email_templates")}</span>
-                            </button>
-
-                            <button
-                                onClick={() => {
                                     setActiveSection("logs");
                                     setSidebarOpen(false);
                                 }}
@@ -1348,19 +1332,6 @@ export default function AdminDashboard() {
                     >
                         <Globe className="w-5 h-5" />
                         <span className="text-sm">{t("admin.territories")}</span>
-                    </button>
-
-                    <button
-                        onClick={() => setActiveSection("emails")}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
-                            activeSection === "emails"
-                                ? "bg-primary text-primary-foreground"
-                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
-                        data-testid="nav-emails"
-                    >
-                        <Mail className="w-5 h-5" />
-                        <span className="text-sm">{t("admin.email_templates")}</span>
                     </button>
 
                     <button
@@ -3980,13 +3951,6 @@ export default function AdminDashboard() {
                     {activeSection === "territories" && (
                         <div>
                             <TerritoryManagement />
-                        </div>
-                    )}
-
-                    {/* Email Templates Section */}
-                    {activeSection === "emails" && (
-                        <div>
-                            <EmailTemplates />
                         </div>
                     )}
 
