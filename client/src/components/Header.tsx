@@ -6,7 +6,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight } from "lucide-react";
+import { Search, Moon, Sun, User, MessageSquare, Heart, Bell, ArrowRight, Menu, X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import {
@@ -21,6 +21,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface HeaderProps {
@@ -34,6 +41,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
   const [, setLocation] = useLocation();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // WebSocket for real-time notifications
   const { lastNotification, unreadCount: wsUnreadCount } = useWebSocket(user?.id || null);
@@ -123,7 +131,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <span className="text-xl font-bold text-foreground">TravelHub</span>
+              <span className="text-lg sm:text-xl font-bold text-foreground">TravelHub</span>
             </div>
           </Link>
 
@@ -146,8 +154,8 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex items-center space-x-4">
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-2 lg:space-x-4">
             <LanguageSwitcher />
             
             <Button variant="ghost" size="icon" onClick={onToggleDarkMode} data-testid="button-dark-mode">
@@ -358,6 +366,148 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
               </div>
             )}
           </nav>
+
+          {/* Mobile Menu Button */}
+          <div className="flex md:hidden items-center space-x-2">
+            <Button variant="ghost" size="icon" onClick={onToggleDarkMode}>
+              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+            
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col space-y-4 mt-6">
+                  {/* Mobile Search */}
+                  <div className="w-full relative">
+                    <Input
+                      type="text"
+                      placeholder={t('header.search_placeholder')}
+                      className="pl-10 pr-4 py-2"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={handleSearchKeyPress}
+                    />
+                    <Search 
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 cursor-pointer" 
+                      onClick={() => {
+                        handleSearch();
+                        setMobileMenuOpen(false);
+                      }}
+                    />
+                  </div>
+
+                  <div className="border-t pt-4 space-y-2">
+                    <LanguageSwitcher />
+                    
+                    {isAuthenticated ? (
+                      <>
+                        <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <User className="w-4 h-4 mr-2" />
+                            {t('header.dashboard')}
+                          </Button>
+                        </Link>
+                        
+                        <Link href="/favorites" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <Heart className="w-4 h-4 mr-2" />
+                            {t('header.favorites')}
+                          </Button>
+                        </Link>
+                        
+                        <Link href="/messages" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            <MessageSquare className="w-4 h-4 mr-2" />
+                            {t('header.messages')}
+                            {unreadCount > 0 && (
+                              <Badge variant="destructive" className="ml-auto">
+                                {unreadCount}
+                              </Badge>
+                            )}
+                          </Button>
+                        </Link>
+
+                        {user && (
+                          <>
+                            <div className="border-t pt-2 mt-2">
+                              <div className="px-4 py-2">
+                                <p className="text-sm font-medium">{user.firstName} {user.lastName}</p>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                              </div>
+                            </div>
+
+                            {user.role === 'admin' && (
+                              <Link href="/admin" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start">
+                                  {t('header.admin_panel')}
+                                </Button>
+                              </Link>
+                            )}
+                            
+                            {user.role === 'country_manager' && (
+                              <Link href="/country-manager-dashboard" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start">
+                                  Country Manager
+                                </Button>
+                              </Link>
+                            )}
+                            
+                            {user.role === 'city_manager' && (
+                              <Link href="/city-manager-dashboard" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start">
+                                  City Manager
+                                </Button>
+                              </Link>
+                            )}
+                            
+                            {user.role === 'service_provider' && (
+                              <Link href="/provider-config" onClick={() => setMobileMenuOpen(false)}>
+                                <Button variant="ghost" className="w-full justify-start">
+                                  Provider Dashboard
+                                </Button>
+                              </Link>
+                            )}
+
+                            <Button 
+                              variant="ghost" 
+                              className="w-full justify-start text-destructive hover:text-destructive" 
+                              onClick={() => {
+                                handleLogout();
+                                setMobileMenuOpen(false);
+                              }}
+                            >
+                              {t('header.log_out')}
+                            </Button>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/host" onClick={() => setMobileMenuOpen(false)}>
+                          <Button variant="ghost" className="w-full justify-start">
+                            {t('header.host')}
+                          </Button>
+                        </Link>
+                        <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                          <Button className="w-full">
+                            <User className="w-4 h-4 mr-2" />
+                            {t('header.log_in')}
+                          </Button>
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>
