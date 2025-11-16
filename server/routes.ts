@@ -24,6 +24,7 @@ import { generateBookingCode } from "./base44";
 import { db, pool } from "./db";
 import { storage } from "./storage";
 import { whatsappService } from "./whatsapp";
+import { sendAccountCredentialsEmail } from "./utils/email";
 import multer from "multer";
 import { promises as fs } from "fs";
 import path from "path";
@@ -1128,6 +1129,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
         }
     );
+
+    // Admin staff account creation
+    app.post("/api/admin/create-staff", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (user?.role !== "admin") {
+                return res.status(403).json({ message: "Admin privileges required" });
+            }
+
+            const { email, firstName, lastName, role } = req.body;
+
+            // Validate internal role
+            const internalRoles = ["billing", "operation", "marketing", "accounts", "country_manager"];
+            if (!internalRoles.includes(role)) {
+                return res.status(400).json({ message: "Invalid staff role" });
+            }
+
+            // Check if user already exists
+            const existingUser = await storage.getUserByEmail(email);
+            if (existingUser) {
+                return res.status(400).json({ message: "User with this email already exists" });
+            }
+
+            // Generate temporary password (8 random characters)
+            const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
+            const hashedPassword = await hashPassword(tempPassword);
+
+            // Create user with approved status
+            const newUser = await storage.createUser({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role,
+                status: "approved",
+                approvedBy: userId,
+                approvedAt: new Date().toISOString(),
+            });
+
+            // Send credentials email
+            try {
+                await sendAccountCredentialsEmail(email, firstName, role, tempPassword);
+            } catch (emailError) {
+                console.error("Failed to send credentials email:", emailError);
+                // Don't fail the request if email fails
+            }
+
+            res.status(201).json({
+                message: "Staff account created successfully",
+                user: {
+                    id: newUser.id,
+                    email: newUser.email,
+                    firstName: newUser.firstName,
+                    lastName: newUser.lastName,
+                    role: newUser.role,
+                },
+            });
+        } catch (error) {
+            console.error("Error creating staff account:", error);
+            res.status(500).json({ message: "Failed to create staff account" });
+        }
+    });
 
     // Billing Dashboard routes
     app.get("/api/billing/stats", requireAuth, async (req, res) => {

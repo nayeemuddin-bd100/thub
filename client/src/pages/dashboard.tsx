@@ -86,6 +86,127 @@ const AMENITIES = [
     { id: "petsAllowed", label: "Pets Allowed" },
 ];
 
+function CreateStaffForm({ toast }: { toast: any }) {
+    const [selectedRole, setSelectedRole] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    return (
+        <div className="max-w-2xl mx-auto">
+            <Card className="p-6">
+                <h2 className="text-2xl font-semibold text-foreground mb-6">
+                    Create Internal Staff Account
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                    Create accounts for internal roles such as Billing, Operation, Marketing, Accounts, and Country Manager. The staff member will receive an email with their login credentials.
+                </p>
+                
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsSubmitting(true);
+                    const formData = new FormData(e.currentTarget);
+                    const data = {
+                        email: formData.get('email') as string,
+                        firstName: formData.get('firstName') as string,
+                        lastName: formData.get('lastName') as string,
+                        role: selectedRole,
+                    };
+
+                    try {
+                        await apiRequest('/api/admin/create-staff', {
+                            method: 'POST',
+                            body: JSON.stringify(data),
+                            headers: { 'Content-Type': 'application/json' },
+                        });
+
+                        toast({
+                            title: "Success",
+                            description: "Staff account created successfully. Credentials sent via email.",
+                        });
+                        e.currentTarget.reset();
+                        setSelectedRole("");
+                    } catch (error) {
+                        toast({
+                            title: "Error",
+                            description: error instanceof Error ? error.message : "Failed to create staff account",
+                            variant: "destructive",
+                        });
+                    } finally {
+                        setIsSubmitting(false);
+                    }
+                }}>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    First Name *
+                                </label>
+                                <Input
+                                    name="firstName"
+                                    required
+                                    placeholder="John"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-2">
+                                    Last Name *
+                                </label>
+                                <Input
+                                    name="lastName"
+                                    required
+                                    placeholder="Doe"
+                                    disabled={isSubmitting}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                Email *
+                            </label>
+                            <Input
+                                name="email"
+                                type="email"
+                                required
+                                placeholder="john.doe@travelhub.com"
+                                disabled={isSubmitting}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-2">
+                                Role *
+                            </label>
+                            <Select value={selectedRole} onValueChange={setSelectedRole} required disabled={isSubmitting}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="billing">Billing</SelectItem>
+                                    <SelectItem value="operation">Operation</SelectItem>
+                                    <SelectItem value="marketing">Marketing</SelectItem>
+                                    <SelectItem value="accounts">Accounts</SelectItem>
+                                    <SelectItem value="country_manager">Country Manager</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="bg-muted/50 rounded-lg p-4">
+                            <p className="text-sm text-muted-foreground">
+                                <strong>Note:</strong> A temporary password will be automatically generated and sent to the staff member's email. They should change it upon first login.
+                            </p>
+                        </div>
+
+                        <Button type="submit" className="w-full" disabled={isSubmitting || !selectedRole}>
+                            {isSubmitting ? "Creating..." : "Create Staff Account"}
+                        </Button>
+                    </div>
+                </form>
+            </Card>
+        </div>
+    );
+}
+
 export default function Dashboard() {
     const { t } = useTranslation();
     const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -752,7 +873,7 @@ export default function Dashboard() {
                     className="space-y-6"
                 >
                     {user?.role === "admin" ? (
-                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 gap-2">
+                        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-8 gap-2">
                             <TabsTrigger
                                 value="overview"
                                 data-testid="tab-overview"
@@ -770,6 +891,16 @@ export default function Dashboard() {
                             >
                                 <Users className="w-4 h-4 sm:mr-2" />
                                 <span className="hidden sm:inline">Users</span>
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="create-staff"
+                                data-testid="tab-create-staff"
+                                className="text-xs sm:text-sm"
+                            >
+                                <UserCheck className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">
+                                    Create Staff
+                                </span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="cancellations"
@@ -976,6 +1107,13 @@ export default function Dashboard() {
                                     {t("dashboard.admin_welcome_message")}
                                 </p>
                             </div>
+                        </TabsContent>
+                    )}
+
+                    {/* Admin Create Staff Tab */}
+                    {user?.role === "admin" && (
+                        <TabsContent value="create-staff" className="space-y-6">
+                            <CreateStaffForm toast={toast} />
                         </TabsContent>
                     )}
 
