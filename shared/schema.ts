@@ -947,6 +947,9 @@ export const cmsContent = pgTable("cms_content", {
     content: text("content").notNull(),
     metaDescription: text("meta_description"),
     metaKeywords: varchar("meta_keywords"),
+    footerSection: varchar("footer_section", {
+        enum: ["company", "support", "legal", "resources", "none"],
+    }).default("none"),
     isPublished: boolean("is_published").default(true),
     updatedBy: varchar("updated_by").references(() => users.id),
     createdAt: timestamp("created_at").defaultNow(),
