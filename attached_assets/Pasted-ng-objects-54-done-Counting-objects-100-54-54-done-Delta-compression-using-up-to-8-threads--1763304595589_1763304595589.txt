@@ -1,0 +1,41 @@
+ng objects: 54, done.
+Counting objects: 100% (54/54), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (35/35), done.
+Writing objects: 100% (35/35), 1.52 MiB | 7.58 MiB/s, done.
+Total 35 (delta 20), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (20/20), completed with 16 local objects.
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: 
+remote: - GITHUB PUSH PROTECTION
+remote:   —————————————————————————————————————————
+remote:     Resolve the following violations before pushing again
+remote: 
+remote:     - Push cannot contain secrets
+remote: 
+remote:     
+remote:      (?) Learn how to resolve a blocked push
+remote:      https://docs.github.com/code-security/secret-scanning/working-with-secret-scanning-and-push-protection/working-with-push-protection-from-the-command-line#resolving-a-blocked-push
+remote:     
+remote:     
+remote:       —— Stripe Test API Secret Key ————————————————————————
+remote:        locations:
+remote:          - commit: 78397cded1d1d2aa90138c9c674afdc47eebde69
+remote:            path: attached_assets/Pasted--16-13-47-25-084599-Preparing-container-with-helper-image-ghcr-io-coollabsio-coolify-helper-1-0-12--1763301264162_1763301264162.txt:179
+remote:          - commit: 78397cded1d1d2aa90138c9c674afdc47eebde69
+remote:            path: attached_assets/Pasted--16-13-47-25-084599-Preparing-container-with-helper-image-ghcr-io-coollabsio-coolify-helper-1-0-12--1763301264162_1763301264162.txt:324
+remote:          - commit: 78397cded1d1d2aa90138c9c674afdc47eebde69
+remote:            path: attached_assets/Pasted--16-13-47-25-084599-Preparing-container-with-helper-image-ghcr-io-coollabsio-coolify-helper-1-0-12--1763301264162_1763301264162.txt:378
+remote:          - commit: 78397cded1d1d2aa90138c9c674afdc47eebde69
+remote:            path: attached_assets/Pasted-2025-Nov-16-13-57-00-878113-CMD-docker-exec-rsgg04c4k4w0884k8o84og4g-bash-c-cat-artifacts-rsgg-1763301544222_1763301544222.txt:127
+remote:          - commit: 78397cded1d1d2aa90138c9c674afdc47eebde69
+remote:            path: attached_assets/Pasted-2025-Nov-16-13-57-00-878113-CMD-docker-exec-rsgg04c4k4w0884k8o84og4g-bash-c-cat-artifacts-rsgg-1763301544222_1763301544222.txt:251
+remote:     
+remote:        (?) To push, remove secret from commit(s) or follow this URL to allow the secret.
+remote:        https://github.com/nayeemuddin-bd100/thub/security/secret-scanning/unblock-secret/35Z1YnWHsLIBTsCqsPdOGu2rNmW
+remote:     
+remote: 
+remote: 
+To https://github.com/nayeemuddin-bd100/thub.git
+ ! [remote rejected] main -> main (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/nayeemuddin-bd100/thub.git'
