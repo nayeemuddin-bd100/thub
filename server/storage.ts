@@ -1083,12 +1083,12 @@ export class DatabaseStorage implements IStorage {
             .from(reviews)
             .where(eq(reviews.propertyId, propertyId));
 
-        if (result[0]) {
+        if (result[0] && result[0].avgRating !== null) {
             await db
                 .update(properties)
                 .set({
-                    rating: result[0].avgRating.toFixed(2),
-                    reviewCount: result[0].count,
+                    rating: parseFloat(String(result[0].avgRating)).toFixed(2),
+                    reviewCount: Number(result[0].count),
                 })
                 .where(eq(properties.id, propertyId));
         }
@@ -1105,12 +1105,12 @@ export class DatabaseStorage implements IStorage {
             .from(reviews)
             .where(eq(reviews.serviceProviderId, serviceProviderId));
 
-        if (result[0]) {
+        if (result[0] && result[0].avgRating !== null) {
             await db
                 .update(serviceProviders)
                 .set({
-                    rating: result[0].avgRating.toFixed(2),
-                    reviewCount: result[0].count,
+                    rating: parseFloat(String(result[0].avgRating)).toFixed(2),
+                    reviewCount: Number(result[0].count),
                 })
                 .where(eq(serviceProviders.id, serviceProviderId));
         }
@@ -1326,6 +1326,15 @@ export class DatabaseStorage implements IStorage {
             .from(jobAssignments)
             .where(eq(jobAssignments.id, id));
         return assignment;
+    }
+
+    async updateJobAssignment(id: string, updates: Partial<InsertJobAssignment>): Promise<JobAssignment | undefined> {
+        const [updatedAssignment] = await db
+            .update(jobAssignments)
+            .set(updates)
+            .where(eq(jobAssignments.id, id))
+            .returning();
+        return updatedAssignment;
     }
 
     async getJobAssignmentsByProvider(providerId: string): Promise<JobAssignment[]> {

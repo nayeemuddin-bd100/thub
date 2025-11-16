@@ -1985,6 +1985,183 @@ async function seed() {
         console.log("Creating bookings...");
         await db.insert(bookings).values(sampleBookings).onConflictDoNothing();
 
+        // Query created service providers for job assignments
+        const createdProviders = await db.select().from(serviceProviders).limit(6);
+        
+        if (createdProviders.length >= 3) {
+            // Create service bookings for job assignment workflow
+            const serviceBooking1Id = randomUUID();
+            const serviceBooking2Id = randomUUID();
+            const serviceBooking3Id = randomUUID();
+            const serviceBooking4Id = randomUUID();
+            const serviceBooking5Id = randomUUID();
+            const serviceBooking6Id = randomUUID();
+            const serviceBooking7Id = randomUUID();
+            const serviceBooking8Id = randomUUID();
+            
+            const sampleServiceBookings = [
+                // Client1 bookings (booking1Id) - Multiple services
+                {
+                    id: serviceBooking1Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[0].id, // First provider (Maid)
+                    serviceName: "Deep Cleaning Service",
+                    serviceDate: new Date(futureDate.getTime() + 1 * 24 * 60 * 60 * 1000), // 1 day after check-in
+                    duration: 4,
+                    rate: "50.00",
+                    total: "200.00",
+                    status: "pending" as const,
+                },
+                {
+                    id: serviceBooking2Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[2].id, // Third provider (Transport)
+                    serviceName: "Airport Pickup Service",
+                    serviceDate: futureDate, // Check-in day
+                    duration: 2,
+                    rate: "60.00",
+                    total: "120.00",
+                    status: "pending" as const,
+                },
+                {
+                    id: serviceBooking5Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[4].id, // Fifth provider (Dining)
+                    serviceName: "Private Chef Dinner",
+                    serviceDate: new Date(futureDate.getTime() + 2 * 24 * 60 * 60 * 1000),
+                    duration: 3,
+                    rate: "150.00",
+                    total: "450.00",
+                    status: "pending" as const,
+                },
+                {
+                    id: serviceBooking6Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[1].id, // Second provider (Maid)
+                    serviceName: "Daily Housekeeping",
+                    serviceDate: new Date(futureDate.getTime() + 1 * 24 * 60 * 60 * 1000),
+                    duration: 2,
+                    rate: "50.00",
+                    total: "100.00",
+                    status: "pending" as const,
+                },
+                {
+                    id: serviceBooking7Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[2].id, // Transport provider
+                    serviceName: "Airport Drop-off Service",
+                    serviceDate: farFutureDate, // Check-out day
+                    duration: 2,
+                    rate: "60.00",
+                    total: "120.00",
+                    status: "pending" as const,
+                },
+                {
+                    id: serviceBooking8Id,
+                    bookingId: booking1Id, // client1's booking
+                    serviceProviderId: createdProviders[3].id, // Fourth provider
+                    serviceName: "Laundry Service",
+                    serviceDate: new Date(futureDate.getTime() + 3 * 24 * 60 * 60 * 1000),
+                    duration: 1,
+                    rate: "45.00",
+                    total: "45.00",
+                    status: "pending" as const,
+                },
+                // Client2 bookings (booking2Id)
+                {
+                    id: serviceBooking3Id,
+                    bookingId: booking2Id,
+                    serviceProviderId: createdProviders[4].id, // Fifth provider (Dining)
+                    serviceName: "Private Chef Lunch",
+                    serviceDate: new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000),
+                    duration: 3,
+                    rate: "80.00",
+                    total: "240.00",
+                    status: "awaiting_assignment" as const, // This one needs manager to assign
+                },
+                {
+                    id: serviceBooking4Id,
+                    bookingId: booking2Id,
+                    serviceProviderId: createdProviders[1].id, // Second provider (Maid)
+                    serviceName: "Post-Stay Cleaning",
+                    serviceDate: new Date(today.getTime() + 24 * 24 * 60 * 60 * 1000),
+                    duration: 3,
+                    rate: "50.00",
+                    total: "150.00",
+                    status: "awaiting_assignment" as const, // This one needs manager to assign
+                },
+            ];
+
+            console.log("Creating service bookings...");
+            await db.insert(serviceBookings).values(sampleServiceBookings).onConflictDoNothing();
+
+            // Create job assignments for country manager workflow
+            const jobAssignment1Id = randomUUID();
+            const jobAssignment2Id = randomUUID();
+            const jobAssignment3Id = randomUUID();
+            const jobAssignment4Id = randomUUID();
+            const jobAssignment5Id = randomUUID();
+            const jobAssignment6Id = randomUUID();
+            const jobAssignment7Id = randomUUID();
+            
+            const sampleJobAssignments = [
+                // Client1's service job assignments - All in pending status
+                {
+                    id: jobAssignment1Id,
+                    serviceBookingId: serviceBooking1Id,
+                    serviceProviderId: createdProviders[0].id,
+                    assignedBy: countryManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                {
+                    id: jobAssignment2Id,
+                    serviceBookingId: serviceBooking2Id,
+                    serviceProviderId: createdProviders[2].id,
+                    assignedBy: countryManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                {
+                    id: jobAssignment4Id,
+                    serviceBookingId: serviceBooking5Id,
+                    serviceProviderId: createdProviders[4].id,
+                    assignedBy: countryManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                {
+                    id: jobAssignment5Id,
+                    serviceBookingId: serviceBooking6Id,
+                    serviceProviderId: createdProviders[1].id,
+                    assignedBy: countryManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                {
+                    id: jobAssignment6Id,
+                    serviceBookingId: serviceBooking7Id,
+                    serviceProviderId: createdProviders[2].id,
+                    assignedBy: countryManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                {
+                    id: jobAssignment7Id,
+                    serviceBookingId: serviceBooking8Id,
+                    serviceProviderId: createdProviders[3].id,
+                    assignedBy: cityManagerId,
+                    status: "pending" as const, // Pending provider acceptance
+                },
+                // Client2's service job assignment
+                {
+                    id: jobAssignment3Id,
+                    serviceBookingId: serviceBooking3Id,
+                    serviceProviderId: createdProviders[4].id,
+                    assignedBy: cityManagerId, // Assigned by city manager
+                    status: "pending" as const, // Pending provider acceptance
+                },
+            ];
+
+            console.log("Creating job assignments...");
+            await db.insert(jobAssignments).values(sampleJobAssignments).onConflictDoNothing();
+        }
+
         // Create sample reviews
         const sampleReviews = [
             {

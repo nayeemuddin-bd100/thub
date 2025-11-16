@@ -50,6 +50,9 @@ interface AssignJobDialogProps {
   onOpenChange: (open: boolean) => void;
   booking: ServiceBooking;
   providers: ServiceProvider[];
+  onAssign?: (serviceProviderId: string) => Promise<void>;
+  isReassign?: boolean;
+  currentProvider?: string;
 }
 
 export default function AssignJobDialog({
@@ -57,6 +60,9 @@ export default function AssignJobDialog({
   onOpenChange,
   booking,
   providers,
+  onAssign,
+  isReassign = false,
+  currentProvider,
 }: AssignJobDialogProps) {
   const [selectedProviderId, setSelectedProviderId] = useState<string>("");
   const { toast } = useToast();
@@ -68,6 +74,13 @@ export default function AssignJobDialog({
         throw new Error("Please select a provider");
       }
 
+      // If custom onAssign handler provided (for reassignment), use it
+      if (onAssign) {
+        await onAssign(selectedProviderId);
+        return;
+      }
+
+      // Otherwise, use the default assignment endpoint
       const response = await apiRequest("POST", "/api/country-manager/assign-job", {
         serviceBookingId: booking.id,
         serviceProviderId: selectedProviderId,
@@ -75,11 +88,13 @@ export default function AssignJobDialog({
       return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/country-manager/bookings"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/country-manager/stats"] });
+      if (!onAssign) {
+        queryClient.invalidateQueries({ queryKey: ["/api/country-manager/bookings"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/country-manager/stats"] });
+      }
       toast({
         title: "Success",
-        description: "Job assigned successfully to provider",
+        description: isReassign ? "Job reassigned successfully" : "Job assigned successfully to provider",
       });
       setSelectedProviderId("");
       onOpenChange(false);
@@ -87,7 +102,7 @@ export default function AssignJobDialog({
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to assign job",
+        description: error.message || (isReassign ? "Failed to reassign job" : "Failed to assign job"),
         variant: "destructive",
       });
     },
@@ -101,10 +116,12 @@ export default function AssignJobDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Assign Job to Provider</DialogTitle>
+          <DialogTitle>{isReassign ? 'Reassign Job to Different Provider' : 'Assign Job to Provider'}</DialogTitle>
           <DialogDescription>
-            Select a service provider to assign this job to. The provider will
-            receive a notification and can accept or reject the assignment.
+            {isReassign 
+              ? 'Select a new service provider to reassign this job to. Both the old and new provider will receive notifications.'
+              : 'Select a service provider to assign this job to. The provider will receive a notification and can accept or reject the assignment.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -119,6 +136,11 @@ export default function AssignJobDialog({
                 Scheduled: {new Date(booking.scheduledDate).toLocaleDateString()}
               </p>
               <p>Amount: ${booking.totalAmount}</p>
+              {isReassign && currentProvider && (
+                <p className="mt-2 font-medium text-foreground">
+                  Current Provider: {currentProvider}
+                </p>
+              )}
             </div>
           </div>
 
@@ -173,7 +195,7 @@ export default function AssignJobDialog({
             {assignMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Assign Job
+            {isReassign ? 'Reassign Job' : 'Assign Job'}
           </Button>
         </DialogFooter>
       </DialogContent>

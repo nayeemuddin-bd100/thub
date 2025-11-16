@@ -4,8 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Briefcase, CheckCircle, Clock, TrendingUp, Check, X, Home, DollarSign, Package } from 'lucide-react';
+import { Users, Briefcase, CheckCircle, Clock, TrendingUp, Check, X, Home, DollarSign, Package, RefreshCw, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -80,6 +90,9 @@ export default function CountryManagerDashboard() {
   const { toast } = useToast();
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<ServiceBooking | null>(null);
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
   if (!user || user.role !== 'country_manager') {
     return (
@@ -106,6 +119,10 @@ export default function CountryManagerDashboard() {
 
   const { data: bookings = [], isLoading: loadingBookings } = useQuery<ServiceBooking[]>({
     queryKey: ['/api/country-manager/bookings'],
+  });
+
+  const { data: jobAssignments = [], isLoading: loadingJobAssignments } = useQuery<any[]>({
+    queryKey: ['/api/country-manager/job-assignments'],
   });
 
   const { data: serviceOrdersData, isLoading: loadingServiceOrders } = useQuery<{
@@ -147,6 +164,40 @@ export default function CountryManagerDashboard() {
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to reject provider', variant: 'destructive' });
+    },
+  });
+
+  const cancelAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const response = await apiRequest('POST', `/api/country-manager/job-assignments/${assignmentId}/cancel`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/job-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/stats'] });
+      toast({ title: 'Success', description: 'Job assignment cancelled successfully' });
+      setCancelDialogOpen(false);
+      setSelectedAssignment(null);
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to cancel job assignment', variant: 'destructive' });
+    },
+  });
+
+  const reassignMutation = useMutation({
+    mutationFn: async ({ assignmentId, serviceProviderId }: { assignmentId: string; serviceProviderId: string }) => {
+      const response = await apiRequest('POST', `/api/country-manager/job-assignments/${assignmentId}/reassign`, { serviceProviderId });
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/job-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/country-manager/stats'] });
+      toast({ title: 'Success', description: 'Job reassigned successfully' });
+      setReassignDialogOpen(false);
+      setSelectedAssignment(null);
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to reassign job', variant: 'destructive' });
     },
   });
 
@@ -302,35 +353,62 @@ export default function CountryManagerDashboard() {
 
               <TabsContent value="pending" className="mt-4">
                 <div className="space-y-4">
-                  {loadingBookings ? (
-                    <p className="text-center text-muted-foreground">Loading bookings...</p>
-                  ) : bookings.filter(b => b.status === 'pending').length === 0 ? (
+                  {loadingJobAssignments ? (
+                    <p className="text-center text-muted-foreground">Loading job assignments...</p>
+                  ) : jobAssignments.filter((a: any) => a.status === 'pending').length === 0 ? (
                     <p className="text-center text-muted-foreground">No pending assignments</p>
                   ) : (
-                    bookings
-                      .filter(b => b.status === 'pending')
-                      .slice(0, 5)
-                      .map((booking) => (
-                        <div key={booking.id} className="border rounded-lg p-4">
+                    jobAssignments
+                      .filter((a: any) => a.status === 'pending')
+                      .slice(0, 10)
+                      .map((assignment: any) => (
+                        <div key={assignment.id} className="border rounded-lg p-4">
                           <div className="flex items-center justify-between mb-2">
                             <p className="font-medium">
-                              {booking.client.firstName} {booking.client.lastName}
+                              {assignment.client ? `${assignment.client.firstName} ${assignment.client.lastName}` : 'Client'}
                             </p>
-                            <Badge variant="outline">{booking.status}</Badge>
+                            <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                              {assignment.status}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Scheduled: {booking.scheduledDate ? format(new Date(booking.scheduledDate), 'PPp') : 'N/A'}
+                          <p className="text-sm font-medium mb-1">
+                            Service: {assignment.serviceBooking?.serviceName || 'N/A'}
                           </p>
-                          <Button 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setAssignDialogOpen(true);
-                            }}
-                          >
-                            Assign Provider
-                          </Button>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Provider: {assignment.provider?.businessName || 'N/A'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Service Date: {assignment.serviceBooking?.serviceDate ? format(new Date(assignment.serviceBooking.serviceDate), 'PPp') : 'N/A'}
+                          </p>
+                          <p className="text-sm font-medium text-green-600 mb-3">
+                            ${parseFloat(assignment.serviceBooking?.total || '0').toFixed(2)}
+                          </p>
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedAssignment(assignment);
+                                setReassignDialogOpen(true);
+                              }}
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Reassign
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="flex-1"
+                              onClick={() => {
+                                setSelectedAssignment(assignment);
+                                setCancelDialogOpen(true);
+                              }}
+                            >
+                              <XCircle className="w-4 h-4 mr-2" />
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       ))
                   )}
@@ -339,22 +417,35 @@ export default function CountryManagerDashboard() {
 
               <TabsContent value="assigned" className="mt-4">
                 <div className="space-y-4">
-                  {bookings.filter(b => b.status === 'confirmed').length === 0 ? (
+                  {loadingJobAssignments ? (
+                    <p className="text-center text-muted-foreground">Loading job assignments...</p>
+                  ) : jobAssignments.filter((a: any) => a.status === 'accepted').length === 0 ? (
                     <p className="text-center text-muted-foreground">No assigned jobs</p>
                   ) : (
-                    bookings
-                      .filter(b => b.status === 'confirmed')
-                      .slice(0, 5)
-                      .map((booking) => (
-                        <div key={booking.id} className="border rounded-lg p-4">
+                    jobAssignments
+                      .filter((a: any) => a.status === 'accepted')
+                      .slice(0, 10)
+                      .map((assignment: any) => (
+                        <div key={assignment.id} className="border rounded-lg p-4 bg-green-50">
                           <div className="flex items-center justify-between mb-2">
                             <p className="font-medium">
-                              {booking.client.firstName} {booking.client.lastName}
+                              {assignment.client ? `${assignment.client.firstName} ${assignment.client.lastName}` : 'Client'}
                             </p>
-                            <Badge>{booking.status}</Badge>
+                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                              {assignment.status}
+                            </Badge>
                           </div>
+                          <p className="text-sm font-medium mb-1">
+                            Service: {assignment.serviceBooking?.serviceName || 'N/A'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Provider: {assignment.provider?.businessName || 'N/A'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Service Date: {assignment.serviceBooking?.serviceDate ? format(new Date(assignment.serviceBooking.serviceDate), 'PPp') : 'N/A'}
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            Scheduled: {booking.scheduledDate ? format(new Date(booking.scheduledDate), 'PPp') : 'N/A'}
+                            Accepted: {assignment.respondedAt ? format(new Date(assignment.respondedAt), 'PPp') : 'N/A'}
                           </p>
                         </div>
                       ))
@@ -364,22 +455,32 @@ export default function CountryManagerDashboard() {
 
               <TabsContent value="completed" className="mt-4">
                 <div className="space-y-4">
-                  {bookings.filter(b => b.status === 'completed').length === 0 ? (
+                  {loadingJobAssignments ? (
+                    <p className="text-center text-muted-foreground">Loading job assignments...</p>
+                  ) : jobAssignments.filter((a: any) => a.status === 'completed').length === 0 ? (
                     <p className="text-center text-muted-foreground">No completed jobs</p>
                   ) : (
-                    bookings
-                      .filter(b => b.status === 'completed')
-                      .slice(0, 5)
-                      .map((booking) => (
-                        <div key={booking.id} className="border rounded-lg p-4">
+                    jobAssignments
+                      .filter((a: any) => a.status === 'completed')
+                      .slice(0, 10)
+                      .map((assignment: any) => (
+                        <div key={assignment.id} className="border rounded-lg p-4 bg-blue-50">
                           <div className="flex items-center justify-between mb-2">
                             <p className="font-medium">
-                              {booking.client.firstName} {booking.client.lastName}
+                              {assignment.client ? `${assignment.client.firstName} ${assignment.client.lastName}` : 'Client'}
                             </p>
-                            <Badge variant="secondary">{booking.status}</Badge>
+                            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                              {assignment.status}
+                            </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Completed: {booking.createdAt ? format(new Date(booking.createdAt), 'PPp') : 'N/A'}
+                          <p className="text-sm font-medium mb-1">
+                            Service: {assignment.serviceBooking?.serviceName || 'N/A'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-1">
+                            Provider: {assignment.provider?.businessName || 'N/A'}
+                          </p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Completed: {assignment.completedAt ? format(new Date(assignment.completedAt), 'PPp') : 'N/A'}
                           </p>
                         </div>
                       ))
@@ -715,6 +816,64 @@ export default function CountryManagerDashboard() {
           providers={providers}
         />
       )}
+
+      {selectedAssignment && (
+        <AssignJobDialog
+          open={reassignDialogOpen}
+          onOpenChange={setReassignDialogOpen}
+          booking={{
+            id: selectedAssignment.serviceBooking?.bookingId || selectedAssignment.serviceBookingId,
+            status: 'pending',
+            createdAt: selectedAssignment.createdAt,
+            scheduledDate: selectedAssignment.serviceBooking?.serviceDate,
+            totalAmount: selectedAssignment.serviceBooking?.total || '0',
+            client: {
+              firstName: selectedAssignment.client?.firstName || '',
+              lastName: selectedAssignment.client?.lastName || '',
+            }
+          }}
+          providers={providers}
+          onAssign={async (serviceProviderId: string) => {
+            await reassignMutation.mutateAsync({
+              assignmentId: selectedAssignment.id,
+              serviceProviderId,
+            });
+          }}
+          isReassign={true}
+          currentProvider={selectedAssignment.provider?.businessName}
+        />
+      )}
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Job Assignment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this job assignment? This will remove the assignment and the service booking will need to be reassigned to another provider.
+              {selectedAssignment && (
+                <div className="mt-3 p-3 bg-muted rounded-md">
+                  <p className="text-sm"><strong>Service:</strong> {selectedAssignment.serviceBooking?.serviceName}</p>
+                  <p className="text-sm"><strong>Provider:</strong> {selectedAssignment.provider?.businessName}</p>
+                  <p className="text-sm"><strong>Client:</strong> {selectedAssignment.client?.firstName} {selectedAssignment.client?.lastName}</p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (selectedAssignment) {
+                  cancelAssignmentMutation.mutate(selectedAssignment.id);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Yes, Cancel Assignment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

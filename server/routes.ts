@@ -14,6 +14,8 @@ import {
     cmsContent,
     userActivityLogs,
     blogPosts,
+    serviceBookings,
+    bookings,
 } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -691,6 +693,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             `);
             const totalRevenue = revenueResult.rows[0]?.total || 0;
 
+            // Get daily booking activity for the last 7 days
+            const dailyBookings = await db.execute(sql`
+                WITH date_series AS (
+                    SELECT generate_series(
+                        CURRENT_DATE - INTERVAL '6 days',
+                        CURRENT_DATE,
+                        '1 day'::interval
+                    )::date as day
+                )
+                SELECT 
+                    TO_CHAR(ds.day, 'Dy') as date,
+                    COALESCE(COUNT(b.id), 0) as bookings
+                FROM date_series ds
+                LEFT JOIN bookings b ON DATE(b.created_at) = ds.day
+                GROUP BY ds.day
+                ORDER BY ds.day
+            `);
+
             res.json({
                 ...basicStats,
                 totalRevenue: parseFloat(totalRevenue),
@@ -713,6 +733,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     location: row.location,
                     bookingCount: parseInt(row.booking_count || 0),
                     revenue: parseFloat(row.revenue || 0),
+                })),
+                dailyBookings: dailyBookings.rows.map((row: any) => ({
+                    date: row.date,
+                    bookings: parseInt(row.bookings || 0),
                 })),
             });
         } catch (error) {
@@ -2603,6 +2627,196 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error assigning job:", error);
             res.status(500).json({ message: "Failed to assign job" });
+        }
+    });
+
+    // Country Manager: Get job assignments
+    app.get("/api/country-manager/job-assignments", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager access required" });
+            }
+
+            // Get all job assignments assigned by this country manager
+            const assignments = await storage.getJobAssignmentsByCountryManager(userId);
+
+            // Fetch related data for each assignment
+            const enrichedAssignments = await Promise.all(
+                assignments.map(async (assignment) => {
+                    const serviceBooking = await db
+                        .select()
+                        .from(serviceBookings)
+                        .where(eq(serviceBookings.id, assignment.serviceBookingId))
+                        .limit(1);
+
+                    const provider = await storage.getServiceProvider(assignment.serviceProviderId);
+
+                    let booking = null;
+                    let client = null;
+                    if (serviceBooking[0]) {
+                        const bookingData = await db
+                            .select()
+                            .from(bookings)
+                            .where(eq(bookings.id, serviceBooking[0].bookingId))
+                            .limit(1);
+                        
+                        if (bookingData[0]) {
+                            booking = bookingData[0];
+                            client = await storage.getUser(booking.clientId);
+                        }
+                    }
+
+                    return {
+                        ...assignment,
+                        serviceBooking: serviceBooking[0],
+                        provider: provider,
+                        booking: booking,
+                        client: client,
+                    };
+                })
+            );
+
+            res.json(enrichedAssignments);
+        } catch (error) {
+            console.error("Error fetching job assignments:", error);
+            res.status(500).json({ message: "Failed to fetch job assignments" });
+        }
+    });
+
+    // Country Manager: Reassign job assignment to different provider
+    app.post("/api/country-manager/job-assignments/:id/reassign", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager access required" });
+            }
+
+            const assignmentId = req.params.id;
+            const { serviceProviderId } = req.body;
+
+            if (!serviceProviderId) {
+                return res.status(400).json({ message: "Service provider ID is required" });
+            }
+
+            // Get the current assignment
+            const assignment = await storage.getJobAssignment(assignmentId);
+            if (!assignment) {
+                return res.status(404).json({ message: "Job assignment not found" });
+            }
+
+            // Can only reassign pending assignments
+            if (assignment.status !== "pending") {
+                return res.status(400).json({ 
+                    message: `Cannot reassign ${assignment.status} assignment. Only pending assignments can be reassigned.` 
+                });
+            }
+
+            // Get the new provider
+            const newProvider = await storage.getServiceProvider(serviceProviderId);
+            if (!newProvider) {
+                return res.status(404).json({ message: "New service provider not found" });
+            }
+
+            // Get the old provider for notification
+            const oldProvider = await storage.getServiceProvider(assignment.serviceProviderId);
+
+            // Update the assignment
+            const updatedAssignment = await storage.updateJobAssignment(assignmentId, {
+                serviceProviderId,
+                assignedBy: userId,
+                updatedAt: new Date(),
+            });
+
+            // Notify the old provider about cancellation
+            if (oldProvider) {
+                await storage.createNotification({
+                    userId: oldProvider.userId,
+                    type: 'cancellation',
+                    title: 'Job Assignment Cancelled',
+                    message: `A job assignment has been reassigned to another provider by the Country Manager.`,
+                    relatedId: assignmentId,
+                    isRead: false,
+                });
+            }
+
+            // Notify the new provider
+            await storage.createNotification({
+                userId: newProvider.userId,
+                type: 'job_assigned',
+                title: 'New Job Assignment',
+                message: `You have been assigned a new job by the Country Manager. Please review and accept or reject.`,
+                relatedId: assignmentId,
+                isRead: false,
+            });
+
+            res.json({
+                message: "Job reassigned successfully",
+                assignment: updatedAssignment,
+            });
+        } catch (error) {
+            console.error("Error reassigning job:", error);
+            res.status(500).json({ message: "Failed to reassign job" });
+        }
+    });
+
+    // Country Manager: Cancel job assignment
+    app.post("/api/country-manager/job-assignments/:id/cancel", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            if (!user || user.role !== "country_manager") {
+                return res.status(403).json({ message: "Country Manager access required" });
+            }
+
+            const assignmentId = req.params.id;
+
+            // Get the assignment
+            const assignment = await storage.getJobAssignment(assignmentId);
+            if (!assignment) {
+                return res.status(404).json({ message: "Job assignment not found" });
+            }
+
+            // Can only cancel pending assignments
+            if (assignment.status !== "pending") {
+                return res.status(400).json({ 
+                    message: `Cannot cancel ${assignment.status} assignment. Only pending assignments can be cancelled.` 
+                });
+            }
+
+            // Get provider for notification
+            const provider = await storage.getServiceProvider(assignment.serviceProviderId);
+
+            // Update assignment status to cancelled
+            const updatedAssignment = await storage.updateJobAssignment(assignmentId, {
+                status: "cancelled",
+                respondedAt: new Date(),
+            });
+
+            // Notify the provider
+            if (provider) {
+                await storage.createNotification({
+                    userId: provider.userId,
+                    type: 'cancellation',
+                    title: 'Job Assignment Cancelled',
+                    message: `A job assignment has been cancelled by the Country Manager.`,
+                    relatedId: assignmentId,
+                    isRead: false,
+                });
+            }
+
+            res.json({
+                message: "Job assignment cancelled successfully",
+                assignment: updatedAssignment,
+            });
+        } catch (error) {
+            console.error("Error cancelling job assignment:", error);
+            res.status(500).json({ message: "Failed to cancel job assignment" });
         }
     });
 
@@ -5814,7 +6028,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 paymentStatus: "pending" as const,
             };
 
-            const booking = await storage.createBooking(bookingData, services);
+            // Convert service dates to Date objects
+            const processedServices = services.map((service: any) => ({
+                ...service,
+                serviceDate: service.serviceDate ? new Date(service.serviceDate) : new Date(checkIn),
+            }));
+
+            const booking = await storage.createBooking(bookingData, processedServices);
 
             // Send notification to client
             await storage.createNotification({

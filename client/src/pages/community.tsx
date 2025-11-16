@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from 'react-i18next';
-import { Link } from "wouter";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Users, MessageSquare, Heart, Award, Globe, Calendar } from "lucide-react";
 
 export default function Community() {
@@ -120,7 +118,6 @@ export default function Community() {
                     <span className="text-xs text-primary">20.1K members</span>
                   </div>
                 </div>
-                <Button>Join the Conversation</Button>
               </div>
             </div>
           </Card>
@@ -158,7 +155,6 @@ export default function Community() {
                     <p className="text-sm text-muted-foreground">Connect with local service providers in your area</p>
                   </div>
                 </div>
-                <Button className="mt-4" variant="outline">View All Events</Button>
               </div>
             </div>
           </Card>
@@ -227,26 +223,21 @@ export default function Community() {
             <div className="space-y-4">
               <div>
                 <h4 className="font-semibold text-foreground mb-2">Become a Moderator</h4>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground">
                   Help maintain a positive community environment
                 </p>
-                <Button variant="outline" size="sm">Apply Now</Button>
               </div>
               <div>
                 <h4 className="font-semibold text-foreground mb-2">Share Your Story</h4>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground">
                   Inspire others with your TravelHub journey
                 </p>
-                <Link href="/blog">
-                  <Button variant="outline" size="sm">Submit Story</Button>
-                </Link>
               </div>
               <div>
                 <h4 className="font-semibold text-foreground mb-2">Join Local Meetups</h4>
-                <p className="text-sm text-muted-foreground mb-2">
+                <p className="text-sm text-muted-foreground">
                   Connect with community members in your city
                 </p>
-                <Button variant="outline" size="sm">Find Meetups</Button>
               </div>
             </div>
           </Card>
@@ -254,21 +245,9 @@ export default function Community() {
 
         <Card className="p-8 bg-primary/5 border-primary/20 text-center">
           <h2 className="text-2xl font-bold text-foreground mb-3">Join Our Community</h2>
-          <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            Whether you're a traveler, host, or service provider, there's a place for you in the TravelHub community. Sign up today and start connecting!
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Whether you're a traveler, host, or service provider, there's a place for you in the TravelHub community.
           </p>
-          {!isAuthenticated ? (
-            <div className="flex gap-3 justify-center">
-              <Link href="/register">
-                <Button size="lg">Create Account</Button>
-              </Link>
-              <Link href="/login">
-                <Button variant="outline" size="lg">Log In</Button>
-              </Link>
-            </div>
-          ) : (
-            <Button size="lg">Explore Community</Button>
-          )}
         </Card>
       </main>
 

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import {
     Dialog,
     DialogContent,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
@@ -326,13 +327,13 @@ export default function CMSSettings() {
 
             {/* Edit/Create Dialog */}
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+                <DialogContent className="max-w-3xl max-h-[90vh]">
                     <DialogHeader>
                         <DialogTitle>
                             {editingContent ? "Edit CMS Content" : "Add CMS Content"}
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 overflow-y-auto flex-1 pr-2">
+                    <div className="space-y-4 overflow-y-auto max-h-[calc(90vh-180px)] pr-2">
                         <div>
                             <Label htmlFor="pageKey">Page Key *</Label>
                             <Input
@@ -467,7 +468,7 @@ export default function CMSSettings() {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4 border-t sticky bottom-0 bg-background">
+                    <DialogFooter className="mt-4">
                         <Button
                             variant="outline"
                             onClick={() => {
@@ -496,7 +497,7 @@ export default function CMSSettings() {
                                 ? "Update"
                                 : "Create"}
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
 
