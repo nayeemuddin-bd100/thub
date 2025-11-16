@@ -218,13 +218,6 @@ app.use((req, res, next) => {
         },
         () => {
             log(`serving on port ${port}`);
-
-            // Initialize database in background after server starts
-            if (process.env.NODE_ENV === "production") {
-                import("./init-db-async").catch((err) => {
-                    console.error("Database initialization error:", err);
-                });
-            }
         }
     );
 })();

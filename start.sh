@@ -3,12 +3,13 @@ set -e
 
 echo "🚀 Starting TravelHub..."
 
-# Drop all existing tables for fresh deployment (with safety checks)
+# Drop all existing tables for fresh deployment
+echo "🗑️  Dropping all tables..."
 tsx server/drop-tables.ts
 
 # Push database schema
 echo "📊 Pushing database schema..."
-npm run db:push --force
+npm run db:push
 
 # Seed the database
 echo "🌱 Seeding database with demo data..."
