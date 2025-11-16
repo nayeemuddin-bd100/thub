@@ -8,6 +8,8 @@ import WhatsAppBubble from "@/components/WhatsAppBubble";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
+import RegisterHost from "@/pages/register-host";
+import RegisterProvider from "@/pages/register-provider";
 import Home from "@/pages/home";
 import Properties from "@/pages/properties";
 import PropertyDetail from "@/pages/property-detail";
@@ -59,6 +61,8 @@ function Router() {
       {/* Auth pages */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
+      <Route path="/register-host" component={RegisterHost} />
+      <Route path="/register-provider" component={RegisterProvider} />
       
       {/* Public pages - accessible to all (CRITICAL: Public browsing without login) */}
       <Route path="/" component={Home} />

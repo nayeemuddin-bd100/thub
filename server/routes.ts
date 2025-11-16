@@ -149,6 +149,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Register as host endpoint
+    app.post("/api/auth/register-host", async (req, res) => {
+        try {
+            const { 
+                email, 
+                password, 
+                firstName, 
+                lastName,
+                businessName,
+                phone,
+                businessAddress,
+                taxLicense,
+                bio
+            } = req.body;
+
+            // Validate input
+            if (!email || !password) {
+                return res
+                    .status(400)
+                    .json({ message: "Email and password are required" });
+            }
+
+            if (password.length < 6) {
+                return res.status(400).json({
+                    message: "Password must be at least 6 characters",
+                });
+            }
+
+            // Hash password
+            const hashedPassword = await hashPassword(password);
+
+            // Create user with property_owner role
+            const user = await storage.upsertUser({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role: "property_owner",
+                businessName,
+                phone,
+                businessAddress,
+                taxLicense,
+                bio,
+            });
+
+            // Set session
+            (req.session as any).userId = user.id;
+
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = user;
+            res.status(201).json(userWithoutPassword);
+        } catch (error: any) {
+            console.error("Host registration error:", error);
+            if (error.code === "23505") {
+                return res
+                    .status(409)
+                    .json({ message: "Email already exists" });
+            }
+            res.status(500).json({ message: "Failed to register host" });
+        }
+    });
+
+    // Register as service provider endpoint
+    app.post("/api/auth/register-provider", async (req, res) => {
+        try {
+            const { 
+                email, 
+                password, 
+                firstName, 
+                lastName,
+                businessName,
+                phone,
+                serviceCategory,
+                certifications,
+                portfolio,
+                hourlyRate,
+                fixedRate,
+                serviceArea,
+                bio
+            } = req.body;
+
+            // Validate input
+            if (!email || !password) {
+                return res
+                    .status(400)
+                    .json({ message: "Email and password are required" });
+            }
+
+            if (password.length < 6) {
+                return res.status(400).json({
+                    message: "Password must be at least 6 characters",
+                });
+            }
+
+            // Hash password
+            const hashedPassword = await hashPassword(password);
+
+            // Create user with service_provider role
+            const user = await storage.upsertUser({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role: "service_provider",
+                businessName,
+                phone,
+                certifications,
+                portfolio,
+                hourlyRate,
+                fixedRate,
+                serviceArea,
+                bio,
+            });
+
+            // Set session
+            (req.session as any).userId = user.id;
+
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = user;
+            res.status(201).json(userWithoutPassword);
+        } catch (error: any) {
+            console.error("Provider registration error:", error);
+            if (error.code === "23505") {
+                return res
+                    .status(409)
+                    .json({ message: "Email already exists" });
+            }
+            res.status(500).json({ message: "Failed to register provider" });
+        }
+    });
+
     // Login endpoint
     app.post("/api/auth/login", async (req, res) => {
         try {
