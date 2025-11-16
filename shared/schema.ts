@@ -63,6 +63,15 @@ export const users = pgTable("users", {
     fixedRate: decimal("fixed_rate", { precision: 10, scale: 2 }),
     serviceArea: varchar("service_area"),
     
+    // Approval system fields
+    status: varchar("status", {
+        enum: ["pending", "approved", "rejected"],
+    })
+        .notNull()
+        .default("approved"),
+    approvedBy: varchar("approved_by").references(() => users.id),
+    approvedAt: timestamp("approved_at"),
+    
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
