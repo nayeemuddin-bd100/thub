@@ -3,6 +3,7 @@ import CancellationManagement from "@/components/admin/CancellationManagement";
 import CMSSettings from "@/components/admin/CMSSettings";
 import CreateStaffAccount from "@/components/admin/CreateStaffAccount";
 import EmailTemplates from "@/components/admin/EmailTemplates";
+import EnhancedOverview from "@/components/admin/EnhancedOverview";
 import PlatformSettings from "@/components/admin/PlatformSettings";
 import PromotionalCodes from "@/components/admin/PromotionalCodes";
 import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
@@ -1407,94 +1408,10 @@ export default function AdminDashboard() {
                     {/* Overview Section */}
                     {activeSection === "overview" && (
                         <div>
-                            <h2 className="text-2xl  font-bold text-foreground mb-6 md:mb-8">
+                            <h2 className="text-2xl font-bold text-foreground mb-6 md:mb-8">
                                 {t("admin.overview")}
                             </h2>
-
-                            {statsLoading ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                                    {[1, 2, 3, 4].map((i) => (
-                                        <div
-                                            key={i}
-                                            className="h-28 sm:h-32 bg-muted rounded-lg animate-pulse"
-                                        ></div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                                    <Card className="p-4 sm:p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                                    {t("admin.total_users")}
-                                                </p>
-                                                <p
-                                                    className="text-2xl sm:text-3xl font-bold text-foreground mt-2"
-                                                    data-testid="stat-users"
-                                                >
-                                                    {stats?.totalUsers || 0}
-                                                </p>
-                                            </div>
-                                            <Users className="w-8 h-8 sm:w-12 sm:h-12 text-primary opacity-20" />
-                                        </div>
-                                    </Card>
-
-                                    <Card className="p-4 sm:p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                                    {t(
-                                                        "admin.total_properties"
-                                                    )}
-                                                </p>
-                                                <p
-                                                    className="text-2xl sm:text-3xl font-bold text-foreground mt-2"
-                                                    data-testid="stat-properties"
-                                                >
-                                                    {stats?.totalProperties ||
-                                                        0}
-                                                </p>
-                                            </div>
-                                            <Building className="w-8 h-8 sm:w-12 sm:h-12 text-primary opacity-20" />
-                                        </div>
-                                    </Card>
-
-                                    <Card className="p-4 sm:p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                                    {t("admin.total_providers")}
-                                                </p>
-                                                <p
-                                                    className="text-2xl sm:text-3xl font-bold text-foreground mt-2"
-                                                    data-testid="stat-providers"
-                                                >
-                                                    {stats?.totalServiceProviders ||
-                                                        0}
-                                                </p>
-                                            </div>
-                                            <Briefcase className="w-8 h-8 sm:w-12 sm:h-12 text-primary opacity-20" />
-                                        </div>
-                                    </Card>
-
-                                    <Card className="p-4 sm:p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div>
-                                                <p className="text-xs sm:text-sm text-muted-foreground">
-                                                    {t("admin.total_bookings")}
-                                                </p>
-                                                <p
-                                                    className="text-3xl font-bold text-foreground mt-2"
-                                                    data-testid="stat-bookings"
-                                                >
-                                                    {stats?.totalBookings || 0}
-                                                </p>
-                                            </div>
-                                            <Calendar className="w-12 h-12 text-primary opacity-20" />
-                                        </div>
-                                    </Card>
-                                </div>
-                            )}
+                            <EnhancedOverview />
                         </div>
                     )}
 
