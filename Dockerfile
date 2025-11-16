@@ -28,9 +28,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-ENV NODE_ENV=production
-RUN npm ci --omit=dev && npm cache clean --force
+# Install ALL dependencies (we need tsx to run drop-tables.ts)
+RUN npm ci && npm cache clean --force
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
