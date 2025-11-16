@@ -766,6 +766,95 @@ export const bookingCancellations = pgTable("booking_cancellations", {
     updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Booking modifications
+export const bookingModifications = pgTable("booking_modifications", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    bookingId: uuid("booking_id").references(() => bookings.id)
+        .notNull(),
+    requestedBy: varchar("requested_by").references(() => users.id)
+        .notNull(),
+    modificationType: varchar("modification_type", {
+        enum: ["dates", "guests", "room_type", "other"],
+    }).notNull(),
+    currentCheckIn: date("current_check_in"),
+    currentCheckOut: date("current_check_out"),
+    newCheckIn: date("new_check_in"),
+    newCheckOut: date("new_check_out"),
+    currentGuests: integer("current_guests"),
+    newGuests: integer("new_guests"),
+    reason: text("reason").notNull(),
+    priceDifference: decimal("price_difference", {
+        precision: 10,
+        scale: 2,
+    }).default("0"),
+    status: varchar("status", {
+        enum: ["pending", "approved", "rejected"],
+    }).default("pending"),
+    approvedBy: varchar("approved_by").references(() => users.id),
+    rejectionReason: text("rejection_reason"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Group bookings
+export const groupBookings = pgTable("group_bookings", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupName: varchar("group_name").notNull(),
+    groupLeaderId: varchar("group_leader_id").references(() => users.id)
+        .notNull(),
+    propertyId: uuid("property_id").references(() => properties.id)
+        .notNull(),
+    numberOfRooms: integer("number_of_rooms").notNull(),
+    totalGuests: integer("total_guests").notNull(),
+    checkIn: date("check_in").notNull(),
+    checkOut: date("check_out").notNull(),
+    totalAmount: decimal("total_amount", {
+        precision: 10,
+        scale: 2,
+    }).notNull(),
+    discountAmount: decimal("discount_amount", {
+        precision: 10,
+        scale: 2,
+    }).default("0"),
+    finalAmount: decimal("final_amount", {
+        precision: 10,
+        scale: 2,
+    }).notNull(),
+    status: varchar("status", {
+        enum: ["pending", "confirmed", "cancelled"],
+    }).default("pending"),
+    paymentStatus: varchar("payment_status", {
+        enum: ["pending", "partial", "paid", "refunded"],
+    }).default("pending"),
+    specialRequests: text("special_requests"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Individual bookings within a group booking
+export const groupBookingItems = pgTable("group_booking_items", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    groupBookingId: uuid("group_booking_id").references(() => groupBookings.id)
+        .notNull(),
+    bookingId: uuid("booking_id").references(() => bookings.id),
+    roomNumber: integer("room_number").notNull(),
+    guestName: varchar("guest_name").notNull(),
+    guestEmail: varchar("guest_email"),
+    guestPhone: varchar("guest_phone"),
+    numberOfGuests: integer("number_of_guests").notNull(),
+    roomType: varchar("room_type"),
+    pricePerNight: decimal("price_per_night", {
+        precision: 10,
+        scale: 2,
+    }).notNull(),
+    totalPrice: decimal("total_price", {
+        precision: 10,
+        scale: 2,
+    }).notNull(),
+    specialRequests: text("special_requests"),
+    createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Trip plans / Itineraries
 export const tripPlans = pgTable("trip_plans", {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -1459,6 +1548,37 @@ export type InsertBookingCancellation = z.infer<
 export type BookingCancellationWithBooking = BookingCancellation & {
     bookingCode?: string;
 };
+
+export type BookingModification = typeof bookingModifications.$inferSelect;
+export const insertBookingModificationSchema = createInsertSchema(
+    bookingModifications
+).omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+});
+export type InsertBookingModification = z.infer<
+    typeof insertBookingModificationSchema
+>;
+
+export type GroupBooking = typeof groupBookings.$inferSelect;
+export const insertGroupBookingSchema = createInsertSchema(
+    groupBookings
+).omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+});
+export type InsertGroupBooking = z.infer<typeof insertGroupBookingSchema>;
+
+export type GroupBookingItem = typeof groupBookingItems.$inferSelect;
+export const insertGroupBookingItemSchema = createInsertSchema(
+    groupBookingItems
+).omit({
+    id: true,
+    createdAt: true,
+});
+export type InsertGroupBookingItem = z.infer<typeof insertGroupBookingItemSchema>;
 
 export type TripPlan = typeof tripPlans.$inferSelect;
 export const insertTripPlanSchema = createInsertSchema(tripPlans).omit({
