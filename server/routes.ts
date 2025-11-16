@@ -601,6 +601,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    app.get("/api/admin/dashboard-stats", requireAuth, async (req, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const user = await storage.getUser(userId);
+
+            // Check if user is admin
+            if (user?.role !== "admin") {
+                return res.status(403).json({ message: "Admin privileges required" });
+            }
+
+            // Get basic stats
+            const basicStats = await storage.getAdminStats();
+
+            // Get monthly revenue
+            const monthlyRevenue = await db.execute(sql`
+                SELECT 
+                    TO_CHAR(created_at, 'Mon') as month,
+                    SUM(CAST(total_amount AS DECIMAL)) as revenue
+                FROM bookings
+                WHERE created_at >= NOW() - INTERVAL '6 months'
+                AND status = 'completed'
+                GROUP BY TO_CHAR(created_at, 'YYYY-MM'), TO_CHAR(created_at, 'Mon')
+                ORDER BY MIN(created_at)
+            `);
+
+            // Get booking trends
+            const bookingTrends = await db.execute(sql`
+                SELECT 
+                    TO_CHAR(created_at, 'Mon') as month,
+                    COUNT(*) as bookings
+                FROM bookings
+                WHERE created_at >= NOW() - INTERVAL '6 months'
+                GROUP BY TO_CHAR(created_at, 'YYYY-MM'), TO_CHAR(created_at, 'Mon')
+                ORDER BY MIN(created_at)
+            `);
+
+            // Get user role distribution
+            const roleDistribution = await db.execute(sql`
+                SELECT 
+                    role,
+                    COUNT(*) as count
+                FROM users
+                WHERE role IS NOT NULL
+                GROUP BY role
+                ORDER BY count DESC
+            `);
+
+            // Get recent activity logs
+            const recentActivities = await db.select({
+                id: userActivityLogs.id,
+                activityType: userActivityLogs.activityType,
+                description: userActivityLogs.description,
+                createdAt: userActivityLogs.createdAt,
+                user: {
+                    firstName: users.firstName,
+                    lastName: users.lastName,
+                    email: users.email,
+                },
+            })
+                .from(userActivityLogs)
+                .leftJoin(users, eq(userActivityLogs.userId, users.id))
+                .orderBy(desc(userActivityLogs.createdAt))
+                .limit(15);
+
+            // Get top properties by revenue
+            const topProperties = await db.execute(sql`
+                SELECT 
+                    p.id,
+                    p.title,
+                    p.location,
+                    COUNT(b.id) as booking_count,
+                    SUM(CAST(b.total_amount AS DECIMAL)) as revenue
+                FROM properties p
+                LEFT JOIN bookings b ON p.id = b.property_id
+                WHERE b.status IN ('completed', 'confirmed')
+                GROUP BY p.id, p.title, p.location
+                ORDER BY revenue DESC NULLS LAST
+                LIMIT 5
+            `);
+
+            // Calculate total revenue
+            const revenueResult = await db.execute(sql`
+                SELECT COALESCE(SUM(CAST(total_amount AS DECIMAL)), 0) as total
+                FROM bookings
+                WHERE status = 'completed'
+            `);
+            const totalRevenue = revenueResult.rows[0]?.total || 0;
+
+            res.json({
+                ...basicStats,
+                totalRevenue: parseFloat(totalRevenue),
+                monthlyRevenue: monthlyRevenue.rows.map((row: any) => ({
+                    month: row.month,
+                    revenue: parseFloat(row.revenue || 0),
+                })),
+                bookingTrends: bookingTrends.rows.map((row: any) => ({
+                    month: row.month,
+                    bookings: parseInt(row.bookings || 0),
+                })),
+                userRoleDistribution: roleDistribution.rows.map((row: any) => ({
+                    role: row.role.replace('_', ' '),
+                    count: parseInt(row.count || 0),
+                })),
+                recentActivities,
+                topProperties: topProperties.rows.map((row: any) => ({
+                    id: row.id,
+                    title: row.title,
+                    location: row.location,
+                    bookingCount: parseInt(row.booking_count || 0),
+                    revenue: parseFloat(row.revenue || 0),
+                })),
+            });
+        } catch (error) {
+            console.error("Error fetching dashboard stats:", error);
+            res.status(500).json({ message: "Failed to fetch dashboard statistics" });
+        }
+    });
+
     app.get("/api/admin/users", requireAuth, async (req, res) => {
         try {
             const userId = (req.session as any).userId;

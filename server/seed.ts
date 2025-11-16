@@ -45,11 +45,11 @@ import {
     promotionalCodes,
     territories,
     platformSettings,
-    emailTemplates,
     blogPosts,
     sessions,
     roleChangeRequests,
     cmsContent,
+    providerServiceCategories,
 } from "../shared/schema";
 import { db } from "./db";
 
@@ -101,7 +101,6 @@ async function seed() {
         await db.delete(promotionalCodes);
         await db.delete(territories);
         await db.delete(platformSettings);
-        await db.delete(emailTemplates);
         await db.delete(blogPosts);
         await db.delete(cmsContent);
         await db.delete(sessions);
@@ -1039,6 +1038,78 @@ async function seed() {
                 .insert(serviceProviders)
                 .values(sampleProviders)
                 .onConflictDoNothing();
+
+            // Create many-to-many provider-service category associations
+            console.log("Creating provider-service category associations...");
+            const providerCategories = [
+                // Provider 1 offers multiple services: Maid, Transport, and Dining
+                { serviceProviderId: serviceProvider1Id, categoryId: maidCategory?.id || "", isPrimary: true },
+                { serviceProviderId: serviceProvider1Id, categoryId: transportCategory?.id || "", isPrimary: false },
+                { serviceProviderId: serviceProvider5Id, categoryId: diningCategory?.id || "", isPrimary: true },
+                
+                // Provider 2 offers Maid Service and Transport
+                { serviceProviderId: serviceProvider2Id, categoryId: maidCategory?.id || "", isPrimary: true },
+                { serviceProviderId: serviceProvider4Id, categoryId: transportCategory?.id || "", isPrimary: true },
+                
+                // Provider 3 offers Concierge and Transport
+                { serviceProviderId: serviceProvider6Id, categoryId: conciergeCategory?.id || "", isPrimary: true },
+                { serviceProviderId: serviceProvider3Id, categoryId: transportCategory?.id || "", isPrimary: true },
+            ];
+            
+            await db.insert(providerServiceCategories).values(providerCategories).onConflictDoNothing();
+
+            // Create territories (regions/countries/cities)
+            console.log("Creating territories...");
+            const territory1Id = randomUUID();
+            const territory2Id = randomUUID();
+            const territory3Id = randomUUID();
+            const territory4Id = randomUUID();
+            const territory5Id = randomUUID();
+            
+            const sampleTerritories = [
+                {
+                    id: territory1Id,
+                    name: "North America - USA East",
+                    country: "United States",
+                    regions: ["New York", "Miami", "Boston", "Washington DC", "Philadelphia"],
+                    managerId: countryManagerId,
+                    isActive: true,
+                },
+                {
+                    id: territory2Id,
+                    name: "North America - USA West",
+                    country: "United States",
+                    regions: ["Los Angeles", "San Francisco", "Seattle", "San Diego", "Las Vegas"],
+                    managerId: countryManagerId,
+                    isActive: true,
+                },
+                {
+                    id: territory3Id,
+                    name: "Europe - Western",
+                    country: "Multi-Country",
+                    regions: ["Paris, France", "London, UK", "Amsterdam, Netherlands", "Madrid, Spain", "Rome, Italy"],
+                    managerId: cityManagerId,
+                    isActive: true,
+                },
+                {
+                    id: territory4Id,
+                    name: "Asia Pacific - East",
+                    country: "Multi-Country",
+                    regions: ["Tokyo, Japan", "Seoul, South Korea", "Beijing, China", "Shanghai, China", "Hong Kong"],
+                    managerId: null,
+                    isActive: true,
+                },
+                {
+                    id: territory5Id,
+                    name: "Asia Pacific - Southeast",
+                    country: "Multi-Country",
+                    regions: ["Bangkok, Thailand", "Singapore", "Phuket, Thailand", "Bali, Indonesia", "Manila, Philippines"],
+                    managerId: null,
+                    isActive: true,
+                },
+            ];
+            
+            await db.insert(territories).values(sampleTerritories).onConflictDoNothing();
 
             // Create service tasks for each category
             console.log("Creating service tasks...");
@@ -2724,6 +2795,164 @@ async function seed() {
 
         await db.insert(cmsContent).values(cmsPages).onConflictDoNothing();
         console.log(`✓ Created ${cmsPages.length} CMS content pages`);
+
+        // Create user activity logs
+        console.log("Creating user activity logs...");
+        const sampleActivityLogs = [
+            // Admin activities
+            {
+                userId: adminId,
+                activityType: "login",
+                description: "Admin logged in to the dashboard",
+                ipAddress: "192.168.1.1",
+                userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0",
+                metadata: { success: true, method: "password" },
+            },
+            {
+                userId: adminId,
+                activityType: "user_management",
+                description: "Approved property owner application for owner1@test.com",
+                ipAddress: "192.168.1.1",
+                metadata: { action: "approve", targetUserId: owner1Id },
+            },
+            {
+                userId: adminId,
+                activityType: "cms_update",
+                description: "Updated CMS content for About Us page",
+                ipAddress: "192.168.1.1",
+                metadata: { pageKey: "about", action: "update" },
+            },
+            // Property owner activities
+            {
+                userId: owner1Id,
+                activityType: "login",
+                description: "Property owner logged in",
+                ipAddress: "10.0.1.25",
+                userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15",
+                metadata: { success: true },
+            },
+            {
+                userId: owner1Id,
+                activityType: "property_created",
+                description: "Created new property listing: Miami Beach Villa",
+                ipAddress: "10.0.1.25",
+                metadata: { propertyTitle: "Miami Beach Villa", propertyId: prop1Id },
+            },
+            {
+                userId: owner1Id,
+                activityType: "pricing_update",
+                description: "Updated seasonal pricing for property",
+                ipAddress: "10.0.1.25",
+                metadata: { propertyId: prop1Id, seasonName: "Winter Peak Season" },
+            },
+            {
+                userId: owner1Id,
+                activityType: "dashboard_view",
+                description: "Viewed property dashboard and analytics",
+                ipAddress: "10.0.1.25",
+                metadata: { section: "overview", totalProperties: 5 },
+            },
+            // Service provider activities
+            {
+                userId: provider1Id,
+                activityType: "login",
+                description: "Service provider logged in",
+                ipAddress: "172.16.0.42",
+                userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) Mobile Safari/604.1",
+                metadata: { success: true },
+            },
+            {
+                userId: provider1Id,
+                activityType: "service_update",
+                description: "Updated service pricing and availability",
+                ipAddress: "172.16.0.42",
+                metadata: { serviceName: "Premium Cleaning", hourlyRate: 65 },
+            },
+            {
+                userId: provider1Id,
+                activityType: "order_accepted",
+                description: "Accepted service order #SVC-12345",
+                ipAddress: "172.16.0.42",
+                metadata: { orderId: "SVC-12345", serviceType: "housekeeping" },
+            },
+            // Client activities
+            {
+                userId: client1Id,
+                activityType: "login",
+                description: "Client logged in to account",
+                ipAddress: "203.0.113.45",
+                userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0",
+                metadata: { success: true },
+            },
+            {
+                userId: client1Id,
+                activityType: "search",
+                description: "Searched for properties in Miami, Florida",
+                ipAddress: "203.0.113.45",
+                metadata: { location: "Miami, FL", checkIn: "2025-01-15", guests: 4 },
+            },
+            {
+                userId: client1Id,
+                activityType: "booking_created",
+                description: "Created booking for Miami Beach Villa",
+                ipAddress: "203.0.113.45",
+                metadata: { propertyId: prop1Id, bookingCode: "BK-001", totalAmount: 1800 },
+            },
+            {
+                userId: client1Id,
+                activityType: "favorite_added",
+                description: "Added property to favorites",
+                ipAddress: "203.0.113.45",
+                metadata: { propertyId: prop2Id, propertyTitle: "NYC Modern Apartment" },
+            },
+            {
+                userId: client2Id,
+                activityType: "review_posted",
+                description: "Posted review for completed booking",
+                ipAddress: "198.51.100.10",
+                metadata: { rating: 5, propertyId: prop1Id },
+            },
+            // Manager activities
+            {
+                userId: countryManagerId,
+                activityType: "login",
+                description: "Country manager logged in",
+                ipAddress: "192.168.10.100",
+                metadata: { success: true, territory: "North America" },
+            },
+            {
+                userId: countryManagerId,
+                activityType: "approval_review",
+                description: "Reviewed and approved city manager application",
+                ipAddress: "192.168.10.100",
+                metadata: { action: "approve", managerId: cityManagerId },
+            },
+            {
+                userId: cityManagerId,
+                activityType: "report_view",
+                description: "Viewed regional analytics report",
+                ipAddress: "192.168.10.50",
+                metadata: { territory: "Europe - Western", period: "Q4 2024" },
+            },
+            // System activities
+            {
+                userId: provider2Id,
+                activityType: "profile_update",
+                description: "Updated service provider profile information",
+                ipAddress: "172.16.0.88",
+                metadata: { fields: ["businessName", "certifications", "portfolio"] },
+            },
+            {
+                userId: owner2Id,
+                activityType: "payout_requested",
+                description: "Requested payout for earnings",
+                ipAddress: "10.0.1.78",
+                metadata: { amount: 2500, method: "bank_transfer" },
+            },
+        ];
+
+        await db.insert(userActivityLogs).values(sampleActivityLogs).onConflictDoNothing();
+        console.log(`✓ Created ${sampleActivityLogs.length} activity log entries`);
 
         console.log("✅ Database seeding completed successfully!");
         console.log("\n🔐 Sample Credentials:");
