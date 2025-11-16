@@ -79,6 +79,7 @@ interface User {
     role: string;
     createdAt: string;
     phoneNumber?: string;
+    isActive?: boolean;
 }
 
 interface Property {
