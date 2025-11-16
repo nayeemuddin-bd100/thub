@@ -209,8 +209,6 @@ export default function Dashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [roleFilter, setRoleFilter] = useState<string>("all");
 
-    // State for provider application dialog
-    const [providerDialogOpen, setProviderDialogOpen] = useState(false);
 
     // State for property modal
     const [propertyDialogOpen, setPropertyDialogOpen] = useState(false);
@@ -295,41 +293,6 @@ export default function Dashboard() {
         resolver: zodResolver(cancellationFormSchema),
         defaultValues: {
             reason: "",
-        },
-    });
-
-    // Provider application form schema
-    const providerFormSchema = z.object({
-        categoryId: z
-            .string()
-            .min(1, t("dashboard.provider_category_required")),
-        businessName: z
-            .string()
-            .min(2, t("dashboard.provider_business_name_min")),
-        description: z
-            .string()
-            .min(10, t("dashboard.provider_description_min")),
-        hourlyRate: z.string().optional(),
-        fixedRate: z.string().optional(),
-        location: z.string().min(2, t("dashboard.provider_location_required")),
-        radius: z.string().optional(),
-        whatsappNumber: z.string().optional(),
-        certifications: z.string().optional(),
-    });
-
-    type ProviderFormValues = z.infer<typeof providerFormSchema>;
-
-    const providerForm = useForm<ProviderFormValues>({
-        resolver: zodResolver(providerFormSchema),
-        defaultValues: {
-            businessName: "",
-            description: "",
-            location: "",
-            radius: "50",
-            hourlyRate: "",
-            fixedRate: "",
-            whatsappNumber: "",
-            certifications: "",
         },
     });
 
@@ -429,54 +392,6 @@ export default function Dashboard() {
             });
         },
     });
-
-    // Self-service become provider mutation with form data
-    const becomeProviderMutation = useMutation({
-        mutationFn: async (formData: ProviderFormValues) => {
-            // Convert certifications string to array
-            const certifications = formData.certifications
-                ? formData.certifications
-                      .split(",")
-                      .map((cert) => cert.trim())
-                      .filter(Boolean)
-                : [];
-
-            return await apiRequest("POST", "/api/user/become-provider", {
-                categoryId: formData.categoryId,
-                businessName: formData.businessName,
-                description: formData.description,
-                hourlyRate: formData.hourlyRate ? formData.hourlyRate : null,
-                fixedRate: formData.fixedRate ? formData.fixedRate : null,
-                location: formData.location,
-                radius: formData.radius ? parseInt(formData.radius) : 50,
-                certifications,
-                portfolio: [],
-                isVerified: false,
-                isActive: true,
-            });
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-            setProviderDialogOpen(false);
-            providerForm.reset();
-            toast({
-                title: t("dashboard.application_submitted"),
-                description: t("dashboard.application_review_message"),
-            });
-        },
-        onError: (error: any) => {
-            toast({
-                title: t("common.error"),
-                description:
-                    error.message || t("dashboard.failed_submit_application"),
-                variant: "destructive",
-            });
-        },
-    });
-
-    const handleProviderFormSubmit = (values: ProviderFormValues) => {
-        becomeProviderMutation.mutate(values);
-    };
 
     // Property creation mutation
     const createPropertyMutation = useMutation({
@@ -1777,31 +1692,12 @@ export default function Dashboard() {
                             >
                                 {t("dashboard.my_properties")}
                             </h2>
-                            {user?.role === "property_owner" ||
-                            user?.role === "admin" ? (
-                                <Button 
-                                    data-testid="button-add-property"
-                                    onClick={() => setPropertyDialogOpen(true)}
-                                >
-                                    {t("dashboard.add_property")}
-                                </Button>
-                            ) : (
-                                <Button
-                                    data-testid="button-become-host"
-                                    onClick={() =>
-                                        toast({
-                                            title: t(
-                                                "dashboard.role_change_required"
-                                            ),
-                                            description: t(
-                                                "dashboard.contact_admin_become_owner"
-                                            ),
-                                        })
-                                    }
-                                >
-                                    {t("dashboard.become_a_host")}
-                                </Button>
-                            )}
+                            <Button 
+                                data-testid="button-add-property"
+                                onClick={() => setPropertyDialogOpen(true)}
+                            >
+                                {t("dashboard.add_property")}
+                            </Button>
                         </div>
 
                         {user?.role === "property_owner" ||
@@ -2042,17 +1938,10 @@ export default function Dashboard() {
                                         "dashboard.service_provider_access_required"
                                     )}
                                 </h3>
-                                <p className="text-muted-foreground mb-6">
-                                    {t(
-                                        "dashboard.service_provider_upgrade_message"
-                                    )}
+                                <p className="text-muted-foreground">
+                                    Service provider features require a separate service provider account. 
+                                    Please register at <a href="/register-provider" className="text-primary hover:underline">register-provider</a> to offer your services.
                                 </p>
-                                <Button
-                                    data-testid="button-become-provider"
-                                    onClick={() => setProviderDialogOpen(true)}
-                                >
-                                    {t("footer.become_provider")}
-                                </Button>
                             </Card>
                         )}
                     </TabsContent>
@@ -2259,275 +2148,6 @@ export default function Dashboard() {
                     </TabsContent>
                 </Tabs>
             </div>
-
-            {/* Provider Application Dialog */}
-            <Dialog
-                open={providerDialogOpen}
-                onOpenChange={setProviderDialogOpen}
-            >
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>{t("footer.become_provider")}</DialogTitle>
-                        <DialogDescription>
-                            {t("dashboard.provider_application_description")}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <Form {...providerForm}>
-                        <form
-                            onSubmit={providerForm.handleSubmit(
-                                handleProviderFormSubmit
-                            )}
-                            className="space-y-4"
-                        >
-                            <FormField
-                                control={providerForm.control}
-                                name="categoryId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t(
-                                                "dashboard.service_category_required"
-                                            )}
-                                        </FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger data-testid="select-category">
-                                                    <SelectValue
-                                                        placeholder={t(
-                                                            "dashboard.select_service_category"
-                                                        )}
-                                                    />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {serviceCategories?.map(
-                                                    (category: any) => (
-                                                        <SelectItem
-                                                            key={category.id}
-                                                            value={category.id}
-                                                        >
-                                                            {category.name}
-                                                        </SelectItem>
-                                                    )
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={providerForm.control}
-                                name="businessName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t(
-                                                "dashboard.business_name_required"
-                                            )}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t(
-                                                    "dashboard.business_name_placeholder"
-                                                )}
-                                                {...field}
-                                                data-testid="input-business-name"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={providerForm.control}
-                                name="description"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t(
-                                                "dashboard.description_required"
-                                            )}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                placeholder={t(
-                                                    "dashboard.description_placeholder"
-                                                )}
-                                                className="min-h-[100px]"
-                                                {...field}
-                                                data-testid="textarea-description"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={providerForm.control}
-                                    name="hourlyRate"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t("dashboard.hourly_rate_usd")}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="25.00"
-                                                    step="0.01"
-                                                    {...field}
-                                                    data-testid="input-hourly-rate"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={providerForm.control}
-                                    name="fixedRate"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>
-                                                {t("dashboard.fixed_rate_usd")}
-                                            </FormLabel>
-                                            <FormControl>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="100.00"
-                                                    step="0.01"
-                                                    {...field}
-                                                    data-testid="input-fixed-rate"
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            <FormField
-                                control={providerForm.control}
-                                name="location"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("dashboard.location_required")}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t(
-                                                    "dashboard.location_placeholder"
-                                                )}
-                                                {...field}
-                                                data-testid="input-location"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={providerForm.control}
-                                name="radius"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("dashboard.service_radius_km")}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                placeholder="50"
-                                                {...field}
-                                                data-testid="input-radius"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={providerForm.control}
-                                name="whatsappNumber"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t("dashboard.whatsapp_number")}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="tel"
-                                                placeholder="+1234567890"
-                                                {...field}
-                                                data-testid="input-whatsapp-number"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <FormField
-                                control={providerForm.control}
-                                name="certifications"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>
-                                            {t(
-                                                "dashboard.certifications_comma"
-                                            )}
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder={t(
-                                                    "dashboard.certifications_placeholder"
-                                                )}
-                                                {...field}
-                                                data-testid="input-certifications"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <div className="flex justify-end space-x-2 pt-4">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setProviderDialogOpen(false)}
-                                    disabled={becomeProviderMutation.isPending}
-                                    data-testid="button-cancel-provider"
-                                >
-                                    {t("common.cancel")}
-                                </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={becomeProviderMutation.isPending}
-                                    data-testid="button-submit-provider"
-                                >
-                                    {becomeProviderMutation.isPending
-                                        ? t("dashboard.submitting")
-                                        : t("dashboard.submit_application")}
-                                </Button>
-                            </div>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
 
             {/* Booking Cancellation Dialog */}
             <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
