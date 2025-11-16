@@ -1,4 +1,13 @@
+import ActivityLogs from "@/components/admin/ActivityLogs";
+import CancellationManagement from "@/components/admin/CancellationManagement";
+import CMSSettings from "@/components/admin/CMSSettings";
+import CreateStaffAccount from "@/components/admin/CreateStaffAccount";
+import EmailTemplates from "@/components/admin/EmailTemplates";
+import PlatformSettings from "@/components/admin/PlatformSettings";
+import PromotionalCodes from "@/components/admin/PromotionalCodes";
+import PropertyServiceAssociation from "@/components/admin/PropertyServiceAssociation";
 import RoleChangeRequests from "@/components/admin/RoleChangeRequests";
+import TerritoryManagement from "@/components/admin/TerritoryManagement";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,6 +39,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
+    Activity,
+    Ban,
     Briefcase,
     Building,
     Calendar,
@@ -37,8 +48,11 @@ import {
     ChevronRight,
     Edit,
     Eye,
+    FileText,
+    Globe,
     Home,
     LayoutDashboard,
+    Link2,
     LogOut,
     Mail,
     MapPin,
@@ -47,9 +61,11 @@ import {
     Plus,
     Search,
     Settings,
+    Tag,
     Trash2,
     User,
     UserCheck,
+    UserPlus,
     Users,
     X,
 } from "lucide-react";
@@ -923,6 +939,141 @@ export default function AdminDashboard() {
                                     {t("admin.service_orders")}
                                 </span>
                             </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("cms");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "cms"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <FileText className="w-5 h-5" />
+                                <span className="text-sm">CMS Content</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("platform");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "platform"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Settings className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.platform_settings")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("associations");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "associations"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Link2 className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.property_service_assoc")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("promocodes");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "promocodes"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Tag className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.promo_codes")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("cancellations");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "cancellations"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Ban className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.cancellations")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("territories");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "territories"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Globe className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.territories")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("emails");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "emails"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Mail className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.email_templates")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("logs");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "logs"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <Activity className="w-5 h-5" />
+                                <span className="text-sm">{t("admin.activity_logs")}</span>
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    setActiveSection("staff");
+                                    setSidebarOpen(false);
+                                }}
+                                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                                    activeSection === "staff"
+                                        ? "bg-primary text-primary-foreground"
+                                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                }`}
+                            >
+                                <UserPlus className="w-5 h-5" />
+                                <span className="text-sm">{t("admin_labels.internal_staff")}</span>
+                            </button>
                         </nav>
 
                         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
@@ -1088,6 +1239,123 @@ export default function AdminDashboard() {
                         <span className="text-sm">
                             {t("admin.service_orders")}
                         </span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("cms")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "cms"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-cms"
+                    >
+                        <FileText className="w-5 h-5" />
+                        <span className="text-sm">CMS Content</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("platform")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "platform"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-platform"
+                    >
+                        <Settings className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.platform_settings")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("associations")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "associations"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-associations"
+                    >
+                        <Link2 className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.property_service_assoc")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("promocodes")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "promocodes"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-promocodes"
+                    >
+                        <Tag className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.promo_codes")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("cancellations")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "cancellations"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-cancellations"
+                    >
+                        <Ban className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.cancellations")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("territories")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "territories"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-territories"
+                    >
+                        <Globe className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.territories")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("emails")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "emails"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-emails"
+                    >
+                        <Mail className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.email_templates")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("logs")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "logs"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-logs"
+                    >
+                        <Activity className="w-5 h-5" />
+                        <span className="text-sm">{t("admin.activity_logs")}</span>
+                    </button>
+
+                    <button
+                        onClick={() => setActiveSection("staff")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "staff"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-staff"
+                    >
+                        <UserPlus className="w-5 h-5" />
+                        <span className="text-sm">{t("admin_labels.internal_staff")}</span>
                     </button>
                 </nav>
 
@@ -3716,6 +3984,69 @@ export default function AdminDashboard() {
                                     </p>
                                 </Card>
                             )}
+                        </div>
+                    )}
+
+                    {/* CMS Settings Section */}
+                    {activeSection === "cms" && (
+                        <div>
+                            <CMSSettings />
+                        </div>
+                    )}
+
+                    {/* Platform Settings Section */}
+                    {activeSection === "platform" && (
+                        <div>
+                            <PlatformSettings />
+                        </div>
+                    )}
+
+                    {/* Associations Section */}
+                    {activeSection === "associations" && (
+                        <div>
+                            <PropertyServiceAssociation />
+                        </div>
+                    )}
+
+                    {/* Promo Codes Section */}
+                    {activeSection === "promocodes" && (
+                        <div>
+                            <PromotionalCodes />
+                        </div>
+                    )}
+
+                    {/* Cancellations Section */}
+                    {activeSection === "cancellations" && (
+                        <div>
+                            <CancellationManagement />
+                        </div>
+                    )}
+
+                    {/* Territories Section */}
+                    {activeSection === "territories" && (
+                        <div>
+                            <TerritoryManagement />
+                        </div>
+                    )}
+
+                    {/* Email Templates Section */}
+                    {activeSection === "emails" && (
+                        <div>
+                            <EmailTemplates />
+                        </div>
+                    )}
+
+                    {/* Activity Logs Section */}
+                    {activeSection === "logs" && (
+                        <div>
+                            <ActivityLogs />
+                        </div>
+                    )}
+
+                    {/* Staff Management Section */}
+                    {activeSection === "staff" && (
+                        <div>
+                            <CreateStaffAccount />
                         </div>
                     )}
 

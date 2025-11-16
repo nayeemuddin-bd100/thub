@@ -41,6 +41,22 @@ Preferred communication style: Simple, everyday language.
 - **WhatsApp Integration**: Direct WhatsApp contact for service providers and system notifications via Twilio.
 - **Stripe Payment Integration**: Secure payment flow with server-side price validation and a payment-first confirmation process for orders and bookings.
 - **Operation Support System**: Dedicated support contact feature with a protected dashboard for the `operation_support` role, ensuring a single support user.
+- **CMS Content Management**: Admin-only content management system for managing informational pages with SEO support (November 16, 2025).
+- **Seasonal Pricing System**: Property owners can manage seasonal pricing for their properties with comprehensive date range and pricing controls (November 16, 2025).
+
+## CMS Content Management System (November 16, 2025)
+- **Admin-Only Access**: CMS content management is restricted to administrators via the Settings page
+- **Managed Pages**: 10 informational pages (About, Careers, Press, Help, Safety, Cancellation Policy, Contact, Resources, Community, Sitemap)
+- **Features**:
+  - Full CRUD operations (Create, Read, Update, Delete)
+  - Rich content editing with title and body content
+  - SEO metadata support (metaDescription, metaKeywords, metaTitle)
+  - Publish/unpublish toggle for content visibility
+  - Preview functionality before publishing
+  - Page key system for unique page identification
+- **API Routes**: `/api/cms-content` endpoints (GET all, GET by pageKey, POST create, PATCH update, DELETE)
+- **Access**: Available via `/settings` route in the Settings page under "CMS Settings" tab
+- **Security**: All API endpoints protected with `requireApprovedUser` middleware and admin role checks
 
 ## Payment Flow
 - Services and bookings are initially created with `status='pending_payment'` and `paymentStatus='pending'`.
