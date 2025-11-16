@@ -19,7 +19,7 @@ import { createServer, type Server } from "http";
 import Stripe from "stripe";
 import { WebSocket, WebSocketServer } from "ws";
 import { z } from "zod";
-import { hashPassword, requireAuth, verifyPassword } from "./auth";
+import { hashPassword, requireAuth, requireApprovedUser, verifyPassword } from "./auth";
 import { generateBookingCode } from "./base44";
 import { db, pool } from "./db";
 import { storage } from "./storage";
@@ -122,13 +122,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Hash password
             const hashedPassword = await hashPassword(password);
 
-            // Create user
+            // Create user with approved status for clients
             const user = await storage.upsertUser({
                 email,
                 password: hashedPassword,
                 firstName,
                 lastName,
                 role: "client",
+                status: "approved", // Clients are auto-approved
             });
 
             // Set session
@@ -149,135 +150,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    // Register as host endpoint
+    // Legacy registration endpoints DISABLED - Use /work-with-us instead
+    // These endpoints allowed bypassing the approval workflow
     app.post("/api/auth/register-host", async (req, res) => {
-        try {
-            const { 
-                email, 
-                password, 
-                firstName, 
-                lastName,
-                businessName,
-                phone,
-                businessAddress,
-                taxLicense,
-                bio
-            } = req.body;
-
-            // Validate input
-            if (!email || !password) {
-                return res
-                    .status(400)
-                    .json({ message: "Email and password are required" });
-            }
-
-            if (password.length < 6) {
-                return res.status(400).json({
-                    message: "Password must be at least 6 characters",
-                });
-            }
-
-            // Hash password
-            const hashedPassword = await hashPassword(password);
-
-            // Create user with property_owner role
-            const user = await storage.upsertUser({
-                email,
-                password: hashedPassword,
-                firstName,
-                lastName,
-                role: "property_owner",
-                businessName,
-                phone,
-                businessAddress,
-                taxLicense,
-                bio,
-            });
-
-            // Set session
-            (req.session as any).userId = user.id;
-
-            // Return user without password
-            const { password: _, ...userWithoutPassword } = user;
-            res.status(201).json(userWithoutPassword);
-        } catch (error: any) {
-            console.error("Host registration error:", error);
-            if (error.code === "23505") {
-                return res
-                    .status(409)
-                    .json({ message: "Email already exists" });
-            }
-            res.status(500).json({ message: "Failed to register host" });
-        }
+        return res.status(410).json({ 
+            message: "This registration method is no longer available. Please use /work-with-us to apply as a host." 
+        });
     });
 
-    // Register as service provider endpoint
     app.post("/api/auth/register-provider", async (req, res) => {
-        try {
-            const { 
-                email, 
-                password, 
-                firstName, 
-                lastName,
-                businessName,
-                phone,
-                serviceCategory,
-                certifications,
-                portfolio,
-                hourlyRate,
-                fixedRate,
-                serviceArea,
-                bio
-            } = req.body;
-
-            // Validate input
-            if (!email || !password) {
-                return res
-                    .status(400)
-                    .json({ message: "Email and password are required" });
-            }
-
-            if (password.length < 6) {
-                return res.status(400).json({
-                    message: "Password must be at least 6 characters",
-                });
-            }
-
-            // Hash password
-            const hashedPassword = await hashPassword(password);
-
-            // Create user with service_provider role
-            const user = await storage.upsertUser({
-                email,
-                password: hashedPassword,
-                firstName,
-                lastName,
-                role: "service_provider",
-                businessName,
-                phone,
-                certifications,
-                portfolio,
-                hourlyRate,
-                fixedRate,
-                serviceArea,
-                bio,
-            });
-
-            // Set session
-            (req.session as any).userId = user.id;
-
-            // Return user without password
-            const { password: _, ...userWithoutPassword } = user;
-            res.status(201).json(userWithoutPassword);
-        } catch (error: any) {
-            console.error("Provider registration error:", error);
-            if (error.code === "23505") {
-                return res
-                    .status(409)
-                    .json({ message: "Email already exists" });
-            }
-            res.status(500).json({ message: "Failed to register provider" });
-        }
+        return res.status(410).json({ 
+            message: "This registration method is no longer available. Please use /work-with-us to apply as a service provider." 
+        });
     });
 
     // Work With Us registration endpoint
@@ -383,7 +267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     .json({ message: "Invalid email or password" });
             }
 
-            // Set session
+            // Check if user is rejected
+            if (users.status === "rejected") {
+                return res.status(403).json({ 
+                    message: "Your account application has been rejected. Please contact support for more information." 
+                });
+            }
+
+            // Set session (pending users can log in but will have limited access)
             (req.session as any).userId = users.id;
 
             // Return user without password
@@ -2347,7 +2238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
-    app.post("/api/properties", requireAuth, async (req: any, res) => {
+    app.post("/api/properties", requireApprovedUser, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const user = await storage.getUser(userId);
@@ -3605,7 +3496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
     // Service Order routes
-    app.post("/api/service-orders", requireAuth, async (req: any, res) => {
+    app.post("/api/service-orders", requireApprovedUser, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const {
@@ -4658,7 +4549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     );
 
     // Booking routes
-    app.post("/api/bookings", requireAuth, async (req: any, res) => {
+    app.post("/api/bookings", requireApprovedUser, async (req: any, res) => {
         try {
             const userId = (req.session as any).userId;
             const {

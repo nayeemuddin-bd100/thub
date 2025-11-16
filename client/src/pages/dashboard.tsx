@@ -663,6 +663,60 @@ export default function Dashboard() {
         );
     }
 
+    // Show "Awaiting Approval" message for pending users
+    if (user?.status === "pending") {
+        return (
+            <div className="min-h-screen bg-background">
+                <Header
+                    onToggleDarkMode={toggleDarkMode}
+                    isDarkMode={isDarkMode}
+                    isAuthenticated={isAuthenticated}
+                    user={user}
+                />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <Card className="max-w-2xl mx-auto p-12 text-center">
+                        <div className="mb-6">
+                            <div className="w-24 h-24 rounded-full bg-yellow-100 dark:bg-yellow-900/20 mx-auto flex items-center justify-center mb-6">
+                                <UserCheck className="w-12 h-12 text-yellow-600 dark:text-yellow-500" />
+                            </div>
+                            <h2 className="text-3xl font-bold text-foreground mb-4">
+                                Awaiting Approval
+                            </h2>
+                            <p className="text-lg text-muted-foreground mb-6">
+                                Your account application is currently under review. You will be notified via email once your account has been approved.
+                            </p>
+                            <div className="bg-muted/50 rounded-lg p-6 mb-6">
+                                <p className="text-sm text-muted-foreground">
+                                    <strong>Account Status:</strong> Pending
+                                    <br />
+                                    <strong>Role:</strong> {user.role?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                    <br />
+                                    <strong>Email:</strong> {user.email}
+                                </p>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-8">
+                                If you have any questions, please contact support at{" "}
+                                <a href="mailto:support@travelhub.com" className="text-primary hover:underline">
+                                    support@travelhub.com
+                                </a>
+                            </p>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    fetch("/api/auth/logout", { method: "POST" });
+                                    window.location.href = "/";
+                                }}
+                            >
+                                Sign Out
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-background">
             <Header
