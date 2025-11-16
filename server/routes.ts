@@ -280,6 +280,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Work With Us registration endpoint
+    app.post("/api/auth/register-work-with-us", async (req, res) => {
+        try {
+            const { 
+                email, 
+                password, 
+                role,
+                firstName, 
+                lastName,
+                businessName,
+                phone,
+                businessAddress,
+                taxLicense,
+                bio,
+                certifications,
+                portfolio,
+            } = req.body;
+
+            // Validate input
+            if (!email || !password || !role) {
+                return res
+                    .status(400)
+                    .json({ message: "Email, password and role are required" });
+            }
+
+            if (password.length < 6) {
+                return res.status(400).json({
+                    message: "Password must be at least 6 characters",
+                });
+            }
+
+            // Validate role is one of the allowed work-with-us roles
+            const allowedRoles = ["city_manager", "property_owner", "service_provider"];
+            if (!allowedRoles.includes(role)) {
+                return res.status(400).json({
+                    message: "Invalid role for work-with-us registration"
+                });
+            }
+
+            // Hash password
+            const hashedPassword = await hashPassword(password);
+
+            // Create user with pending status
+            const user = await storage.upsertUser({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                role,
+                businessName,
+                phone,
+                businessAddress,
+                taxLicense,
+                bio,
+                certifications,
+                portfolio,
+                status: "pending", // Set status to pending for approval
+            });
+
+            // Set session
+            (req.session as any).userId = user.id;
+
+            // Return user without password
+            const { password: _, ...userWithoutPassword } = user;
+            res.status(201).json(userWithoutPassword);
+        } catch (error: any) {
+            console.error("Work-with-us registration error:", error);
+            if (error.code === "23505") {
+                return res
+                    .status(409)
+                    .json({ message: "Email already exists" });
+            }
+            res.status(500).json({ message: "Failed to register" });
+        }
+    });
+
     // Login endpoint
     app.post("/api/auth/login", async (req, res) => {
         try {
