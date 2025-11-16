@@ -129,6 +129,11 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
+                <Link href="/work-with-us" className="hover:text-foreground transition-colors font-medium text-primary" data-testid="link-work-with-us">
+                  Work With Us
+                </Link>
+              </li>
+              <li>
                 <Link href="/host" className="hover:text-foreground transition-colors" data-testid="link-host">
                   {t('footer.become_host')}
                 </Link>
