@@ -22,7 +22,12 @@ Preferred communication style: Simple, everyday language.
 - **Multi-role Dashboards**: Specialized dashboards for each user role with enhanced analytics for administrators using Recharts.
 - **Two-Tier Approval System**: Workflow for provider onboarding and service approval.
 - **Real-time Notifications**: System-wide notifications for various events.
-- **Live Chat System**: WebSocket-powered real-time messaging.
+- **Live Chat System**: WebSocket-powered real-time messaging with WhatsApp-like features:
+  - **Message Status Indicators**: Single checkmark (sent), double gray checkmarks (delivered), double blue checkmarks (read)
+  - **Typing Indicators**: Real-time animated typing indicators with auto-stop after 3 seconds
+  - **Online/Offline Status**: Live presence tracking showing when users are online
+  - **Read Receipts**: Automatic marking of messages as delivered and read
+  - **Real-time Updates**: Instant message delivery and status updates via WebSocket
 - **WhatsApp Integration**: Direct WhatsApp contact and system notifications.
 - **Stripe Payment Integration**: Secure payment flow with server-side validation and a payment-first confirmation process.
 - **Operation Support System**: Dedicated support contact feature for the `operation_support` role.
