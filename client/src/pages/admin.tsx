@@ -1411,6 +1411,19 @@ export default function AdminDashboard() {
                     </button>
 
                     <button
+                        onClick={() => setActiveSection("currencies")}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
+                            activeSection === "currencies"
+                                ? "bg-primary text-primary-foreground"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                        data-testid="nav-currencies"
+                    >
+                        <CircleDollarSign className="w-5 h-5" />
+                        <span className="text-sm">Currency Settings</span>
+                    </button>
+
+                    <button
                         onClick={() => setActiveSection("cancellations")}
                         className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition ${
                             activeSection === "cancellations"
