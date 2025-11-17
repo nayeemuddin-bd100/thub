@@ -19,7 +19,7 @@ import {
     messages,
     currencySettings,
 } from "@shared/schema";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql, or } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
 import { format } from "date-fns";
 import express, { type Express } from "express";
@@ -8580,7 +8580,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     app.post("/api/video-call/create-room", requireAuth, async (req: any, res) => {
         try {
             const { participantId } = req.body;
-            const currentUserId = req.user.id;
+            const currentUserId = req.session.userId;
+            
+            if (!currentUserId) {
+                return res.status(401).json({ message: "User not authenticated" });
+            }
             
             if (!participantId) {
                 return res.status(400).json({ message: "Participant ID is required" });

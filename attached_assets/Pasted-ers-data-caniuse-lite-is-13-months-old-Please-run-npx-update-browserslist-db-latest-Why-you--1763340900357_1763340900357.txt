@@ -1,0 +1,50 @@
+ers data (caniuse-lite) is 13 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+12:54:29 AM [express] GET /api/service-categories 304 in 70ms :: [{"id":"d69d5a99-1dd6-472f-af59-1e21…
+12:54:29 AM [express] GET /api/service-providers 304 in 69ms :: [{"id":"be484cc8-05ce-4fc3-b445-54eeb…
+12:54:29 AM [express] GET /api/auth/user 304 in 72ms :: {"id":"e625aff8-3138-4f8a-8dea-b047e234527e",…
+12:54:29 AM [express] GET /api/cms-content 304 in 101ms :: [{"id":"3a1b98be-4165-472f-91e9-1e30bdbc0e…
+12:54:29 AM [express] GET /api/blog 304 in 105ms :: [{"id":"a4a04ab9-5aed-4bad-b84f-262562474566","ti…
+12:54:29 AM [express] GET /api/properties 304 in 453ms :: [{"id":"5b04ba2c-5294-4835-8382-8809f3fbad9…
+12:54:29 AM [express] GET /api/currencies/enabled 304 in 92ms :: [{"code":"USD","name":"US Dollar","s…
+12:54:29 AM [express] GET /api/notifications/unread-count 304 in 77ms :: {"count":"0"}
+12:54:29 AM [express] GET /api/notifications 304 in 69ms :: []
+12:54:29 AM [express] GET /api/favorites 304 in 68ms :: []
+12:54:29 AM [express] GET /api/currencies/rates 200 in 147ms :: {"base":"USD","rates":{"USD":1,"AED":…
+[WebSocket] New connection attempt from: 172.31.80.34
+[WebSocket] Cookies: present
+[WebSocket] User e625aff8-3138-4f8a-8dea-b047e234527e authenticated successfully
+[WebSocket] Broadcasting online status for user e625aff8-3138-4f8a-8dea-b047e234527e
+12:54:33 AM [express] GET /api/conversations 304 in 151ms :: [{"userId":"1a7f45bd-5195-4c8a-b3f7-58a8…
+[WebSocket] User e625aff8-3138-4f8a-8dea-b047e234527e disconnected
+[WebSocket] New connection attempt from: 172.31.80.34
+[WebSocket] Cookies: present
+[WebSocket] User e625aff8-3138-4f8a-8dea-b047e234527e authenticated successfully
+[WebSocket] Broadcasting online status for user e625aff8-3138-4f8a-8dea-b047e234527e
+12:54:34 AM [express] GET /api/messages/1a7f45bd-5195-4c8a-b3f7-58a80bc39602 304 in 66ms :: [{"id":"a…
+[WebSocket] New connection attempt from: 172.31.80.34
+[WebSocket] Cookies: present
+[WebSocket] User e625aff8-3138-4f8a-8dea-b047e234527e authenticated successfully
+[WebSocket] Broadcasting online status for user e625aff8-3138-4f8a-8dea-b047e234527e
+Error creating video call room: TypeError: Cannot read properties of undefined (reading 'id')
+    at <anonymous> (/home/runner/workspace/server/routes.ts:8583:44)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/runner/workspace/server/auth.ts:17:5)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+    at next (/home/runner/workspace/node_modules/express/lib/router/index.js:280:10)
+    at /home/runner/workspace/node_modules/express-session/index.js:514:7
+    at /home/runner/workspace/node_modules/connect-pg-simple/index.js:370:18
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+12:54:35 AM [express] POST /api/video-call/create-room 500 in 61ms :: {"message":"Cannot read propert…
+Error creating video call room: TypeError: Cannot read properties of undefined (reading 'id')
+    at <anonymous> (/home/runner/workspace/server/routes.ts:8583:44)
+    at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+    at requireAuth (/home/runner/workspace/server/auth.ts:17:5)

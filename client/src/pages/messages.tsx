@@ -535,7 +535,7 @@ export default function MessagesPage() {
                   ) : (
                     <div className="space-y-4">
                       {messages.map((msg) => {
-                        const isSent = msg.senderId === currentUser.id;
+                        const isSent = msg.senderId === currentUser?.id;
                         
                         // Determine message status for sent messages
                         let statusIcon = null;
@@ -644,6 +644,12 @@ export default function MessagesPage() {
           }}
           roomUrl={videoRoomUrl}
           userName={`${currentUser.firstName} ${currentUser.lastName}`}
+          isRecipientOnline={selectedUserId ? onlineUsers.has(selectedUserId) : false}
+          recipientName={selectedConversation 
+            ? selectedConversation.userName
+            : selectedUser 
+              ? `${selectedUser.firstName} ${selectedUser.lastName}`
+              : 'User'}
         />
       )}
     </div>
