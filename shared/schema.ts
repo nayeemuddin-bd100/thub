@@ -80,6 +80,9 @@ export const users = pgTable("users", {
     // Account status
     isActive: boolean("is_active").default(true),
     
+    // Currency preference
+    preferredCurrency: varchar("preferred_currency", { length: 3 }).default("USD"),
+    
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -119,6 +122,7 @@ export const properties = pgTable("properties", {
         precision: 10,
         scale: 2,
     }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("USD"),
     maxGuests: integer("max_guests").notNull(),
     bedrooms: integer("bedrooms").notNull(),
     bathrooms: integer("bathrooms").notNull(),
@@ -214,6 +218,7 @@ export const bookings = pgTable("bookings", {
         scale: 2,
     }).default("0"),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("USD"),
     status: varchar("status", {
         enum: [
             "pending",
@@ -561,6 +566,7 @@ export const serviceOrders = pgTable("service_orders", {
     subtotal: decimal("subtotal", { precision: 10, scale: 2 }).notNull(),
     taxAmount: decimal("tax_amount", { precision: 10, scale: 2 }).default("0"),
     totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+    currency: varchar("currency", { length: 3 }).default("USD"),
     platformFeePercentage: decimal("platform_fee_percentage", { precision: 5, scale: 2 }).default("15.00"),
     platformFeeAmount: decimal("platform_fee_amount", { precision: 10, scale: 2 }).default("0"),
     providerAmount: decimal("provider_amount", { precision: 10, scale: 2 }).default("0"),

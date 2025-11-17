@@ -40,6 +40,7 @@ import { fileTypeFromBuffer } from "file-type";
 import signature from "cookie-signature";
 import { Resend } from "resend";
 import { canMessageRole, getAllowedMessagingRoles, type UserRole } from "@shared/messagingPermissions";
+import { currencyService, SUPPORTED_CURRENCIES } from "./currency";
 
 const PgSession = connectPg(session);
 
@@ -8370,6 +8371,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error: any) {
             console.error("Error fetching activity logs:", error);
             res.status(500).json({ message: "Failed to fetch activity logs" });
+        }
+    });
+
+    // ============ CURRENCY ENDPOINTS ============
+    // Get list of supported currencies
+    app.get("/api/currencies", async (req, res) => {
+        res.json(SUPPORTED_CURRENCIES);
+    });
+
+    // Get current exchange rates
+    app.get("/api/currencies/rates", async (req, res) => {
+        try {
+            const rates = await currencyService.getExchangeRates();
+            res.json(rates);
+        } catch (error) {
+            console.error("Error fetching exchange rates:", error);
+            res.status(500).json({ message: "Failed to fetch exchange rates" });
+        }
+    });
+
+    // Convert amount between currencies
+    app.post("/api/currencies/convert", async (req, res) => {
+        try {
+            const { amount, from, to } = req.body;
+            
+            if (!amount || !from || !to) {
+                return res.status(400).json({ message: "Amount, from, and to currencies are required" });
+            }
+
+            const convertedAmount = await currencyService.convert(
+                parseFloat(amount),
+                from,
+                to
+            );
+
+            res.json({
+                original: { amount: parseFloat(amount), currency: from },
+                converted: { amount: convertedAmount, currency: to },
+                rate: await currencyService.getRate(from, to),
+            });
+        } catch (error) {
+            console.error("Error converting currency:", error);
+            res.status(500).json({ message: "Failed to convert currency" });
+        }
+    });
+
+    // Update user's preferred currency
+    app.patch("/api/user/currency", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const { currency } = req.body;
+
+            if (!currency || !currencyService.isCurrencySupported(currency)) {
+                return res.status(400).json({ message: "Invalid currency code" });
+            }
+
+            const [user] = await db
+                .update(users)
+                .set({ preferredCurrency: currency })
+                .where(eq(users.id, userId))
+                .returning();
+
+            res.json({ currency: user.preferredCurrency });
+        } catch (error) {
+            console.error("Error updating user currency:", error);
+            res.status(500).json({ message: "Failed to update currency preference" });
         }
     });
 
