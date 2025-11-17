@@ -40,7 +40,7 @@ export const SUPPORTED_CURRENCIES: CurrencyInfo[] = [
 class CurrencyService {
   private cache: Map<string, ExchangeRates> = new Map();
   private readonly CACHE_DURATION = 3600000; // 1 hour in milliseconds
-  private readonly API_URL = 'https://api.exchangerate-api.io/v4/latest/USD';
+  private readonly API_URL = 'https://open.er-api.com/v6/latest/USD';
 
   /**
    * Get exchange rates for USD base currency (cached)

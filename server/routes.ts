@@ -17,6 +17,7 @@ import {
     serviceBookings,
     bookings,
     messages,
+    currencySettings,
 } from "@shared/schema";
 import { and, desc, eq, sql } from "drizzle-orm";
 import connectPg from "connect-pg-simple";
@@ -8437,6 +8438,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (error) {
             console.error("Error updating user currency:", error);
             res.status(500).json({ message: "Failed to update currency preference" });
+        }
+    });
+
+    // ============ ADMIN CURRENCY MANAGEMENT ENDPOINTS ============
+    // Initialize currency settings with default currencies
+    app.post("/api/admin/currencies/settings/init", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            
+            if (user.role !== 'admin') {
+                return res.status(403).json({ message: "Admin access required" });
+            }
+
+            // Insert all supported currencies into settings
+            const insertPromises = SUPPORTED_CURRENCIES.map((currency, index) => 
+                db.insert(currencySettings)
+                    .values({
+                        code: currency.code,
+                        name: currency.name,
+                        symbol: currency.symbol,
+                        isEnabled: true,
+                        displayOrder: index,
+                        updatedBy: userId,
+                    })
+                    .onConflictDoNothing()
+            );
+
+            await Promise.all(insertPromises);
+
+            res.json({ message: "Currency settings initialized successfully" });
+        } catch (error) {
+            console.error("Error initializing currency settings:", error);
+            res.status(500).json({ message: "Failed to initialize currency settings" });
+        }
+    });
+
+    // Get all currency settings (admin only)
+    app.get("/api/admin/currencies/settings", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            
+            if (user.role !== 'admin') {
+                return res.status(403).json({ message: "Admin access required" });
+            }
+
+            const settings = await db
+                .select()
+                .from(currencySettings)
+                .orderBy(currencySettings.displayOrder);
+
+            res.json(settings);
+        } catch (error) {
+            console.error("Error fetching currency settings:", error);
+            res.status(500).json({ message: "Failed to fetch currency settings" });
+        }
+    });
+
+    // Toggle currency enabled status (admin only)
+    app.patch("/api/admin/currencies/settings/:code", requireAuth, async (req: any, res) => {
+        try {
+            const userId = (req.session as any).userId;
+            const [user] = await db.select().from(users).where(eq(users.id, userId));
+            
+            if (user.role !== 'admin') {
+                return res.status(403).json({ message: "Admin access required" });
+            }
+
+            const { code } = req.params;
+            const { isEnabled } = req.body;
+
+            if (typeof isEnabled !== 'boolean') {
+                return res.status(400).json({ message: "isEnabled must be a boolean" });
+            }
+
+            const [updated] = await db
+                .update(currencySettings)
+                .set({ 
+                    isEnabled, 
+                    updatedAt: new Date(),
+                    updatedBy: userId,
+                })
+                .where(eq(currencySettings.code, code))
+                .returning();
+
+            if (!updated) {
+                return res.status(404).json({ message: "Currency not found" });
+            }
+
+            res.json(updated);
+        } catch (error) {
+            console.error("Error updating currency settings:", error);
+            res.status(500).json({ message: "Failed to update currency settings" });
+        }
+    });
+
+    // Get only enabled currencies (for currency selector)
+    app.get("/api/currencies/enabled", async (req, res) => {
+        try {
+            const enabled = await db
+                .select()
+                .from(currencySettings)
+                .where(eq(currencySettings.isEnabled, true))
+                .orderBy(currencySettings.displayOrder);
+
+            // If no settings exist yet, return all currencies as enabled by default
+            if (enabled.length === 0) {
+                res.json(SUPPORTED_CURRENCIES);
+            } else {
+                res.json(enabled);
+            }
+        } catch (error) {
+            console.error("Error fetching enabled currencies:", error);
+            // Fallback to all currencies if database error
+            res.json(SUPPORTED_CURRENCIES);
         }
     });
 

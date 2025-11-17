@@ -28,6 +28,17 @@ export const sessions = pgTable(
     (table) => [index("IDX_session_expire").on(table.expire)]
 );
 
+// Currency settings table (admin-managed)
+export const currencySettings = pgTable("currency_settings", {
+    code: varchar("code", { length: 3 }).primaryKey(),
+    name: varchar("name").notNull(),
+    symbol: varchar("symbol", { length: 10 }).notNull(),
+    isEnabled: boolean("is_enabled").notNull().default(true),
+    displayOrder: integer("display_order").notNull().default(0),
+    updatedAt: timestamp("updated_at").defaultNow(),
+    updatedBy: varchar("updated_by").references(() => users.id),
+});
+
 // User storage table
 export const users = pgTable("users", {
     id: varchar("id").primaryKey().$defaultFn(() => crypto.randomUUID()),

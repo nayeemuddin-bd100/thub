@@ -35,10 +35,10 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     return localStorage.getItem('preferredCurrency') || 'USD';
   });
 
-  // Fetch supported currencies
+  // Fetch enabled currencies (admin-controlled)
   const { data: currencies = [] } = useQuery<CurrencyInfo[]>({
-    queryKey: ['/api/currencies'],
-    staleTime: Infinity, // Currencies list rarely changes
+    queryKey: ['/api/currencies/enabled'],
+    staleTime: 300000, // 5 minutes (shorter cache for admin changes)
   });
 
   // Fetch exchange rates
