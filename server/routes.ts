@@ -8650,10 +8650,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.log(`[VideoCall] Created room ${room.name} for users ${currentUserId} and ${participantId}`);
                 res.json({ roomUrl: room.url });
             } else {
-                // Demo mode: Generate Daily.co demo room URL
-                // Note: Demo rooms work without API key but have limitations
-                const demoRoomUrl = `https://travelhub.daily.co/${roomName}`;
-                console.log(`[VideoCall] Demo mode: Generated room URL for users ${currentUserId} and ${participantId}`);
+                // Demo mode: Use Daily.co's public demo domain
+                // This works without an API key for testing purposes
+                // Room URLs expire after use and are for demo only
+                const demoRoomUrl = `https://demo.daily.co/${roomName}`;
+                console.log(`[VideoCall] Demo mode: Generated room URL ${demoRoomUrl} for users ${currentUserId} and ${participantId}`);
                 res.json({ roomUrl: demoRoomUrl });
             }
         } catch (error: any) {
