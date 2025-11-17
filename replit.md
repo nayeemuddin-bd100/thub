@@ -51,6 +51,44 @@ Preferred communication style: Simple, everyday language.
 - **UI/UX Libraries**: Radix UI, Lucide React, TailwindCSS, Recharts.
 - **Development Tools**: TypeScript, Drizzle Kit, ESBuild.
 
+# Production Deployment (Coolify)
+
+## WebSocket Configuration
+
+The real-time chat features (typing indicators, online/offline status, message delivery) use WebSocket connections (`/ws` path). For production deployment on Coolify:
+
+### Required Environment Variables
+- `SESSION_SECRET`: Must be set to a secure random string (used for session cookie signing and WebSocket authentication)
+- All other environment variables from development (database URL, Stripe keys, etc.)
+
+### Reverse Proxy Configuration
+WebSocket connections require special proxy settings. If using **nginx** in Coolify, add this to your site configuration:
+
+```nginx
+location /ws {
+    proxy_pass http://localhost:5000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 86400;
+}
+```
+
+### Testing WebSocket Connection
+After deployment, check server logs for:
+- `[WebSocket] New connection attempt from: <IP>`
+- `[WebSocket] User <userId> authenticated successfully`
+- `[WebSocket] Broadcasting online status for user <userId>`
+
+If authentication fails, verify:
+1. `SESSION_SECRET` environment variable matches between development and production
+2. Session cookies are being sent with WebSocket upgrade requests
+3. Reverse proxy is configured to pass WebSocket upgrade headers
+
 # Recent Changes
 
 ## November 17, 2025 - Multi-Currency System with Admin Control Panel
