@@ -241,7 +241,14 @@ export default function MessagesPage() {
   };
 
   const handleStartVideoCall = () => {
-    if (!selectedUserId) return;
+    if (!selectedUserId || !currentUser) {
+      toast({
+        title: 'Error',
+        description: 'Please wait for user data to load',
+        variant: 'destructive',
+      });
+      return;
+    }
     startVideoCallMutation.mutate(selectedUserId);
   };
 
@@ -628,7 +635,7 @@ export default function MessagesPage() {
       </div>
 
       {/* Video Call Modal */}
-      {isVideoCallOpen && videoRoomUrl && (
+      {isVideoCallOpen && videoRoomUrl && currentUser && (
         <VideoCall
           isOpen={isVideoCallOpen}
           onClose={() => {
@@ -636,7 +643,7 @@ export default function MessagesPage() {
             setVideoRoomUrl('');
           }}
           roomUrl={videoRoomUrl}
-          userName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'User'}
+          userName={`${currentUser.firstName} ${currentUser.lastName}`}
         />
       )}
     </div>
