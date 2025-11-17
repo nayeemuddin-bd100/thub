@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Star, Users, Bed, Car, Heart, MapPin } from "lucide-react";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -28,6 +29,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
   const imageUrl = property.images?.[0] || "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=600";
   const serviceCount = property.serviceCount || 0;
   const { user, isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   const { toast } = useToast();
   const { data: favorites = [] } = useQuery<any[]>({
     queryKey: ['/api/favorites'],
@@ -157,7 +159,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           {/* Price */}
           <div className="flex items-baseline space-x-2">
             <span className="text-3xl font-bold text-foreground" data-testid={`text-property-price-${property.id}`}>
-              ${parseFloat(property.pricePerNight).toLocaleString()}
+              {formatPrice(parseFloat(property.pricePerNight))}
             </span>
             <span className="text-sm font-medium text-muted-foreground">/ night</span>
           </div>

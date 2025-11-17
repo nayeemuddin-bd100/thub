@@ -29,6 +29,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import CurrencySelector from "@/components/CurrencySelector";
 
 interface HeaderProps {
   onToggleDarkMode: () => void;
@@ -156,6 +157,7 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-2 lg:space-x-4">
+            <CurrencySelector />
             <LanguageSwitcher />
             
             <Button variant="ghost" size="icon" onClick={onToggleDarkMode} data-testid="button-dark-mode">
@@ -404,6 +406,9 @@ export default function Header({ onToggleDarkMode, isDarkMode, isAuthenticated =
                   </div>
 
                   <div className="border-t pt-4 space-y-2">
+                    <div className="px-2 py-2">
+                      <CurrencySelector />
+                    </div>
                     <LanguageSwitcher />
                     
                     {isAuthenticated ? (

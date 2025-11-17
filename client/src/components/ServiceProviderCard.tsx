@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/contexts/CurrencyContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,11 +37,12 @@ export default function ServiceProviderCard({ provider }: ServiceProviderCardPro
   const avatarUrl = provider.user?.profileImageUrl || 
     `https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&h=300`;
   const { user, isAuthenticated } = useAuth();
+  const { formatPrice } = useCurrency();
   const { toast } = useToast();
   
   const rate = provider.hourlyRate ? 
-    `$${parseFloat(provider.hourlyRate).toLocaleString()}/hour` :
-    `$${parseFloat(provider.fixedRate || '0').toLocaleString()}/service`;
+    `${formatPrice(parseFloat(provider.hourlyRate))}/hour` :
+    `${formatPrice(parseFloat(provider.fixedRate || '0'))}/service`;
 
   const { data: favorites = [] } = useQuery<any[]>({
     queryKey: ['/api/favorites'],
