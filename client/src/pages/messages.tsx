@@ -8,12 +8,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Send, ArrowLeft, Plus, Home, Check, CheckCheck } from 'lucide-react';
+import { MessageSquare, Send, ArrowLeft, Plus, Home, Check, CheckCheck, Video } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { getAllowedMessagingRoles, ROLE_LABELS, type UserRole } from '@shared/messagingPermissions';
+import VideoCall from '@/components/VideoCall';
 
 interface Message {
   id: string;
@@ -53,6 +54,8 @@ export default function MessagesPage() {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [selectedNewUser, setSelectedNewUser] = useState<string>('');
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [isVideoCallOpen, setIsVideoCallOpen] = useState(false);
+  const [videoRoomUrl, setVideoRoomUrl] = useState<string>('');
   
   // Check for user query parameter to auto-select conversation
   useEffect(() => {
@@ -89,6 +92,41 @@ export default function MessagesPage() {
   });
 
   // Send message mutation
+  // Start video call mutation
+  const startVideoCallMutation = useMutation({
+    mutationFn: async (participantId: string) => {
+      const response = await fetch('/api/video-call/create-room', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create video call' }));
+        throw new Error(errorData.message || 'Failed to create video call');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      if (!data.roomUrl) {
+        toast({
+          title: 'Video Call Error',
+          description: 'Failed to create video call room. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setVideoRoomUrl(data.roomUrl);
+      setIsVideoCallOpen(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Video Call Error',
+        description: error.message || 'Failed to start video call. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { receiverId: string; content: string }) => {
       const response = await fetch('/api/messages', {
@@ -200,6 +238,11 @@ export default function MessagesPage() {
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
+
+  const handleStartVideoCall = () => {
+    if (!selectedUserId) return;
+    startVideoCallMutation.mutate(selectedUserId);
   };
 
   // Get allowed messaging roles for current user
@@ -415,47 +458,61 @@ export default function MessagesPage() {
           {selectedUserId && (selectedConversation || selectedUser) ? (
             <>
               <CardHeader className="border-b">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="lg:hidden"
-                    onClick={() => setSelectedUserId(null)}
-                    data-testid="button-back"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                  <Avatar>
-                    <AvatarFallback>
-                      {selectedConversation 
-                        ? getInitials(selectedConversation.userName)
-                        : selectedUser 
-                          ? getInitials(`${selectedUser.firstName} ${selectedUser.lastName}`)
-                          : '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg" data-testid="text-chat-username">
-                      {selectedConversation 
-                        ? selectedConversation.userName
-                        : selectedUser 
-                          ? `${selectedUser.firstName} ${selectedUser.lastName}`
-                          : 'User'}
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="lg:hidden"
+                      onClick={() => setSelectedUserId(null)}
+                      data-testid="button-back"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                    <Avatar>
+                      <AvatarFallback>
                         {selectedConversation 
-                          ? selectedConversation.userEmail
-                          : selectedUser?.email || ''}
-                      </p>
-                      {selectedUserId && onlineUsers.has(selectedUserId) && (
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                          <span className="text-xs text-green-600 font-medium">Online</span>
-                        </div>
-                      )}
+                          ? getInitials(selectedConversation.userName)
+                          : selectedUser 
+                            ? getInitials(`${selectedUser.firstName} ${selectedUser.lastName}`)
+                            : '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <CardTitle className="text-lg" data-testid="text-chat-username">
+                        {selectedConversation 
+                          ? selectedConversation.userName
+                          : selectedUser 
+                            ? `${selectedUser.firstName} ${selectedUser.lastName}`
+                            : 'User'}
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">
+                          {selectedConversation 
+                            ? selectedConversation.userEmail
+                            : selectedUser?.email || ''}
+                        </p>
+                        {selectedUserId && onlineUsers.has(selectedUserId) && (
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                            <span className="text-xs text-green-600 font-medium">Online</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartVideoCall}
+                    disabled={startVideoCallMutation.isPending}
+                    className="gap-2"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span className="hidden sm:inline">
+                      {startVideoCallMutation.isPending ? 'Starting...' : 'Video Call'}
+                    </span>
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -569,6 +626,19 @@ export default function MessagesPage() {
           )}
         </Card>
       </div>
+
+      {/* Video Call Modal */}
+      {isVideoCallOpen && videoRoomUrl && (
+        <VideoCall
+          isOpen={isVideoCallOpen}
+          onClose={() => {
+            setIsVideoCallOpen(false);
+            setVideoRoomUrl('');
+          }}
+          roomUrl={videoRoomUrl}
+          userName={currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'User'}
+        />
+      )}
     </div>
   );
 }

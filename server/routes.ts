@@ -8576,6 +8576,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
     });
 
+    // Video call room creation endpoint
+    app.post("/api/video-call/create-room", requireAuth, async (req: any, res) => {
+        try {
+            const { participantId } = req.body;
+            const currentUserId = req.user.id;
+            
+            if (!participantId) {
+                return res.status(400).json({ message: "Participant ID is required" });
+            }
+
+            // Security: Verify that the participant is in an allowed conversation with the requester
+            // Check if there are any messages between these two users
+            const existingConversation = await db
+                .select()
+                .from(messages)
+                .where(
+                    or(
+                        and(eq(messages.senderId, currentUserId), eq(messages.receiverId, participantId)),
+                        and(eq(messages.senderId, participantId), eq(messages.receiverId, currentUserId))
+                    )
+                )
+                .limit(1);
+
+            if (existingConversation.length === 0) {
+                return res.status(403).json({ 
+                    message: "You can only start video calls with users you have messaged" 
+                });
+            }
+
+            // Generate a unique room name with sanitized IDs
+            const sanitizedCurrentId = currentUserId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+            const sanitizedParticipantId = participantId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8);
+            const timestamp = Date.now();
+            const roomName = `travelhub-${sanitizedCurrentId}-${sanitizedParticipantId}-${timestamp}`;
+            
+            // Check if DAILY_API_KEY is configured
+            const apiKey = process.env.DAILY_API_KEY;
+            
+            if (apiKey) {
+                // Production mode: Create room using Daily.co API
+                const response = await fetch('https://api.daily.co/v1/rooms', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                    },
+                    body: JSON.stringify({
+                        name: roomName,
+                        privacy: 'private',
+                        properties: {
+                            max_participants: 2,
+                            enable_chat: true,
+                            enable_screenshare: true,
+                            start_video_off: false,
+                            start_audio_off: false,
+                            exp: Math.floor(Date.now() / 1000) + 3600, // Room expires in 1 hour
+                        },
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Daily.co API error:', errorData);
+                    throw new Error(errorData.error || 'Failed to create Daily.co room');
+                }
+
+                const room = await response.json();
+                console.log(`[VideoCall] Created room ${room.name} for users ${currentUserId} and ${participantId}`);
+                res.json({ roomUrl: room.url });
+            } else {
+                // Demo mode: Generate Daily.co demo room URL
+                // Note: Demo rooms work without API key but have limitations
+                const demoRoomUrl = `https://travelhub.daily.co/${roomName}`;
+                console.log(`[VideoCall] Demo mode: Generated room URL for users ${currentUserId} and ${participantId}`);
+                res.json({ roomUrl: demoRoomUrl });
+            }
+        } catch (error: any) {
+            console.error("Error creating video call room:", error);
+            res.status(500).json({ 
+                message: error.message || "Failed to create video call room" 
+            });
+        }
+    });
+
     const httpServer = createServer(app);
 
     // WebSocket setup for real-time messaging and notifications

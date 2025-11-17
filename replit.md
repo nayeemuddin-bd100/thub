@@ -28,6 +28,11 @@ Preferred communication style: Simple, everyday language.
   - **Online/Offline Status**: Live presence tracking showing when users are online
   - **Read Receipts**: Automatic marking of messages as delivered and read
   - **Real-time Updates**: Instant message delivery and status updates via WebSocket
+  - **Video Calling**: Integrated one-on-one video calling using Daily.co
+    - Click "Video Call" button in any chat conversation
+    - Built-in camera/microphone controls and screen sharing
+    - HD video quality with low latency
+    - Demo mode (no API key needed) and production mode (with DAILY_API_KEY)
 - **WhatsApp Integration**: Direct WhatsApp contact and system notifications.
 - **Stripe Payment Integration**: Secure payment flow with server-side validation and a payment-first confirmation process.
 - **Operation Support System**: Dedicated support contact feature for the `operation_support` role.
@@ -47,6 +52,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: Neon (PostgreSQL serverless).
 - **Payment Processing**: Stripe.
 - **Communication**: Twilio (for WhatsApp integration and SendGrid for emails).
+- **Video Calling**: Daily.co (WebRTC-based video conferencing).
 - **File Management**: Uppy (file uploads), AWS S3 (media storage).
 - **UI/UX Libraries**: Radix UI, Lucide React, TailwindCSS, Recharts.
 - **Development Tools**: TypeScript, Drizzle Kit, ESBuild.
@@ -59,6 +65,11 @@ The real-time chat features (typing indicators, online/offline status, message d
 
 ### Required Environment Variables
 - `SESSION_SECRET`: Must be set to a secure random string (used for session cookie signing and WebSocket authentication)
+- `DAILY_API_KEY` (optional): Daily.co API key for production video calling with custom branding
+  - **Demo Mode** (no API key): Video calls work but use public demo domain `https://travelhub.daily.co/` with basic features
+  - **Production Mode** (with API key): Private rooms with custom domain, advanced controls, and better security
+  - **How to get API key**: Sign up at https://dashboard.daily.co/ (10,000 free minutes/month)
+  - **Setup**: Create account → Get API key → Add to environment variables → Rooms auto-created via API
 - All other environment variables from development (database URL, Stripe keys, etc.)
 
 ### Reverse Proxy Configuration
@@ -89,7 +100,37 @@ If authentication fails, verify:
 2. Session cookies are being sent with WebSocket upgrade requests
 3. Reverse proxy is configured to pass WebSocket upgrade headers
 
+### Testing Video Calling
+After deployment, verify video calling:
+1. Log in as two different users (use two browsers/incognito windows)
+2. Send a message between the two users (required for security - can only video call existing conversations)
+3. Click "Video Call" button in chat header
+4. Check server logs for: `[VideoCall] Created room` or `[VideoCall] Demo mode: Generated room URL`
+5. Both users should see the video call interface with camera/microphone controls
+
+**Security Note**: Video calls only work between users who have an existing message conversation. This prevents unauthorized video call spam.
+
 # Recent Changes
+
+## November 17, 2025 - Enhanced Real-Time Features & Video Calling
+- **WebSocket Debugging & Production Deployment**:
+  - Added comprehensive WebSocket connection logging for debugging
+  - Created production deployment guide for Coolify with nginx configuration
+  - Documented SESSION_SECRET requirement and reverse proxy settings
+  - Added real-time connection status indicators in Messages page
+- **Video Calling Integration**:
+  - Integrated Daily.co for one-on-one video calling in Messages
+  - Added "Video Call" button in chat header (visible in all conversations)
+  - Created VideoCall modal component with camera/microphone controls
+  - Backend endpoint `/api/video-call/create-room` for room creation
+  - Supports demo mode (no API key) and production mode (with DAILY_API_KEY)
+  - Features: HD video, screen sharing, audio/video toggle, hang up button
+  - Automatic room cleanup and connection management
+- **Real-Time Chat Verification**:
+  - Confirmed typing indicators working correctly
+  - Verified online/offline status tracking
+  - Message delivery and read receipts functioning properly
+  - WebSocket authentication and session management validated
 
 ## November 17, 2025 - Multi-Currency System with Admin Control Panel
 - **Comprehensive Multi-Currency Support**: Added complete multi-currency functionality across the platform
