@@ -53,6 +53,41 @@ Preferred communication style: Simple, everyday language.
 
 # Recent Changes
 
+## November 17, 2025 - Multi-Currency System with Admin Control Panel
+- **Comprehensive Multi-Currency Support**: Added complete multi-currency functionality across the platform
+  - Currency conversion service using open.er-api.com API with rate caching (1-hour expiry)
+  - Support for 20 major currencies (USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, INR, MXN, BRL, ZAR, KRW, SGD, NZD, HKD, NOK, SEK, DKK, AED)
+  - Real-time currency conversion for all prices throughout the platform
+  - User preference storage for selected currency
+- **Currency Selector Component**: Added to header (desktop and mobile)
+  - Displays current currency with symbol
+  - Dropdown list of available currencies with flags and symbols
+  - Persists user preference to database and localStorage
+- **Admin Currency Control Panel**: New admin dashboard section for currency management
+  - Located in Admin Dashboard > Currency Settings sidebar menu
+  - Initialize button to set up all currencies with default settings
+  - Toggle switches to enable/disable specific currencies
+  - Real-time updates across entire platform when currencies are toggled
+  - Changes immediately reflected in currency selector, bookings, services, and payments
+- **Database Schema Updates**: Added currency support tables and fields
+  - New `currency_settings` table for admin-controlled currency availability
+  - Added currency fields to users, properties, bookings, and serviceOrders tables
+  - All currency codes stored as VARCHAR(3) for ISO standard compatibility
+- **Currency Context Provider**: React context for managing currency state
+  - Fetches enabled currencies from API (5-minute cache for instant admin updates)
+  - Provides formatPrice() and convertPrice() functions
+  - Automatic currency preference sync for logged-in users
+- **API Endpoints**: Full currency management API
+  - Public: GET /api/currencies/enabled, GET /api/currencies/rates
+  - Admin: POST /api/admin/currencies/settings/init, GET /api/admin/currencies/settings, PATCH /api/admin/currencies/settings/:code
+  - User: PATCH /api/user/currency
+- **Platform-wide Integration**: Currency conversion applied to:
+  - Property cards (pricePerNight)
+  - Service provider cards (hourlyRate, fixedRate)
+  - Booking confirmation pages
+  - Payment flows
+  - All price displays throughout the application
+
 ## November 16, 2025 - Mobile Responsiveness Improvements
 - **Header Component**: Added comprehensive mobile navigation
   - Mobile menu with hamburger icon using Sheet component

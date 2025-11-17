@@ -8632,9 +8632,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let userId: string | null = null;
         let authenticated = false;
 
+        console.log('[WebSocket] New connection attempt from:', req.socket.remoteAddress);
+
         // Parse session cookie from WebSocket upgrade request
         try {
             const cookies = req.headers.cookie;
+            console.log('[WebSocket] Cookies:', cookies ? 'present' : 'missing');
             if (cookies) {
                 // Extract session ID from cookie
                 const sessionMatch = cookies.match(/connect\.sid=([^;]+)/);
@@ -8683,17 +8686,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Close connection if authentication failed
             if (!authenticated) {
-                console.log("WebSocket authentication failed - closing connection");
+                console.log("[WebSocket] Authentication failed - closing connection");
                 ws.close(1008, "Authentication required");
                 return;
             }
+
+            console.log(`[WebSocket] User ${userId} authenticated successfully`);
         } catch (error) {
-            console.error("WebSocket authentication error:", error);
+            console.error("[WebSocket] Authentication error:", error);
             ws.close(1011, "Authentication error");
             return;
         }
 
         // Broadcast online status to all connected clients
+        console.log(`[WebSocket] Broadcasting online status for user ${userId}`);
         broadcastUserOnline(userId);
 
         ws.on("message", async (data) => {
@@ -8701,14 +8707,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const message = JSON.parse(data.toString());
 
                 if (message.type === "typing_start" && message.receiverId) {
+                    console.log(`[WebSocket] User ${userId} typing to ${message.receiverId}`);
                     const receiverWs = connectedClients.get(message.receiverId);
                     if (receiverWs && receiverWs.readyState === 1) {
                         receiverWs.send(JSON.stringify({
                             type: "typing_start",
                             userId: userId,
                         }));
+                    } else {
+                        console.log(`[WebSocket] Receiver ${message.receiverId} not connected`);
                     }
                 } else if (message.type === "typing_stop" && message.receiverId) {
+                    console.log(`[WebSocket] User ${userId} stopped typing to ${message.receiverId}`);
                     const receiverWs = connectedClients.get(message.receiverId);
                     if (receiverWs && receiverWs.readyState === 1) {
                         receiverWs.send(JSON.stringify({
@@ -8754,6 +8764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         ws.on("close", () => {
             if (userId) {
+                console.log(`[WebSocket] User ${userId} disconnected`);
                 connectedClients.delete(userId);
                 // Broadcast offline status to all connected clients
                 broadcastUserOffline(userId);
